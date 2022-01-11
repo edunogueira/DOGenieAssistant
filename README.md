@@ -4,14 +4,14 @@
 <img src="player.jpg">
 <img src="playertitle.jpg">
 <img src="squad.jpg">
+<img src="tactics.png">
 
 ### To-Do
 - [x] Adicionar OPS na tela de detalhes do jogador
 - [x] Adicionar XP na tela de detalhes do jogador
 - [x] Adicionar o nome do jogador na tela de detalhes do jogador
 - [x] Adicionar OPS na tela de elenco
-- [ ] Adicionar OPS na tela de taticas
-- [ ] Adicionar calculo de capitão na tela de taticas
+- [x] Adicionar OPS na tela de taticas
 
 ### Como instalar 
 1. Instalar o [Tampermonkey](https://www.tampermonkey.net/)
