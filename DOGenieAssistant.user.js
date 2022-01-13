@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      0.41
+// @version      0.5
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -11,6 +11,12 @@
 // @include      https://www.dugout-online.com/*
 // ==/UserScript==
 
+//page title
+var title = $(location).attr('pathname').split("/")[1];
+title = title.charAt(0).toUpperCase() + title.slice(1);
+$(document).prop('title', title);
+
+//page select
 var page = document.URL;
 if (page.match('/players/details/')) {
     playerDetails();
@@ -19,6 +25,7 @@ if (page.match('/players/details/')) {
 } else if (page.match('/tactics/none/') || page.match('/tactics_youth/none/')) {
     tacticsDetails();
 }
+
 //second clock
 $('#footer').append('<div class="time_display" id="servertime2" style="top: 12px;border:1px solid #fff"></div>');
 
