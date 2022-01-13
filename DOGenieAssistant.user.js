@@ -1,25 +1,22 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      0.4
+// @version      0.41
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
 // @icon         https://www.google.com/s2/favicons?domain=dugout-online.com
 // @require	     http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js
 // @require      https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js
-// @include      http*dugout-online.com/players/details*
-// @include      http*dugout-online.com/players/none*
-// @include      http*dugout-online.com/tactics/none*
-// @include      http*dugout-online.com/tactics_youth/none*
 // @include      http*dugout-online.com/*
+// @include      https://www.dugout-online.com/*
 // ==/UserScript==
 
 var page = document.URL;
-if (page.match('players/details/')) {
+if (page.match('/players/details/')) {
     playerDetails();
-} else if (page.match('players/none/')) {
+} else if (page.match('/players/none/')) {
     squadDetails();
-} else if (page.match('tactics/none/') || page.match('tactics_youth/none/')) {
+} else if (page.match('/tactics/none/') || page.match('/tactics_youth/none/')) {
     tacticsDetails();
 }
 //second clock
@@ -156,12 +153,15 @@ function squadDetails() {
 
     $(".forumline [class*=matches_row]").each(function() {
         var data = Array();
+        var count = 0;
         $(this).find(".tableHeader").remove();
 
         $(this).find("table tr").each(function() {
             $(this).children('td').each(function() {
                 if ($.isNumeric($(this).text())) {
                     data.push(parseInt($(this).text()));
+                } else {
+                    count++;
                 }
             });
         });
@@ -184,6 +184,8 @@ function squadDetails() {
                 ops = (data[3] + data[8] + data[17] + data[11] + data[13]);
             }
             $(this).last().append('<td align="center"><span class="tableText">' + ops + '</span></td>');
+        } else if (count > 1) {
+            $(this).last().append('<td align="center"><span class="tableText">0</span></td>');
         }
     });
 
