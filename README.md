@@ -1,23 +1,31 @@
 # DO Genie Assistant
 
-#### 🚧  DO Genie Assistant 🚀 Em construção...  🚧
-<img src="player.jpg">
-<img src="playertitle.jpg">
-<img src="pagetitle.jpg">
-<img src="squad.jpg">
-<img src="tactics.png">
-<img src="datatable.gif">
-<img src="clock.gif">
+### Funcionalidades
+  #### Adicionar OPS e XP na tela de detalhes do jogador
+  <img src="player.jpg">
 
-### To-Do
-- [x] Adicionar OPS na tela de detalhes do jogador
-- [x] Adicionar XP na tela de detalhes do jogador
-- [x] Adicionar o nome do jogador na tela de detalhes do jogador
-- [x] Adicionar OPS na tela de elenco
-- [x] Adicionar OPS na tela de taticas
-- [x] Adicionar relógio secundário com o horário real
-- [x] Adicionar ordenar tabela de jogadores
-- [x] Mudar o título das páginas
+  #### Adicionar o nome do jogador como titulo da pagina na pagina de detalhes do jogador
+  <img src="playertitle.jpg">
+
+  #### Mudar o titulo da pagina em todas as paginas
+  <img src="pagetitle.jpg">
+
+  #### Adicionar OPS na tela de elenco
+  <img src="squad.jpg">
+  
+  #### Adicionar OPS na tela de taticas
+  <img src="tactics.png">
+
+  #### Adicionar relógio secundário com o horário real
+  <img src="clock.gif">
+
+  #### Adicionar ordenar tabela de jogadores
+  <img src="datatable.gif">
+
+### To-Do list
+- [ ] -
+- [ ] -
+- [ ] -
 
 ### Como instalar 
 1. Instalar o [Tampermonkey](https://www.tampermonkey.net/)
@@ -27,4 +35,3 @@
 #### Faça parte da nossa comunidade!
 
 ###### Meu time: [Tramontina FC](https://www.dugout-online.com/clubinfo/none/clubid/112411)
-###### Jogadores por emprestimos e amistosos são bem vindos
