@@ -14,8 +14,8 @@
 - [x] Adicionar o nome do jogador na tela de detalhes do jogador
 - [x] Adicionar OPS na tela de elenco
 - [x] Adicionar OPS na tela de taticas
-- [x] Adicionar um relogio secundario com o horario real
-- [x] Adicionar ordernar tabela de jogadores
+- [x] Adicionar relógio secundário com o horário real
+- [x] Adicionar ordenar tabela de jogadores
 
 ### Como instalar 
 1. Instalar o [Tampermonkey](https://www.tampermonkey.net/)
