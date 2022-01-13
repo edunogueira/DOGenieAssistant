@@ -16,6 +16,7 @@
 - [x] Adicionar OPS na tela de taticas
 - [x] Adicionar relógio secundário com o horário real
 - [x] Adicionar ordenar tabela de jogadores
+- [x] Mudar o título das páginas
 
 ### Como instalar 
 1. Instalar o [Tampermonkey](https://www.tampermonkey.net/)
