@@ -5,6 +5,8 @@
 <img src="playertitle.jpg">
 <img src="squad.jpg">
 <img src="tactics.png">
+<img src="datatable.gif">
+<img src="clock.gif">
 
 ### To-Do
 - [x] Adicionar OPS na tela de detalhes do jogador
@@ -12,6 +14,8 @@
 - [x] Adicionar o nome do jogador na tela de detalhes do jogador
 - [x] Adicionar OPS na tela de elenco
 - [x] Adicionar OPS na tela de taticas
+- [x] Adicionar um relogio secundario com o horario real
+- [x] Adicionar ordernar tabela de jogadores
 
 ### Como instalar 
 1. Instalar o [Tampermonkey](https://www.tampermonkey.net/)
