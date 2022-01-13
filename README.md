@@ -3,6 +3,7 @@
 #### 🚧  DO Genie Assistant 🚀 Em construção...  🚧
 <img src="player.jpg">
 <img src="playertitle.jpg">
+<img src="pagetitle.jpg">
 <img src="squad.jpg">
 <img src="tactics.png">
 <img src="datatable.gif">
