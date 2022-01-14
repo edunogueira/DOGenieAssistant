@@ -21,6 +21,9 @@
 
   #### Adicionar ordenar tabela de jogadores
   <img src="datatable.gif">
+  
+  #### Menu Dropdown 
+  <img src="menu.gif">
 
 ### To-Do list
 - [ ] -
