@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      0.5
+// @version      0.6
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -16,6 +16,7 @@ var title = $(location).attr('pathname').split("/")[1];
 title = title.charAt(0).toUpperCase() + title.slice(1);
 $(document).prop('title', title);
 
+//----------------------------------------------//
 //page select
 var page = document.URL;
 if (page.match('/players/details/')) {
@@ -26,6 +27,7 @@ if (page.match('/players/details/')) {
     tacticsDetails();
 }
 
+//----------------------------------------------//
 //second clock
 $('#footer').append('<div class="time_display" id="servertime2" style="top: 12px;border:1px solid #fff"></div>');
 
@@ -46,6 +48,30 @@ function addZero(i) {
 }
 
 setInterval(serverTime, 1000);
+//----------------------------------------------//
+//dropdown menu
+var css = '.dropdown-content{border-radius: 15px;margin-top:40px;display:none;position:absolute;background-color:#f1f1f1;min-width:160px;box-shadow:0 8px 16px 0 rgba(0,0,0,.2);z-index:1}.dropdown-content a{border-radius: 15px;color:#000;padding:12px 16px;text-decoration:none;display:block}.dropdown-content a:hover{background-color:#ddd}.menu_button:hover .dropdown-content{display:block}.menu_button:hover .dropbtn{background-color:#3e8e41}';
+applyStyle(css);
+$('.menu_button:nth-child(1)').append(('<div class="dropdown-content"><a href="https://www.dugout-online.com/home/none/Free-online-football-manager-game">Home</a> <a href="https://www.dugout-online.com/news/none/Free-online-football-manager-news">News</a> <a href="https://www.dugout-online.com/rules/none/">Rules</a> <a href="https://www.dugout-online.com/helpmain/none/Free-online-football-manager-help-FAQ">Ajuda</a></div>'));
+$('.menu_button:nth-child(2)').append(('<div class="dropdown-content"><a href="https://www.dugout-online.com/clubinfo/none/clubid/0/Free-online-football-manager-game">Info</a> <a href="https://www.dugout-online.com/players/none/clubid/0/Free-online-football-manager-game">Players</a> <a href="https://www.dugout-online.com/staff/none/Free-online-football-manager-game">Staff</a> <a href="https://www.dugout-online.com/settings/none/Free-online-football-manager-game">Settings</a></div>'));
+$('.menu_button:nth-child(3)').append(('<div class="dropdown-content"><a href="https://www.dugout-online.com/finances/none/Free-online-football-manager-game">Finances</a> <a href="https://www.dugout-online.com/stadium/none/Free-online-football-manager-game">Stadium</a> <a href="https://www.dugout-online.com/facilities/none/Free-online-football-manager-game">Facilities</a> <a href="https://www.dugout-online.com/sponsors/none/Free-online-football-manager-game">Sponsors</a> <a href="https://www.dugout-online.com/calendar/none/Free-online-football-manager-game">Calendar</a></div>'));
+$('.menu_button:nth-child(4)').append(('<div class="dropdown-content"><a href="https://www.dugout-online.com/tactics/none/Free-online-football-manager-game">Tactics</a> <a href="https://www.dugout-online.com/tactics_youth/none/Free-online-football-manager-game">Tactics Youth</a></div>'));
+$('.menu_button:nth-child(5)').append(('<div class="dropdown-content"><a href="https://www.dugout-online.com/training/none/Free-online-football-manager-game">Training</a> <a href="https://www.dugout-online.com/physios/none/Free-online-football-manager-game">Physios</a> <a href="https://www.dugout-online.com/physio_report/none">Physio Report</a></div>'));
+$('.menu_button:nth-child(6)').append(('<div class="dropdown-content"><a href="https://www.dugout-online.com/search_players/none/Free-online-football-manager-game">Players</a> <a href="https://www.dugout-online.com/search_clubs/none/Free-online-football-manager-game">Clubs</a> <a href="https://www.dugout-online.com/national_teams/none/Free-online-football-manager-game">National</a> <a href="https://www.dugout-online.com/search_coaches/none/Free-online-football-manager-game">Coaches</a> <a href="https://www.dugout-online.com/search_physios/none/Free-online-football-manager-game">Physios</a> <a href="https://www.dugout-online.com/search_transfers/none/Free-online-football-manager-game">Transfers</a></div>'));
+$('.menu_button:nth-child(7)').append(('<div class="dropdown-content"><a href="https://www.dugout-online.com/forum/none/Free-online-football-manager-game">Forum</a> <a href="https://www.dugout-online.com/community_rules/none/Free-online-football-manager-game">Rules</a> <a href="https://www.dugout-online.com/community_profile/none/Free-online-football-manager-game">Profile</a> <a href="https://www.dugout-online.com/links/none/Free-online-football-manager-game">Links</a></div>'));
+//----------------------------------------------//
+
+function applyStyle(css)
+{
+    'use strict';
+    var head, style;
+    head = document.getElementsByTagName('head')[0];
+    if (!head) { return; }
+    style = document.createElement('style');
+    style.type = 'text/css';
+    style.innerHTML = css;
+    head.appendChild(style);
+}
 
 function playerDetails() {
     var data = Array();
@@ -222,6 +248,7 @@ function doTable(selector) {
         "bAutoWidth": false
     });
 }
+
 function tacticsDetails() {
     $(".player").each(function() {
         var data = Array();
