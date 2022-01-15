@@ -24,9 +24,10 @@
   
   #### Menu Dropdown 
   <img src="menu.gif">
+  <img src="menu-en.gif">
 
 ### To-Do list
-- [ ] -
+- [ ] - som da torcida quando sair gol durante a partida
 - [ ] -
 - [ ] -
 
