@@ -151,7 +151,7 @@ function doTable(selector) {
 			"bFilter": true,
 			"bInfo": false,
 			"bAutoWidth": false,
-			"order": [[ 7, "desc"]]
+			"order": [[ $(selector + ' .table_top_row th').size() -1, "desc"]]
 		}
 
 	);
