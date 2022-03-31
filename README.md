@@ -27,9 +27,10 @@
   <img src="menu-en.gif">
 
 ### To-Do list
-- [ ] - som da torcida quando sair gol durante a partida
-- [ ] -
-- [ ] -
+- [ ] - jogador com camisa emprestado (time bnetto)
+- [ ] - menu para quem tem seleção (NT)
+- [ ] - facilitar o código para desativar funções
+- [ ] - musica quando sair gol
 
 ### Como instalar 
 1. Instalar o [Tampermonkey](https://www.tampermonkey.net/)
