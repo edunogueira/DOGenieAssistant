@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      1.2
+// @version      1.3
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
 // @icon         https://www.google.com/s2/favicons?domain=dugout-online.com
-// @require	     http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js
+// @require	 http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js
 // @require      https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js
 // @include      http*dugout-online.com/*
 // @include      https://www.dugout-online.com/*
@@ -23,11 +23,11 @@ const TACTICS_DETAILS = 1;
 
 if (page.match('/players/details/')) {
 	playerDetails();
-} else if (page.match('/players/none/')) {
+} else if (page.match('/players/none/') || page.match('/players_nt/none/')) {
 	if (SQUAD_DETAILS) {
 		squadDetails();
 	}
-} else if (page.match('/tactics/none/') || page.match('/tactics_youth/none/')) {
+} else if (page.match('/tactics/none/') || page.match('/tactics_youth/none/') || page.match('/tactics_nt/none/')) {
 	if (TACTICS_DETAILS) {
 		tacticsDetails();
 	}
