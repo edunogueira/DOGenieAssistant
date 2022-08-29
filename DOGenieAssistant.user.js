@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      1.3
+// @version      1.3.1
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -362,6 +362,20 @@ function dropdownMenu() {
 			$('.menu_button:nth-child(' + i + ')').append(('<div class="dropdown-content"><a href="https://www.dugout-online.com/search_players/none/">Players</a> <a href="https://www.dugout-online.com/search_clubs/none/">Clubs</a> <a href="https://www.dugout-online.com/national_teams/none/">National</a> <a href="https://www.dugout-online.com/search_coaches/none/">Coaches</a> <a href="https://www.dugout-online.com/search_physios/none/">Physios</a> <a href="https://www.dugout-online.com/search_transfers/none/">Transfers</a></div>'));i++;
 			$('.menu_button:nth-child(' + i + '7)').append(('<div class="dropdown-content"><a href="https://www.dugout-online.com/forum/none/">Forum</a> <a href="https://www.dugout-online.com/community_rules/none/">Rules</a> <a href="https://www.dugout-online.com/community_profile/none/">Profile</a> <a href="https://www.dugout-online.com/links/none/">Links</a></div>'));
 		}
+
+	    // substitui divs do canto superior esquerdo por anchors para facilitar navegação
+	    [...document.querySelectorAll('div#top_container > div')]
+		    .filter(d => d.classList.contains(`${d.id}_ico`))
+		    .forEach(d => {
+			const anchor = document.createElement('a');
+			anchor.href = d.onclick.toString().split('document.location.href=')[1].split('\'')[1];
+			anchor.classList.add(...d.classList.values())
+			anchor.id = d.id;
+			anchor.style.cssText = d.style.cssText;
+			anchor.title = d.title;
+			d.parentElement.insertBefore(anchor, d);
+			d.remove();
+		    });
 	}
 }
 
