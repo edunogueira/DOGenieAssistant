@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      1.3.2
+// @version      1.3.3
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -21,6 +21,8 @@ const PLAYER_EXP = 1;
 const SQUAD_DETAILS = 1;
 const TACTICS_DETAILS = 1;
 
+pageTitle();
+
 if (page.match('/players/details/')) {
 	playerDetails();
 } else if (page.match('/players/none/') || page.match('/players_nt/none/')) {
@@ -35,7 +37,6 @@ if (page.match('/players/details/')) {
 
 dropdownMenu();
 secondaryClock();
-pageTitle();
 
 //helper //----------------------------------------------//
 function serverTime() {
