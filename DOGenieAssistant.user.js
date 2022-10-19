@@ -35,6 +35,7 @@ if (page.match('/players/details/')) {
 
 dropdownMenu();
 secondaryClock();
+pageTitle();
 
 //helper //----------------------------------------------//
 function serverTime() {
