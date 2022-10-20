@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      1.3.3
+// @version      1.3.4
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -147,6 +147,35 @@ function getPos() {
 	return posArray;
 }
 
+function getOPS(data){
+    var ops = new Array();
+    var bestPos, maxOPS = 0;
+
+    ops[0] = (data[0] + data[5] + data[10] + data[15] + data[13]);
+    ops[1] = (data[16] + data[6] + data[1] + data[15] + data[13]);
+    ops[2] = (data[6] + data[11] + data[1] + data[15] + data[13]);
+    ops[3] = (data[16] + data[6] + data[1] + data[15] + data[13]);
+    ops[4] = (data[16] + data[17] + data[7] + data[2] + data[13]);
+    ops[5] = (data[12] + data[17] + data[7] + data[2] + data[13]);
+    ops[6] = (data[16] + data[17] + data[7] + data[2] + data[13]);
+    ops[7] = (data[3] + data[8] + data[17] + data[16] + data[13]);
+    ops[8] = (data[3] + data[8] + data[17] + data[11] + data[13]);
+    ops[9] = (data[3] + data[8] + data[17] + data[16] + data[13]);
+
+    ops[10] = (data[1] + data[6] + data[7] + data[2] + data[13]);
+    ops[11] = (data[12] + data[2] + data[7] + data[3] + data[8]);
+
+
+    for (var i = 0; i < ops.length; ++i) {
+        if (ops[i] < maxOPS) continue;
+        if (ops[i] > maxOPS) {
+            maxOPS = ops[i];
+            ops['pos'] = i;
+        }
+    }
+    return ops;
+}
+
 function doTable(selector) {
 	$(selector + ' tr:first td').wrapInner('<div />').find('div').unwrap().wrap('<th/>');
 	var header = $(selector + " .table_top_row:first").clone();
@@ -162,52 +191,41 @@ function doTable(selector) {
 		"bInfo": false,
 		"bAutoWidth": false,
 		"order": [
-			[$(selector + ' .table_top_row th').size() - 1, "desc"]
+			[$(selector + ' .table_top_row th').size() - 2, "desc"]
 		]
 	});
 }
 
 //features //----------------------------------------------//
 function playerDetails() {
-	var data = Array();
+    if (PLAYER_OPS) {
+        var data = Array();
 
-	$("#main-1 table tr").each(function(i, v) {
-		$(this).children('td').each(function(ii, vv) {
-			if ($.isNumeric($(this).text())) {
-				data.push(parseInt($(this).text()));
-			}
-		});
-	});
-	var exp = getExp((new XMLSerializer()).serializeToString(document));
-	var position = getPos();
-	var ops;
+        $("#main-1 table tr").each(function(i, v) {
+            $(this).children('td').each(function(ii, vv) {
+                if ($.isNumeric($(this).text())) {
+                    data.push(parseInt($(this).text()));
+                }
+            });
+        });
+        var ops = getOPS(data);
+        var position = getPos();
+        var natPos = 0;
 
-	if (position[0] == "1") {
-		//GK
-		ops = (data[0] + data[5] + data[10] + data[15] + data[13]);
-	} else if (position[2] == "1") {
-		//DC
-		ops = (data[6] + data[11] + data[1] + data[15] + data[13]);
-	} else if ((position[1] == "1") || (position[3] == "1")) {
-		//DL DR
-		ops = (data[16] + data[6] + data[1] + data[15] + data[13]);
-	} else if ((position[4] == "1") || (position[6] == "1")) {
-		//ML MR
-		ops = (data[16] + data[17] + data[7] + data[2] + data[13]);
-	} else if (position[5] == "1") {
-		//MC
-		ops = (data[12] + data[17] + data[7] + data[2] + data[13]);
-	} else if ((position[9] == "1") || (position[7] == "1")) {
-		//FL FR
-		ops = (data[3] + data[8] + data[17] + data[16] + data[13]);
-	} else if (position[8] == "1") {
-		//FC
-		ops = (data[3] + data[8] + data[17] + data[11] + data[13]);
-	}
-	if (PLAYER_OPS) {
-		$('.player_name').append(' @ OPS ' + ops);
+        for (var i = 0; i < position.length; ++i) {
+            if (position[i] == 1) {
+                natPos = i;
+            }
+        }
+
+        if ((ops['pos'] != natPos)) {
+            $('.player_name').append(' @ OPS ' + ops[natPos] + '/' + ops[ops['pos']] + '*');
+        } else {
+            $('.player_name').append(' @ OPS ' + ops[natPos]);
+        }
 	}
 	if (PLAYER_EXP) {
+        var exp = getExp((new XMLSerializer()).serializeToString(document));
 		$('.player_name').append(' | ' + exp + ' XP');
 	}
 	$(document).prop('title', $('.player_name').text());
@@ -216,6 +234,7 @@ function playerDetails() {
 function squadDetails() {
 	$(".forumline .table_top_row").each(function() {
 		$(this).last().append('<td align="center" width="20" title="Original Position Skills" class="tableHeader">OPS</td>');
+        $(this).last().append('<td align="center" width="20" title="Best Original Position Skills" class="tableHeader">HIGH</td>');
 	});
 
 	$(".forumline [class*=matches_row]").each(function() {
@@ -235,28 +254,36 @@ function squadDetails() {
 
 		if (data.length > 0) {
 			var position = $(this).find(" [class*=_icon]").text();
-			var ops = 0;
+			var ops = getOPS(data);
+            var natPos = 0;
 
 			if (position == "GK") {
-				ops = (data[0] + data[5] + data[10] + data[15] + data[13]);
+				natPos = 0;
+			} else if ((position == "DL")) {
+				natPos = 1;
 			} else if (position == "DC") {
-				ops = (data[6] + data[11] + data[1] + data[15] + data[13]);
-			} else if ((position == "DL") || (position == "DR")) {
-				ops = (data[16] + data[6] + data[1] + data[15] + data[13]);
-			} else if ((position == "ML") || (position == "MR")) {
-				ops = (data[16] + data[17] + data[7] + data[2] + data[13]);
+				natPos = 2;
+			} else if (position == "DR") {
+				natPos = 3;
+			} else if (position == "ML") {
+				natPos = 4;
 			} else if (position == "MC") {
-				ops = (data[12] + data[17] + data[7] + data[2] + data[13]);
-			} else if ((position == "FL") || (position == "FR")) {
-				ops = (data[3] + data[8] + data[17] + data[16] + data[13]);
+				natPos = 5;
+			} else if (position == "MR") {
+				natPos = 6;
+			} else if (position == "FL") {
+				natPos = 7;
 			} else if (position == "FC") {
-				ops = (data[3] + data[8] + data[17] + data[11] + data[13]);
+				natPos = 8;
+			} else if (position == "FR") {
+				natPos = 9;
 			}
-			if (isNaN(ops)) {
-				$(this).last().append('<td align="center"><span class="tableText">0</span></td>');
-			} else {
-				$(this).last().append('<td align="center"><span class="tableText">' + ops + '</span></td>');
-			}
+            $(this).last().append('<td align="center"><span class="tableText">' + ops[natPos] + '</span></td>');
+            if (ops[ops['pos']] > ops[natPos]){
+                $(this).last().append('<td align="center"><span class="tableText"><strong>' + ops[ops['pos']] + '</strong></span></td>');
+            } else {
+                $(this).last().append('<td align="center"><span class="tableText">' + ops[ops['pos']] + '</span></td>');
+            }
 		} else if (count > 1) {
 			$(this).last().append('<td align="center"><span class="tableText">0</span></td>');
 		}
