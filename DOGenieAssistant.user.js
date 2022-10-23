@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      1.3.5
+// @version      1.3.6
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -415,6 +415,6 @@ function pageTitle() {
 	if (PAGE_TITLE) {
 		var title = $(location).attr('pathname').split("/")[1];
 		title = title.charAt(0).toUpperCase() + title.slice(1);
-		$(document).prop('title', title);
+		$(document).prop('title', title.replace("_", " "));
 	}
 }
