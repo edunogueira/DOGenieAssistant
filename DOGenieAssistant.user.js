@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      1.3.4
+// @version      1.3.5
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -164,9 +164,12 @@ function getOPS(data){
 
     ops[10] = (data[1] + data[6] + data[7] + data[2] + data[13]);
     ops[11] = (data[12] + data[2] + data[7] + data[3] + data[8]);
-
+    ops['pos'] = 0;
 
     for (var i = 0; i < ops.length; ++i) {
+        if(isNaN(ops[i])){
+            ops[i] = 0;
+        }
         if (ops[i] < maxOPS) continue;
         if (ops[i] > maxOPS) {
             maxOPS = ops[i];
