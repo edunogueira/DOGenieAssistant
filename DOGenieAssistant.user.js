@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      1.4.1
+// @version      1.4.2
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -187,17 +187,31 @@ function doTable(selector) {
 	$(selector + " tbody:first").before('<thead></thead>');
 	$(selector + " thead:first").append(header);
 
-	$(selector).dataTable({
-		"searching": false,
-		"bPaginate": false,
-		"bLengthChange": false,
-		"bFilter": true,
-		"bInfo": false,
-		"bAutoWidth": false,
-		"order": [
-			[$(selector + ' .table_top_row th').size() - 2, "desc"]
-		]
-	});
+    if (SQUAD_HIGH) {
+        $(selector).dataTable({
+            "searching": false,
+            "bPaginate": false,
+            "bLengthChange": false,
+            "bFilter": true,
+            "bInfo": false,
+            "bAutoWidth": false,
+            "order": [
+                [$(selector + ' .table_top_row th').size() - 2, "desc"]
+            ]
+        });
+    } else {
+         $(selector).dataTable({
+            "searching": false,
+            "bPaginate": false,
+            "bLengthChange": false,
+            "bFilter": true,
+            "bInfo": false,
+            "bAutoWidth": false,
+            "order": [
+                [$(selector + ' .table_top_row th').size() - 1, "desc"]
+            ]
+        });
+    }
 }
 
 //features //----------------------------------------------//
