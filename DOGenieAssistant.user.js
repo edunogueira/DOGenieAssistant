@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      1.3.7
+// @version      1.4.1
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -20,6 +20,7 @@ const PLAYER_OPS = 1;
 const PLAYER_EXP = 1;
 const SQUAD_DETAILS = 1;
 const TACTICS_DETAILS = 1;
+const SQUAD_HIGH = 1;
 
 pageTitle();
 
@@ -237,7 +238,9 @@ function playerDetails() {
 function squadDetails() {
 	$(".forumline .table_top_row").each(function() {
 		$(this).last().append('<td align="center" width="20" title="Original Position Skills" class="tableHeader">OPS</td>');
-        $(this).last().append('<td align="center" width="20" title="Best Original Position Skills" class="tableHeader">HIGH</td>');
+        if (SQUAD_HIGH) {
+            $(this).last().append('<td align="center" width="20" title="Best Original Position Skills" class="tableHeader">HIGH</td>');
+        }
 	});
 
 	$(".forumline [class*=matches_row]").each(function() {
@@ -282,14 +285,18 @@ function squadDetails() {
 				natPos = 9;
 			}
             $(this).last().append('<td align="center"><span class="tableText">' + ops[natPos] + '</span></td>');
-            if (ops[ops['pos']] > ops[natPos]){
-                $(this).last().append('<td align="center"><span class="tableText"><strong>' + ops[ops['pos']] + '</strong></span></td>');
-            } else {
-                $(this).last().append('<td align="center"><span class="tableText">' + ops[ops['pos']] + '</span></td>');
+            if (SQUAD_HIGH) {
+                if (ops[ops['pos']] > ops[natPos]){
+                    $(this).last().append('<td align="center"><span class="tableText"><strong>' + ops[ops['pos']] + '</strong></span></td>');
+                } else {
+                    $(this).last().append('<td align="center"><span class="tableText">' + ops[ops['pos']] + '</span></td>');
+                }
             }
 		} else if (count > 1) {
 			$(this).last().append('<td align="center"><span class="tableText">0</span></td>');
-            $(this).last().append('<td align="center"><span class="tableText">0</span></td>');
+            if (SQUAD_HIGH) {
+                $(this).last().append('<td align="center"><span class="tableText">0</span></td>');
+            }
 		}
 	});
 	var tables = document.querySelectorAll("[class=forumline]");
