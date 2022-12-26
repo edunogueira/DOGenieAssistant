@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      13.0
+// @version      14.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -12,8 +12,6 @@
 // ==/UserScript==
 //page select ----------------------------------------------//
 var page = document.URL;
-$('#footer').css('background-image', 'url("https://pbs.twimg.com/media/FgWiWddXgAAJLEE?format=jpg&name=medium")');
-$('#footer').css('height', '100%');
 
 const SECONDARY_CLOCK = 1;
 const DROPDWON_MENU = 1;
@@ -327,10 +325,29 @@ function squadDetails() {
 }
 
 function tacticsDetails() {
+    var players = [];
+	$("#capitan_sel > option").each(function() {
+	    players.push(this.value);
+	});
+
 	$(".player").each(function() {
 		var data = Array();
 		var i = 0;
+        var decoration = false;
 		var playerId = $(this).attr('rel').split('|')[0];
+
+		$.each( players, function( key, value ) {
+			if (value == playerId) {
+				decoration = true;
+                return false;
+			}
+		});
+
+        if (decoration == true) {
+            var div = $(this).find(" [class*=matches_row]")[0];
+			$(div).css('text-decoration', 'underline');
+            $(div).css('font-weight', 'bold');
+		}
 
 		$(this).find("#" + playerId + " table tr").each(function() {
 			$(this).children('td').each(function() {
