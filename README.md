@@ -25,6 +25,9 @@
   #### Menu Dropdown 
   <img src="menu.gif">
   <img src="menu-en.gif">
+  
+  #### Titulares em negrito para diferenciar dos reservas
+  <img src="squad_bold.jpeg">
 
 ### To-Do list
 - [ ] - 
