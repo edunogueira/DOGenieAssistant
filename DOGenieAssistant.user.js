@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      14.1
+// @version      14.2
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -12,6 +12,9 @@
 // ==/UserScript==
 //page select ----------------------------------------------//
 var page = document.URL;
+
+$('#footer').css('background-image', 'url("https://pbs.twimg.com/media/FlKthAZXkAI4yDz?format=jpg&name=small")');
+$('#footer').css('height', '100%');
 
 const SECONDARY_CLOCK = 1;
 const DROPDWON_MENU = 1;
@@ -350,7 +353,12 @@ function tacticsDetails() {
 		});
 
         if (decoration == true) {
-            var div = $(this).find(" [class*=matches_row]")[0];
+            var div = null;
+            if (typeof $(this).find("[class*=matches_row]")[0].cells === "undefined") {
+                div = $(this).find("[class*=matches_row]")[50];
+            } else {
+                div = $(this).find("[class*=matches_row]")[0];
+            }
 			$(div).css('text-decoration', 'underline');
             $(div).css('font-weight', 'bold');
 		}
@@ -363,9 +371,14 @@ function tacticsDetails() {
 		});
 
         if (subdecoration == true) {
-            var div = $(this).find(" [class*=matches_row]")[0];
-            $(div).css('text-shadow', '0 0 red');
-            $(div).css('color', 'red');
+            var div = null;
+            if (typeof $(this).find("[class*=matches_row]")[0].cells === "undefined") {
+                div = $(this).find("[class*=matches_row]")[50];
+            } else {
+                div = $(this).find("[class*=matches_row]")[0];
+            }
+            $(div).css('text-shadow', '0 0 blue');
+            $(div).css('color', 'blue');
 		}
 
 		$(this).find("#" + playerId + " table tr").each(function() {
