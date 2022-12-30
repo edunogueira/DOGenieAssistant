@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      14.2
+// @version      14.3
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -328,6 +328,7 @@ function squadDetails() {
 }
 
 function tacticsDetails() {
+    $('td').css('color', 'unset');
     var players = Array();
 	$("#capitan_sel > option").each(function() {
 	    players.push(this.value);
@@ -377,7 +378,7 @@ function tacticsDetails() {
             } else {
                 div = $(this).find("[class*=matches_row]")[0];
             }
-            $(div).css('text-shadow', '0 0 blue');
+            $(div).css('font-weight', 'bold');
             $(div).css('color', 'blue');
 		}
 
