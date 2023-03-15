@@ -629,7 +629,7 @@ function dropdownMenu() {
         if (document.querySelector("#tac_button_c")) document.querySelector("#tac_button_c").innerHTML +=
             `
 <div class="dropdown-content">
-  <a href="https://www.dugout-online.com/tactics/none">${translation.tactics_fiest[language]}</a>
+  <a href="https://www.dugout-online.com/tactics/none/">${translation.tactics_fiest[language]}</a>
   <a href="https://www.dugout-online.com/tactics_youth/">${translation.tactics_youth[language]}</a>
 </div>
 `
