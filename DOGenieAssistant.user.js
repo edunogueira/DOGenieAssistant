@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      14.4
+// @version      14.5
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -608,7 +608,7 @@ function dropdownMenu() {
   <a href="https://www.dugout-online.com/clubinfo/">${translation.club_info[language]}</a>
   <a href="https://www.dugout-online.com/clubinfo/bids/">${translation.club_bids[language]}</a>
   <a href="https://www.dugout-online.com/clubinfo/transfers/">${translation.club_transfers[language]}</a>
-  <a href="https://www.dugout-online.com/players/">${translation.club_players[language]}</a>
+  <a href="https://www.dugout-online.com/players/none">${translation.club_players[language]}</a>
   <a href="https://www.dugout-online.com/players/view/youth/">${translation.club_players_youth[language]}</a>
   <a href="https://www.dugout-online.com/staff/">${translation.club_staff[language]}</a>
   <a href="https://www.dugout-online.com/settings/">${translation.club_settings[language]}</a>
@@ -668,8 +668,8 @@ function dropdownMenu() {
         if (document.querySelector("#nt_button_c")) document.querySelector("#nt_button_c").innerHTML +=
             `
 <div class="dropdown-content">
-  <a href="https://www.dugout-online.com/players_nt/">${translation.players_nt[language]}</a>
-  <a href="https://www.dugout-online.com/tactics_nt/">${translation.tactics_nt[language]}</a>
+  <a href="https://www.dugout-online.com/players_nt/none">${translation.players_nt[language]}</a>
+  <a href="https://www.dugout-online.com/tactics_nt/none">${translation.tactics_nt[language]}</a>
 </div>
 `;
 
