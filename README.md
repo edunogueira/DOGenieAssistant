@@ -27,7 +27,7 @@
   <img src="menu-en.gif">
   
   #### Titulares em negrito para diferenciar dos reservas
-  <img src="squad_bold.jpeg">
+  <img src="squad_bold.jpg">
 
 ### To-Do list
 - [ ] - 
