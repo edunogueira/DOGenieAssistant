@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      14.7
+// @version      14.8
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -591,87 +591,17 @@ function dropdownMenu() {
             return languages[settingsTitle];
         };
         const language = getLanguage();
-
-        if (document.querySelector("#home_button_c")) document.querySelector("#home_button_c").innerHTML +=
-            `
-<div class="dropdown-content">
-  <a href="https://www.dugout-online.com/home/">${translation.home_home[language]}</a>
-  <a href="https://www.dugout-online.com/news/">${translation.home_news[language]}</a>
-  <a href="https://www.dugout-online.com/rules/">${translation.home_rules[language]}</a>
-  <a href="https://www.dugout-online.com/helpmain/">${translation.home_help[language]}</a>
-</div>
-`
-
-        if (document.querySelector("#club_button_c")) document.querySelector("#club_button_c").innerHTML +=
-            `
-<div class="dropdown-content">
-  <a href="https://www.dugout-online.com/clubinfo/">${translation.club_info[language]}</a>
-  <a href="https://www.dugout-online.com/clubinfo/bids/">${translation.club_bids[language]}</a>
-  <a href="https://www.dugout-online.com/clubinfo/transfers/">${translation.club_transfers[language]}</a>
-  <a href="https://www.dugout-online.com/players/none/">${translation.club_players[language]}</a>
-  <a href="https://www.dugout-online.com/players/view/youth/">${translation.club_players_youth[language]}</a>
-  <a href="https://www.dugout-online.com/staff/">${translation.club_staff[language]}</a>
-  <a href="https://www.dugout-online.com/settings/">${translation.club_settings[language]}</a>
-</div>
-`
-
-        if (document.querySelector("#mana_button_c")) document.querySelector("#mana_button_c").innerHTML +=
-            `
-<div class="dropdown-content">
-  <a href="https://www.dugout-online.com/finances/">${translation.management_finances[language]}</a>
-  <a href="https://www.dugout-online.com/stadium/">${translation.management_stadium[language]}</a>
-  <a href="https://www.dugout-online.com/facilities/">${translation.management_facilities[language]}</a>
-  <a href="https://www.dugout-online.com/sponsors/">${translation.management_sponsors[language]}</a>
-  <a href="https://www.dugout-online.com/calendar/">${translation.management_calendar[language]}</a>
-</div>
-`
-
-        if (document.querySelector("#tac_button_c")) document.querySelector("#tac_button_c").innerHTML +=
-            `
-<div class="dropdown-content">
-  <a href="https://www.dugout-online.com/tactics/none/">${translation.tactics_fiest[language]}</a>
-  <a href="https://www.dugout-online.com/tactics_youth/">${translation.tactics_youth[language]}</a>
-</div>
-`
-
-        if (document.querySelector("#tra_button_c")) document.querySelector("#tra_button_c").innerHTML +=
-            `
-<div class="dropdown-content">
-  <a href="https://www.dugout-online.com/training/">${translation.training_training[language]}</a>
-  <a href="https://www.dugout-online.com/physios/">${translation.training_physios[language]}</a>
-  <a href="https://www.dugout-online.com/physio_report/">${translation.training_physio_report[language]}</a>
-</div>
-`
-
-        if (document.querySelector("#src_button_c")) document.querySelector("#src_button_c").innerHTML +=
-            `
-<div class="dropdown-content">
-  <a href="https://www.dugout-online.com/search_players/">${translation.search__players[language]}</a>
-  <a href="https://www.dugout-online.com/search_clubs/">${translation.search_clubs[language]}</a>
-  <a href="https://www.dugout-online.com/national_teams/">${translation.search_national[language]}</a>
-  <a href="https://www.dugout-online.com/search_coaches/">${translation.search_coaches[language]}</a>
-  <a href="https://www.dugout-online.com/search_physios/">${translation.search_physios[language]}</a>
-  <a href="https://www.dugout-online.com/search_transfers/">${translation.search_transfers[language]}</a>
-</div>
-`
-
-        if (document.querySelector("#for_button_c")) document.querySelector("#for_button_c").innerHTML +=
-            `
-<div class="dropdown-content">
-  <a href="https://www.dugout-online.com/forum/">${translation.community_forum[language]}</a>
-  <a href="https://www.dugout-online.com/community_rules/">${translation.community_rules[language]}</a>
-  <a href="https://www.dugout-online.com/community_profile/">${translation.community_profile[language]}</a>
-  <a href="https://www.dugout-online.com/links/">${translation.community_links[language]}</a>
-</div>
-`
-
-        if (document.querySelector("#nt_button_c")) document.querySelector("#nt_button_c").innerHTML +=
-            `
-<div class="dropdown-content">
-  <a href="https://www.dugout-online.com/players_nt/none/">${translation.players_nt[language]}</a>
-  <a href="https://www.dugout-online.com/tactics_nt/none/">${translation.tactics_nt[language]}</a>
-</div>
-`;
+        var i =1;
+        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/home/none/">${translation.home_home[language]}</a> <a href="https://www.dugout-online.com/news/none/">${translation.home_news[language]}</a> <a href="https://www.dugout-online.com/rules/none/">${translation.home_rules[language]}</a> <a href="https://www.dugout-online.com/helpmain/none/">${translation.home_help[language]}</a></div>`));i++;
+        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/clubinfo/none/">${translation.club_info[language]}</a><a href="https://www.dugout-online.com/clubinfo/bids/">${translation.club_bids[language]}</a><a href="https://www.dugout-online.com/clubinfo/transfers/">${translation.club_transfers[language]}</a><a href="https://www.dugout-online.com/players/none/">${translation.club_players[language]}</a><a href="https://www.dugout-online.com/players/none/view/youth/">${translation.club_players_youth[language]}</a><a href="https://www.dugout-online.com/staff/none/">${translation.club_staff[language]}</a> <a href="https://www.dugout-online.com/settings/none/">${translation.club_settings[language]}</a></div>`));i++;
+        if ($(".menu_button").length > 7) {
+            $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/players_nt/none/">${translation.players_nt[language]}</a><a href="https://www.dugout-online.com/tactics_nt/none/">${translation.tactics_nt[language]}</a></div>`));i++;
+        }
+        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/finances/none/">${translation.management_finances[language]}</a> <a href="https://www.dugout-online.com/stadium/none/">${translation.management_stadium[language]}</a> <a href="https://www.dugout-online.com/facilities/none/">${translation.management_facilities[language]}</a> <a href="https://www.dugout-online.com/sponsors/none/">${translation.management_sponsors[language]}</a> <a href="https://www.dugout-online.com/calendar/none/">${translation.management_calendar[language]}</a></div>`));i++;
+        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/tactics/none/">${translation.tactics_fiest[language]}</a> <a href="https://www.dugout-online.com/tactics_youth/none/">${translation.tactics_youth[language]}</a></div>`));i++;
+        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/training/none/">${translation.training_training[language]}</a> <a href="https://www.dugout-online.com/physios/none/">${translation.training_physios[language]}</a> <a href="https://www.dugout-online.com/physio_report/none">${translation.training_physio_report[language]}</a></div>`));i++;
+        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/search_players/none/">${translation.search__players[language]}</a> <a href="https://www.dugout-online.com/search_clubs/none/">${translation.search_clubs[language]}</a> <a href="https://www.dugout-online.com/national_teams/none/">${translation.search_national[language]}</a> <a href="https://www.dugout-online.com/search_coaches/none/">${translation.search_coaches[language]}</a> <a href="https://www.dugout-online.com/search_physios/none/">${translation.search_physios[language]}</a> <a href="https://www.dugout-online.com/search_transfers/none/">${translation.search_transfers[language]}</a></div>`));i++;
+        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/forum/none/">${translation.community_forum[language]}</a> <a href="https://www.dugout-online.com/community_rules/none/">${translation.community_rules[language]}</a> <a href="https://www.dugout-online.com/community_profile/none/">${translation.community_profile[language]}</a> <a href="https://www.dugout-online.com/links/none/">${translation.community_links[language]}</a></div>`));
 
         // substitui divs do canto superior esquerdo por anchors para facilitar navegação
         [...document.querySelectorAll('div#top_container > div')]
