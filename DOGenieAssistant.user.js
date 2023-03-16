@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      14.8
+// @version      15.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -21,6 +21,7 @@ const PLAYER_EXP = 1;
 const SQUAD_DETAILS = 1;
 const TACTICS_DETAILS = 1;
 const SQUAD_HIGH = 1;
+const COACHES_WAGE = 1;
 
 pageTitle();
 
@@ -33,6 +34,10 @@ if (page.match('/players/details/')) {
 } else if (page.match('/tactics/none/') || page.match('/tactics_youth/none/') || page.match('/tactics_nt/none/')) {
     if (TACTICS_DETAILS) {
         tacticsDetails();
+    }
+} else if (page.match('/search_coaches/none/')) {
+    if (COACHES_WAGE) {
+        coachesWage();
     }
 }
 
@@ -149,6 +154,38 @@ function getPos() {
 }
 
 function getOPS(data) {
+    var ops = new Array();
+    var bestPos, maxOPS = 0;
+
+    ops[0] = (data[0] + data[5] + data[10] + data[15] + data[13]);
+    ops[1] = (data[16] + data[6] + data[1] + data[15] + data[13]);
+    ops[2] = (data[6] + data[11] + data[1] + data[15] + data[13]);
+    ops[3] = (data[16] + data[6] + data[1] + data[15] + data[13]);
+    ops[4] = (data[16] + data[17] + data[7] + data[2] + data[13]);
+    ops[5] = (data[12] + data[17] + data[7] + data[2] + data[13]);
+    ops[6] = (data[16] + data[17] + data[7] + data[2] + data[13]);
+    ops[7] = (data[3] + data[8] + data[17] + data[16] + data[13]);
+    ops[8] = (data[3] + data[8] + data[17] + data[11] + data[13]);
+    ops[9] = (data[3] + data[8] + data[17] + data[16] + data[13]);
+
+    ops[10] = (data[1] + data[6] + data[7] + data[2] + data[13]);
+    ops[11] = (data[12] + data[2] + data[7] + data[3] + data[8]);
+    ops['pos'] = 0;
+
+    for (var i = 0; i < ops.length; ++i) {
+        if (isNaN(ops[i])) {
+            ops[i] = 0;
+        }
+        if (ops[i] < maxOPS) continue;
+        if (ops[i] > maxOPS) {
+            maxOPS = ops[i];
+            ops['pos'] = i;
+        }
+    }
+    return ops;
+}
+
+function getCoachOPS(data) {
     var ops = new Array();
     var bestPos, maxOPS = 0;
 
@@ -591,16 +628,23 @@ function dropdownMenu() {
             return languages[settingsTitle];
         };
         const language = getLanguage();
-        var i =1;
-        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/home/none/">${translation.home_home[language]}</a> <a href="https://www.dugout-online.com/news/none/">${translation.home_news[language]}</a> <a href="https://www.dugout-online.com/rules/none/">${translation.home_rules[language]}</a> <a href="https://www.dugout-online.com/helpmain/none/">${translation.home_help[language]}</a></div>`));i++;
-        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/clubinfo/none/">${translation.club_info[language]}</a><a href="https://www.dugout-online.com/clubinfo/bids/">${translation.club_bids[language]}</a><a href="https://www.dugout-online.com/clubinfo/transfers/">${translation.club_transfers[language]}</a><a href="https://www.dugout-online.com/players/none/">${translation.club_players[language]}</a><a href="https://www.dugout-online.com/players/none/view/youth/">${translation.club_players_youth[language]}</a><a href="https://www.dugout-online.com/staff/none/">${translation.club_staff[language]}</a> <a href="https://www.dugout-online.com/settings/none/">${translation.club_settings[language]}</a></div>`));i++;
+        var i = 1;
+        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/home/none/">${translation.home_home[language]}</a> <a href="https://www.dugout-online.com/news/none/">${translation.home_news[language]}</a> <a href="https://www.dugout-online.com/rules/none/">${translation.home_rules[language]}</a> <a href="https://www.dugout-online.com/helpmain/none/">${translation.home_help[language]}</a></div>`));
+        i++;
+        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/clubinfo/none/">${translation.club_info[language]}</a><a href="https://www.dugout-online.com/clubinfo/bids/">${translation.club_bids[language]}</a><a href="https://www.dugout-online.com/clubinfo/transfers/">${translation.club_transfers[language]}</a><a href="https://www.dugout-online.com/players/none/">${translation.club_players[language]}</a><a href="https://www.dugout-online.com/players/none/view/youth/">${translation.club_players_youth[language]}</a><a href="https://www.dugout-online.com/staff/none/">${translation.club_staff[language]}</a> <a href="https://www.dugout-online.com/settings/none/">${translation.club_settings[language]}</a></div>`));
+        i++;
         if ($(".menu_button").length > 7) {
-            $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/players_nt/none/">${translation.players_nt[language]}</a><a href="https://www.dugout-online.com/tactics_nt/none/">${translation.tactics_nt[language]}</a></div>`));i++;
+            $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/players_nt/none/">${translation.players_nt[language]}</a><a href="https://www.dugout-online.com/tactics_nt/none/">${translation.tactics_nt[language]}</a></div>`));
+            i++;
         }
-        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/finances/none/">${translation.management_finances[language]}</a> <a href="https://www.dugout-online.com/stadium/none/">${translation.management_stadium[language]}</a> <a href="https://www.dugout-online.com/facilities/none/">${translation.management_facilities[language]}</a> <a href="https://www.dugout-online.com/sponsors/none/">${translation.management_sponsors[language]}</a> <a href="https://www.dugout-online.com/calendar/none/">${translation.management_calendar[language]}</a></div>`));i++;
-        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/tactics/none/">${translation.tactics_fiest[language]}</a> <a href="https://www.dugout-online.com/tactics_youth/none/">${translation.tactics_youth[language]}</a></div>`));i++;
-        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/training/none/">${translation.training_training[language]}</a> <a href="https://www.dugout-online.com/physios/none/">${translation.training_physios[language]}</a> <a href="https://www.dugout-online.com/physio_report/none">${translation.training_physio_report[language]}</a></div>`));i++;
-        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/search_players/none/">${translation.search__players[language]}</a> <a href="https://www.dugout-online.com/search_clubs/none/">${translation.search_clubs[language]}</a> <a href="https://www.dugout-online.com/national_teams/none/">${translation.search_national[language]}</a> <a href="https://www.dugout-online.com/search_coaches/none/">${translation.search_coaches[language]}</a> <a href="https://www.dugout-online.com/search_physios/none/">${translation.search_physios[language]}</a> <a href="https://www.dugout-online.com/search_transfers/none/">${translation.search_transfers[language]}</a></div>`));i++;
+        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/finances/none/">${translation.management_finances[language]}</a> <a href="https://www.dugout-online.com/stadium/none/">${translation.management_stadium[language]}</a> <a href="https://www.dugout-online.com/facilities/none/">${translation.management_facilities[language]}</a> <a href="https://www.dugout-online.com/sponsors/none/">${translation.management_sponsors[language]}</a> <a href="https://www.dugout-online.com/calendar/none/">${translation.management_calendar[language]}</a></div>`));
+        i++;
+        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/tactics/none/">${translation.tactics_fiest[language]}</a> <a href="https://www.dugout-online.com/tactics_youth/none/">${translation.tactics_youth[language]}</a></div>`));
+        i++;
+        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/training/none/">${translation.training_training[language]}</a> <a href="https://www.dugout-online.com/physios/none/">${translation.training_physios[language]}</a> <a href="https://www.dugout-online.com/physio_report/none">${translation.training_physio_report[language]}</a></div>`));
+        i++;
+        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/search_players/none/">${translation.search__players[language]}</a> <a href="https://www.dugout-online.com/search_clubs/none/">${translation.search_clubs[language]}</a> <a href="https://www.dugout-online.com/national_teams/none/">${translation.search_national[language]}</a> <a href="https://www.dugout-online.com/search_coaches/none/">${translation.search_coaches[language]}</a> <a href="https://www.dugout-online.com/search_physios/none/">${translation.search_physios[language]}</a> <a href="https://www.dugout-online.com/search_transfers/none/">${translation.search_transfers[language]}</a></div>`));
+        i++;
         $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/forum/none/">${translation.community_forum[language]}</a> <a href="https://www.dugout-online.com/community_rules/none/">${translation.community_rules[language]}</a> <a href="https://www.dugout-online.com/community_profile/none/">${translation.community_profile[language]}</a> <a href="https://www.dugout-online.com/links/none/">${translation.community_links[language]}</a></div>`));
 
         // substitui divs do canto superior esquerdo por anchors para facilitar navegação
@@ -624,5 +668,57 @@ function pageTitle() {
         var title = $(location).attr('pathname').split("/")[1];
         title = title.charAt(0).toUpperCase() + title.slice(1);
         $(document).prop('title', title.replace("_", " "));
+    }
+}
+
+function coachesWage() {
+    if (COACHES_WAGE) {
+        var max = 0;
+        var wage = 0;
+        $(".search_tbl tbody tr").first().append('<td width="36" class="table_header" valign="middle" align="center" style="cursor: default;" title="Approximate Wage">Wage</td>');
+        $(".search_tbl tbody tr").each(function() {
+            var data = Array();
+            var count = 0;
+            $(this).children('td').each(function() {
+                if ($.isNumeric($(this).text())) {
+                    data.push(parseInt($(this).text()));
+                } else {
+                    count++;
+                }
+            });
+            if (data.length > 0) {
+                data.shift();
+                data.pop();
+                data.pop();
+                data.pop();
+                data.pop();
+                data.pop();
+
+                max = Math.max.apply(Math, data);
+                if (max <= 42) {
+                    wage = (24.44889 * max - 138.145) * max;
+                } else {
+                    wage = (51.54712 * max - 1260) * max;
+                }
+                wage = parseFloat(wage, 10).toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, "$1,").toString();
+
+                $(this).last().append('<td align="center"><span class="tableText">' + wage + '</span></td>');
+            }
+        });
+
+        $('.search_tbl th:first').wrapInner('<div />').find('div').unwrap().wrap('<th/>');
+        var header = $(".search_tbl tr:first").clone();
+        $(".search_tbl tr:first").remove();
+        $(".search_tbl tbody:first").before('<thead></thead>');
+        $(".search_tbl thead:first").append(header);
+        $(".search_tbl").dataTable({
+            "searching": false,
+            "bPaginate": false,
+            "bLengthChange": false,
+            "bFilter": true,
+            "bInfo": false,
+            "bAutoWidth": false,
+            "order": [[ 13, 'asc' ]]
+        });
     }
 }
