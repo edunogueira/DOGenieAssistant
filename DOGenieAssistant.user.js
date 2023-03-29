@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      15.0
+// @version      15.1
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -22,6 +22,7 @@ const SQUAD_DETAILS = 1;
 const TACTICS_DETAILS = 1;
 const SQUAD_HIGH = 1;
 const COACHES_WAGE = 1;
+const READ_RESUME = 1;
 
 pageTitle();
 
@@ -39,7 +40,12 @@ if (page.match('/players/details/')) {
     if (COACHES_WAGE) {
         coachesWage();
     }
+} else if (page.match('/clubinfo/none/clubid/')) {
+    if (READ_RESUME) {
+        readResume();
+    }
 }
+
 
 dropdownMenu();
 secondaryClock();
@@ -627,8 +633,9 @@ function dropdownMenu() {
             };
             return languages[settingsTitle];
         };
-        const language = getLanguage();
-        var i = 1;
+        let language = getLanguage();
+        if (language!="en" && language!="br") language = "en";
+        let i = 1;
         $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/home/none/">${translation.home_home[language]}</a> <a href="https://www.dugout-online.com/news/none/">${translation.home_news[language]}</a> <a href="https://www.dugout-online.com/rules/none/">${translation.home_rules[language]}</a> <a href="https://www.dugout-online.com/helpmain/none/">${translation.home_help[language]}</a></div>`));
         i++;
         $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/clubinfo/none/">${translation.club_info[language]}</a><a href="https://www.dugout-online.com/clubinfo/bids/">${translation.club_bids[language]}</a><a href="https://www.dugout-online.com/clubinfo/transfers/">${translation.club_transfers[language]}</a><a href="https://www.dugout-online.com/players/none/">${translation.club_players[language]}</a><a href="https://www.dugout-online.com/players/none/view/youth/">${translation.club_players_youth[language]}</a><a href="https://www.dugout-online.com/staff/none/">${translation.club_staff[language]}</a> <a href="https://www.dugout-online.com/settings/none/">${translation.club_settings[language]}</a></div>`));
@@ -720,5 +727,15 @@ function coachesWage() {
             "bAutoWidth": false,
             "order": [[ 13, 'asc' ]]
         });
+    }
+}
+
+function readResume() {
+    if (READ_RESUME) {
+        let url = $(".maninfo a").attr('href');
+        let pos = url.indexOf('toid');
+        let toid = url.substring(pos+5);
+        url = "https://www.dugout-online.com/readresume.php?id=" + toid;
+        $(".clubname").append( "<a href=" + url + "> [Read Resume]</a>" );
     }
 }
