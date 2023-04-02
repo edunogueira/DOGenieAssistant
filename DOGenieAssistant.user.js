@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      15.1
+// @version      15.2
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -529,6 +529,15 @@ function dropdownMenu() {
             club_settings: {
                 en: "Settings",
                 br: "Configurações"
+            },
+
+            players_nt: {
+                en: "Players",
+                br: "Jogadores"
+            },
+            tactics_nt: {
+                en: "Tactics",
+                br: "Táticas"
             },
 
             management_finances: {
