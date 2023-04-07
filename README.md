@@ -28,6 +28,9 @@
   
   #### Titulares em negrito para diferenciar dos reservas
   <img src="squad_bold.jpg">
+  
+  #### Carregar taticas
+  <img src="apply_ttc.jpg">
 
 ### To-Do list
 - [ ] - 
