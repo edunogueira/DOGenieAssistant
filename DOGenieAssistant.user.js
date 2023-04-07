@@ -784,11 +784,11 @@ function loadTactics() {
             if (page.match('/tactics/none/')) {
                 url = SERVER_URL + "/ajaxphp/tactics_save.php";
             } else if (page.match('/tactics_youth/none/')) {
-                url = SERVER_URL + "/ajaxphp/tactics_youth.php";
+                url = SERVER_URL + "/ajaxphp/tactics_youth_save.php";
             } else if (page.match('/tactics_nt/none/')) {
-                url = SERVER_URL + "/ajaxphp/tactics_nt.php";
+                url = SERVER_URL + "/ajaxphp/tactics_nt_save.php";
             }
-            xmlhttp.open("POST",SERVER_URL + "/ajaxphp/tactics_save.php",true);
+            xmlhttp.open("POST", url,true);
             xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
             xmlhttp.send($("#dataTtc").val());
             location.reload();
