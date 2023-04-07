@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      16.0
+// @version      16.1
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -780,6 +780,14 @@ function loadTactics() {
                 xmlhttp=new XMLHttpRequest();
             else
                 xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+            let url = '';
+            if (page.match('/tactics/none/')) {
+                url = SERVER_URL + "/ajaxphp/tactics_save.php";
+            } else if (page.match('/tactics_youth/none/')) {
+                url = SERVER_URL + "/ajaxphp/tactics_youth.php";
+            } else if (page.match('/tactics_nt/none/')) {
+                url = SERVER_URL + "/ajaxphp/tactics_nt.php";
+            }
             xmlhttp.open("POST",SERVER_URL + "/ajaxphp/tactics_save.php",true);
             xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
             xmlhttp.send($("#dataTtc").val());
