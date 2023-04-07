@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      15.2
+// @version      16.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  Dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -23,6 +23,7 @@ const TACTICS_DETAILS = 1;
 const SQUAD_HIGH = 1;
 const COACHES_WAGE = 1;
 const READ_RESUME = 1;
+const LOAD_TACTICS = 1;
 
 pageTitle();
 
@@ -35,6 +36,9 @@ if (page.match('/players/details/')) {
 } else if (page.match('/tactics/none/') || page.match('/tactics_youth/none/') || page.match('/tactics_nt/none/')) {
     if (TACTICS_DETAILS) {
         tacticsDetails();
+    }
+    if (LOAD_TACTICS) {
+        loadTactics();
     }
 } else if (page.match('/search_coaches/none/')) {
     if (COACHES_WAGE) {
@@ -746,5 +750,40 @@ function readResume() {
         let toid = url.substring(pos+5);
         url = "https://www.dugout-online.com/readresume.php?id=" + toid;
         $(".clubname").append( "<a href=" + url + "> [Read Resume]</a>" );
+    }
+}
+
+function loadTactics() {
+    if (LOAD_TACTICS) {
+        $('#field_cont table').append('<tr><td valign="middle" style="color: unset;" colspan="2"><textarea id="dataTtc" name="dataTtc" rows="2" cols="40"></textarea></td><td valign="middle" style="color: unset;"><input type="button" value="Apply" id="apply"><input type="button" value="getTtc" id="getTtc"></td></tr>');
+
+        $("#getTtc").click(function() {
+            data="action=submit&players_ids="+players[0]+"&positions="+players[1]+"&players_x="+players[2]+"&players_y="+players[3]+"&substitutes="+substitutes[0]+"&actions="+actionsb;
+            data+="&options="+$("#agression_id").val()+"*"+$("#mentality_id option:selected").val()+"*"+$("#attack_wing_id option:selected").val();
+            data+="*"+$("#passing_id option:selected").val()+"*"+$("#capitan_sel option:selected").val()+"*"+$("#playmaker_sel option:selected").val();
+            data+="*"+$("#target_man_sel option:selected").val()+"*"+$("#penalty_sel option:selected").val();
+            if($("#counter_attacks_id").prop('checked'))
+                data+="*1";
+            else
+                data+="*0";
+            if($("#offside_trap_id").prop('checked'))
+                data+="*1";
+            else
+                data+="*0";
+
+            $("#dataTtc").val(data);
+        });
+
+        $("#apply").click(function() {
+            var xmlhttp;
+            if (window.XMLHttpRequest)
+                xmlhttp=new XMLHttpRequest();
+            else
+                xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+            xmlhttp.open("POST",SERVER_URL + "/ajaxphp/tactics_save.php",true);
+            xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+            xmlhttp.send($("#dataTtc").val());
+            location.reload();
+        });
     }
 }
