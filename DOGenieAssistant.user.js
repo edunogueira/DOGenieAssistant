@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         DO Genie Assistant
-// @version      16.1
+// @name         DO Genie AssistantAA
+// @version      18.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
-// @description  Dugout-online genie assistant
+// @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
 // @icon         https://www.google.com/s2/favicons?domain=dugout-online.com
 // @require	 http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js
