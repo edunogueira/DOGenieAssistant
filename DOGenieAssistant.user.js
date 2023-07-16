@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         DO Genie AssistantAA
-// @version      18.0
+// @name         DO Genie Assistant
+// @version      18.1
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -13,7 +13,7 @@
 //page select ----------------------------------------------//
 var page = document.URL;
 
-const SECONDARY_CLOCK = 1;
+const SECONDARY_CLOCK = 0;
 const DROPDWON_MENU = 1;
 const PAGE_TITLE = 1;
 const PLAYER_OPS = 1;
@@ -24,6 +24,7 @@ const SQUAD_HIGH = 1;
 const COACHES_WAGE = 1;
 const READ_RESUME = 1;
 const LOAD_TACTICS = 1;
+const SCOUT_BUTTON = 1;
 
 pageTitle();
 
@@ -47,6 +48,10 @@ if (page.match('/players/details/')) {
 } else if (page.match('/clubinfo/none/clubid/')) {
     if (READ_RESUME) {
         readResume();
+    }
+} else if (page.match('/clubinfo/none/')) {
+    if (SCOUT_BUTTON) {
+        scoutButton();
     }
 }
 
@@ -399,13 +404,8 @@ function tacticsDetails() {
 
         var div = null;
         if (decoration == true) {
-            if (typeof $(this).find("[class*=matches_row]")[0].cells === "undefined") {
-                div = $(this).find("[class*=matches_row]")[50];
-            } else {
-                div = $(this).find("[class*=matches_row]")[0];
-            }
-            $(div).css('text-decoration', 'underline');
-            $(div).css('font-weight', 'bold');
+            $(this).css('text-decoration', 'underline');
+            $(this).css('font-weight', 'bold');
         }
 
         $.each(subs, function(key, value) {
@@ -415,13 +415,8 @@ function tacticsDetails() {
             }
         });
         if (subdecoration == true) {
-            if (typeof $(this).find("[class*=matches_row]")[0].cells === "undefined") {
-                div = $(this).find("[class*=matches_row]")[50];
-            } else {
-                div = $(this).find("[class*=matches_row]")[0];
-            }
-            $(div).css('font-weight', 'bold');
-            $(div).css('color', 'blue');
+            $(this).css('font-weight', 'bold');
+            $(this).css('color', 'blue');
         }
 
         $(this).find("#" + playerId + " table tr").each(function() {
@@ -486,8 +481,6 @@ function dropdownMenu() {
         var css = '.dropdown-content{text-align: left;top:0px;border-radius: 15px;margin-top:40px;display:none;position:absolute;background-color:#f1f1f1;min-width:160px;box-shadow:0 8px 16px 0 rgba(0,0,0,.2);z-index:1}.dropdown-content a{border-radius: 15px;color:#000;padding:12px 16px;text-decoration:none;display:block}.dropdown-content a:hover{background-color:#ddd}.menu_button:hover .dropdown-content{display:block}.menu_button:hover .dropbtn{background-color:#3e8e41}';
         applyStyle(css);
 
-        // BR translation needs changing since this was auto generated from the enlgish version
-        // you can add more translations later obviously
         const translation = {
             home_home: {
                 en: "Home",
@@ -525,6 +518,10 @@ function dropdownMenu() {
             club_players_youth: {
                 en: "Players (youth)",
                 br: "Jogadores (juvenil)"
+            },
+            scout_report: {
+                en: "Scout Report",
+                br: "Relatório do Espião"
             },
             club_staff: {
                 en: "Staff",
@@ -651,7 +648,7 @@ function dropdownMenu() {
         let i = 1;
         $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/home/none/">${translation.home_home[language]}</a> <a href="https://www.dugout-online.com/news/none/">${translation.home_news[language]}</a> <a href="https://www.dugout-online.com/rules/none/">${translation.home_rules[language]}</a> <a href="https://www.dugout-online.com/helpmain/none/">${translation.home_help[language]}</a></div>`));
         i++;
-        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/clubinfo/none/">${translation.club_info[language]}</a><a href="https://www.dugout-online.com/clubinfo/bids/">${translation.club_bids[language]}</a><a href="https://www.dugout-online.com/clubinfo/transfers/">${translation.club_transfers[language]}</a><a href="https://www.dugout-online.com/players/none/">${translation.club_players[language]}</a><a href="https://www.dugout-online.com/players/none/view/youth/">${translation.club_players_youth[language]}</a><a href="https://www.dugout-online.com/staff/none/">${translation.club_staff[language]}</a> <a href="https://www.dugout-online.com/settings/none/">${translation.club_settings[language]}</a></div>`));
+        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/clubinfo/none/">${translation.club_info[language]}</a><a href="https://www.dugout-online.com/clubinfo/bids/">${translation.club_bids[language]}</a><a href="https://www.dugout-online.com/clubinfo/transfers/">${translation.club_transfers[language]}</a><a href="https://www.dugout-online.com/players/none/">${translation.club_players[language]}</a><a href="https://www.dugout-online.com/players/none/view/youth/">${translation.club_players_youth[language]}</a><a href="https://www.dugout-online.com/staff/none/">${translation.club_staff[language]}</a><a href="https://www.dugout-online.com/settings/none/">${translation.club_settings[language]}</a></div>`));
         i++;
         if ($(".menu_button").length > 7) {
             $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/players_nt/none/">${translation.players_nt[language]}</a><a href="https://www.dugout-online.com/tactics_nt/none/">${translation.tactics_nt[language]}</a></div>`));
@@ -750,6 +747,31 @@ function readResume() {
         let toid = url.substring(pos+5);
         url = "https://www.dugout-online.com/readresume.php?id=" + toid;
         $(".clubname").append( "<a href=" + url + "> [Read Resume]</a>" );
+    }
+}
+
+function scoutButton() {
+    if (SCOUT_BUTTON) {
+        let clubid = 1000;
+        let sPageURL = $("a[href^='https://www.dugout-online.com/clubinfo/none/clubid/']")[1].href,
+        sURLVariables = sPageURL.split('/'),
+        sParameterName,
+        i;
+
+        for (i = 0; i < sURLVariables.length; i++) {
+            sParameterName = sURLVariables[i].split('=');
+
+            if (sParameterName[0] === 'clubid') {
+                clubid = sURLVariables[i+1];
+            }
+        }
+
+        $('table > tbody  > tr').each(function(index, tr) {
+            if (index == 8) {
+                $(this).append( '<td valign="middle" style="padding-left: 25px; padding-right: 1px;"><input type="button" value="Relatório do espião" style="" onclick="document.location.href=\'https://www.dugout-online.com/clubinfo/analysis/clubid/' + clubid + '\'"></td>' );
+            }
+
+        });
     }
 }
 
