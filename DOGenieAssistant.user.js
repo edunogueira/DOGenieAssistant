@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      19.1
+// @version      19.2
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -766,10 +766,7 @@ function scoutButton() {
                 clubid = sURLVariables[i+1];
             }
         }
-        i = 5;
-        if ($('table > tbody  > tr').length == 26) {
-            i = 8;
-        }
+        i = $('table tbody tr').length - 18;
 
         $('table > tbody  > tr').each(function(index, tr) {
             if (index == i) {
