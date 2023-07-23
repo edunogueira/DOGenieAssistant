@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      19.0
+// @version      19.1
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -56,7 +56,6 @@ if (page.match('/players/details/')) {
         scoutButton();
     }
 }
-
 
 dropdownMenu();
 secondaryClock();
@@ -767,12 +766,15 @@ function scoutButton() {
                 clubid = sURLVariables[i+1];
             }
         }
+        i = 5;
+        if ($('table > tbody  > tr').length == 26) {
+            i = 8;
+        }
 
         $('table > tbody  > tr').each(function(index, tr) {
-            if (index == 8) {
+            if (index == i) {
                 $(this).append( '<td valign="middle" style="padding-left: 25px; padding-right: 1px;"><input type="button" value="Relatório do espião" style="" onclick="document.location.href=\'https://www.dugout-online.com/clubinfo/analysis/clubid/' + clubid + '\'"></td>' );
             }
-
         });
     }
 }
