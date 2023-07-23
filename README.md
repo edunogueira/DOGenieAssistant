@@ -12,6 +12,15 @@
 
   #### Adicionar OPS na tela de elenco
   <img src="squad.jpg">
+
+  #### Adicionar ordenar tabela de jogadores
+  <img src="datatable.gif">
+
+  #### Titulares em negrito para diferenciar dos reservas
+  <img src="squad_bold.jpg">
+  
+  #### Carregar taticas
+  <img src="apply_ttc.jpg">
   
   #### Adicionar OPS na tela de taticas
   <img src="tactics.png">
@@ -19,18 +28,18 @@
   #### Adicionar relógio secundário com o horário real
   <img src="clock.gif">
 
-  #### Adicionar ordenar tabela de jogadores
-  <img src="datatable.gif">
-  
   #### Menu Dropdown 
   <img src="menu.gif">
   <img src="menu-en.gif">
-  
-  #### Titulares em negrito para diferenciar dos reservas
-  <img src="squad_bold.jpg">
-  
-  #### Carregar taticas
-  <img src="apply_ttc.jpg">
+
+  #### Botões de oferta +100k e +50% ou +1M
+  <img src="bid_button.png">
+
+  #### Estimativa do salário do treinador na busca
+  <img src="coaches_wage.gif">
+
+  #### Botão de relatório espião no proprio time
+  <img src="scout_report.jpg">
 
 ### To-Do list
 - [ ] - 
