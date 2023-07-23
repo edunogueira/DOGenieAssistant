@@ -36,7 +36,7 @@
   <img src="bid_button.png">
 
   #### Estimativa do salário do treinador na busca
-  <img src="coaches_wage.gif">
+  <img src="coaches_wage.png">
 
   #### Botão de relatório espião no proprio time
   <img src="scout_report.jpg">
