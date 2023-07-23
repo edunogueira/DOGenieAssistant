@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      18.1
+// @version      19.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -13,7 +13,7 @@
 //page select ----------------------------------------------//
 var page = document.URL;
 
-const SECONDARY_CLOCK = 0;
+const SECONDARY_CLOCK = 1;
 const DROPDWON_MENU = 1;
 const PAGE_TITLE = 1;
 const PLAYER_OPS = 1;
@@ -25,11 +25,13 @@ const COACHES_WAGE = 1;
 const READ_RESUME = 1;
 const LOAD_TACTICS = 1;
 const SCOUT_BUTTON = 1;
+const BID_BUTTON = 1;
 
 pageTitle();
 
 if (page.match('/players/details/')) {
     playerDetails();
+    bidButton();
 } else if (page.match('/players/none/') || page.match('/players_nt/none/')) {
     if (SQUAD_DETAILS) {
         squadDetails();
@@ -476,6 +478,23 @@ function secondaryClock() {
     }
 }
 
+function getLanguage() {
+    const settingsTitle = document.querySelector(".settings_button").title;
+    const languages = {
+        Postavke: "bh",
+        Settings: "en",
+        Configuraciones: "sp",
+        Impostazioni: "it",
+        Instellingen: "du",
+        Configurações: "br",
+        Setări: "ro",
+        Nastavitve: "si",
+        Ayarlar: "tu",
+        설정: "sk",
+    };
+    return languages[settingsTitle];
+};
+
 function dropdownMenu() {
     if (DROPDWON_MENU) {
         var css = '.dropdown-content{text-align: left;top:0px;border-radius: 15px;margin-top:40px;display:none;position:absolute;background-color:#f1f1f1;min-width:160px;box-shadow:0 8px 16px 0 rgba(0,0,0,.2);z-index:1}.dropdown-content a{border-radius: 15px;color:#000;padding:12px 16px;text-decoration:none;display:block}.dropdown-content a:hover{background-color:#ddd}.menu_button:hover .dropdown-content{display:block}.menu_button:hover .dropbtn{background-color:#3e8e41}';
@@ -625,23 +644,6 @@ function dropdownMenu() {
                 en: "Links",
                 br: "Links"
             },
-        };
-
-        const getLanguage = () => {
-            const settingsTitle = document.querySelector(".settings_button").title;
-            const languages = {
-                Postavke: "bh",
-                Settings: "en",
-                Configuraciones: "sp",
-                Impostazioni: "it",
-                Instellingen: "du",
-                Configurações: "br",
-                Setări: "ro",
-                Nastavitve: "si",
-                Ayarlar: "tu",
-                설정: "sk",
-            };
-            return languages[settingsTitle];
         };
         let language = getLanguage();
         if (language!="en" && language!="br") language = "en";
@@ -815,5 +817,38 @@ function loadTactics() {
             xmlhttp.send($("#dataTtc").val());
             location.reload();
         });
+    }
+}
+
+function bidButton() {
+    if (BID_BUTTON) {
+        if ($('input[name="riseoffer"]').length == 1) {
+            $('form[name="bidForm"]').addClass( "bidForm" );
+            $( ".bidForm input:last" ).addClass( "bidButton" );
+
+            let value = parseInt($('.bidForm input').val()) - 1000;
+            let val1 = new Intl.NumberFormat('en-DE').format(value + 100000);
+            let val2 = new Intl.NumberFormat('en-DE').format(value + 1000000);
+
+            const translation = {
+                bid: {
+                    en: "Bid",
+                    br: "Oferta"
+                },
+            }
+            let language = getLanguage();
+            if (language!="en" && language!="br") language = "en";
+            $(`<input id="bid1" type="button" value="${translation.bid[language]} ${val1}"><input id="bid2" type="button" value="${translation.bid[language]} ${val2}">"`).insertAfter( ".bidButton" );
+            $("#bid1").click(function() {
+                let value = parseInt($('.bidForm input').val()) - 1000;
+                $('.bidForm input').val(value + 100000);
+                document.bidForm.submit();
+            });
+            $("#bid2").click(function() {
+                let value = parseInt($('.bidForm input').val()) - 1000;
+                $('.bidForm input').val(value + 1000000);
+                document.bidForm.submit();
+            });
+        }
     }
 }
