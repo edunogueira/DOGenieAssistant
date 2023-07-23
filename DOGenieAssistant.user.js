@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      19.2
+// @version      19.3
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -420,7 +420,7 @@ function tacticsDetails() {
             $(this).css('color', 'blue');
         }
 
-        $(this).find("#" + playerId + " table tr").each(function() {
+        $("#" + playerId + " table tr").each(function() {
             $(this).children('td').each(function() {
                 if ($.isNumeric($(this).text())) {
                     data.push(parseInt($(this).text()));
@@ -443,10 +443,10 @@ function tacticsDetails() {
         });
 
         if (data.length > 0) {
-            var array = $(this).find(" [class*=matches_row] > td").map(function() {
+            var array = $(this).parent().next().map(function() {
                 return $.trim($(this).text());
             }).get();
-            var position = array[2];
+            var position = array[0];
             var ops = 0;
 
             if (position == "GK") {
@@ -465,7 +465,7 @@ function tacticsDetails() {
                 ops = (data[3] + data[8] + data[17] + data[11] + data[13]);
             }
 
-            $(this).find("#" + playerId + " .ops").text(ops);
+            $("#" + playerId + " .ops").text(ops);
         }
     });
 }
@@ -828,6 +828,9 @@ function bidButton() {
             let value = parseInt($('.bidForm input').val()) - 1000;
             let val1 = new Intl.NumberFormat('en-DE').format(value + 100000);
             let val2 = new Intl.NumberFormat('en-DE').format(value + 1000000);
+            if (value < 2000000) {
+                val2 = new Intl.NumberFormat('en-DE').format(value + (value / 2));
+            }
 
             const translation = {
                 bid: {
@@ -837,15 +840,13 @@ function bidButton() {
             }
             let language = getLanguage();
             if (language!="en" && language!="br") language = "en";
-            $(`<input id="bid1" type="button" value="${translation.bid[language]} ${val1}"><input id="bid2" type="button" value="${translation.bid[language]} ${val2}">"`).insertAfter( ".bidButton" );
+            $(`<input id="bid1" type="button" value="${translation.bid[language]} ${val1}"><input id="bid2" type="button" value="${translation.bid[language]} ${val2}"> "`).insertAfter( ".bidButton" );
             $("#bid1").click(function() {
-                let value = parseInt($('.bidForm input').val()) - 1000;
-                $('.bidForm input').val(value + 100000);
+                $('.bidForm input').val(val1);
                 document.bidForm.submit();
             });
             $("#bid2").click(function() {
-                let value = parseInt($('.bidForm input').val()) - 1000;
-                $('.bidForm input').val(value + 1000000);
+                $('.bidForm input').val(val2);
                 document.bidForm.submit();
             });
         }
