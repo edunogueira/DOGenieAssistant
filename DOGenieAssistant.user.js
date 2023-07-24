@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      19.3
+// @version      20.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -26,6 +26,7 @@ const READ_RESUME = 1;
 const LOAD_TACTICS = 1;
 const SCOUT_BUTTON = 1;
 const BID_BUTTON = 1;
+const SPREADSHEET_SQUAD = 1;
 
 pageTitle();
 
@@ -54,6 +55,10 @@ if (page.match('/players/details/')) {
 } else if (page.match('/clubinfo/none/')) {
     if (SCOUT_BUTTON) {
         scoutButton();
+    }
+} else if (page.match('/players/spreadsheet/')) {
+    if (SPREADSHEET_SQUAD) {
+        doTable('.forumline');
     }
 }
 
