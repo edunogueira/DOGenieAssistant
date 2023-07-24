@@ -16,6 +16,9 @@
   #### Adicionar ordenar tabela de jogadores
   <img src="datatable.gif">
 
+  #### Adicionar ordenar em exibição por tabela
+  <img src="spreadsheet_squad.gif">
+
   #### Titulares em negrito para diferenciar dos reservas
   <img src="squad_bold.jpg">
   
