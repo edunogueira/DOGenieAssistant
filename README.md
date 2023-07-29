@@ -45,7 +45,7 @@
   <img src="scout_report.jpg">
 
 ### To-Do list
-- [ ] - 
+- [ ] - Salvar configurações em cookies
 
 ### Como instalar 
 1. Instalar o [Tampermonkey](https://www.tampermonkey.net/)
