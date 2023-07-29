@@ -44,8 +44,11 @@
   #### Botão de relatório espião no proprio time
   <img src="scout_report.jpg">
 
+  #### Menu para ativar/desativar funcionalidades
+  <img src="config_menu.png">
+
 ### To-Do list
-- [ ] - Salvar configurações em cookies
+- [ ]
 
 ### Como instalar 
 1. Instalar o [Tampermonkey](https://www.tampermonkey.net/)
