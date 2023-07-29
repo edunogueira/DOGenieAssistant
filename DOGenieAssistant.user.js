@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      20.0
+// @version      21.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -13,57 +13,51 @@
 //page select ----------------------------------------------//
 var page = document.URL;
 
-const SECONDARY_CLOCK = 1;
-const DROPDWON_MENU = 1;
-const PAGE_TITLE = 1;
-const PLAYER_OPS = 1;
-const PLAYER_EXP = 1;
-const SQUAD_DETAILS = 1;
-const TACTICS_DETAILS = 1;
-const SQUAD_HIGH = 1;
-const COACHES_WAGE = 1;
-const READ_RESUME = 1;
-const LOAD_TACTICS = 1;
-const SCOUT_BUTTON = 1;
-const BID_BUTTON = 1;
-const SPREADSHEET_SQUAD = 1;
-
-pageTitle();
-
 if (page.match('/players/details/')) {
     playerDetails();
-    bidButton();
+    if (JSON.parse(localStorage.getItem("BID_BUTTON"))) {
+        bidButton();
+    }
 } else if (page.match('/players/none/') || page.match('/players_nt/none/')) {
-    if (SQUAD_DETAILS) {
+    if (JSON.parse(localStorage.getItem("SQUAD_DETAILS"))) {
         squadDetails();
     }
 } else if (page.match('/tactics/none/') || page.match('/tactics_youth/none/') || page.match('/tactics_nt/none/')) {
-    if (TACTICS_DETAILS) {
+    if (JSON.parse(localStorage.getItem("TACTICS_DETAILS"))) {
         tacticsDetails();
     }
-    if (LOAD_TACTICS) {
+    if (JSON.parse(localStorage.getItem("LOAD_TACTICS"))) {
         loadTactics();
     }
 } else if (page.match('/search_coaches/none/')) {
-    if (COACHES_WAGE) {
+    if (JSON.parse(localStorage.getItem("COACHES_WAGE"))) {
         coachesWage();
     }
 } else if (page.match('/clubinfo/none/clubid/')) {
-    if (READ_RESUME) {
+    if (JSON.parse(localStorage.getItem("READ_RESUME"))) {
         readResume();
     }
 } else if (page.match('/clubinfo/none/')) {
-    if (SCOUT_BUTTON) {
+    if (JSON.parse(localStorage.getItem("SCOUT_BUTTON"))) {
         scoutButton();
     }
 } else if (page.match('/players/spreadsheet/')) {
-    if (SPREADSHEET_SQUAD) {
+    if (JSON.parse(localStorage.getItem("SPREADSHEET_SQUAD"))) {
         doTable('.forumline');
     }
+} else if (page.match('/home/none/')) {
+    configMenu();
 }
 
-dropdownMenu();
-secondaryClock();
+if (JSON.parse(localStorage.getItem("PAGE_TITLE"))) {
+    pageTitle();
+}
+if (JSON.parse(localStorage.getItem("DROPDDOWN_MENU"))) {
+    dropdownMenu();
+}
+if (JSON.parse(localStorage.getItem("SECONDARY_CLOCK"))) {
+    secondaryClock();
+}
 
 //helper //----------------------------------------------//
 function serverTime() {
@@ -274,7 +268,7 @@ function doTable(selector) {
 
 //features //----------------------------------------------//
 function playerDetails() {
-    if (PLAYER_OPS) {
+    if (JSON.parse(localStorage.getItem("PLAYER_OPS"))) {
         var data = Array();
 
         $("#main-1 table tr").each(function(i, v) {
@@ -300,7 +294,7 @@ function playerDetails() {
             $('.player_name').append(' @ OPS ' + ops[natPos]);
         }
     }
-    if (PLAYER_EXP) {
+    if (JSON.parse(localStorage.getItem("PLAYER_EXP"))) {
         var exp = getExp((new XMLSerializer()).serializeToString(document));
         $('.player_name').append(' | ' + exp + ' XP');
     }
@@ -310,7 +304,7 @@ function playerDetails() {
 function squadDetails() {
     $(".forumline .table_top_row").each(function() {
         $(this).last().append('<td align="center" width="20" title="Original Position Skills" class="tableHeader">OPS</td>');
-        if (SQUAD_HIGH) {
+        if (JSON.parse(localStorage.getItem("SQUAD_HIGH"))) {
             $(this).last().append('<td align="center" width="20" title="Best Original Position Skills" class="tableHeader">HIGH</td>');
         }
     });
@@ -357,7 +351,7 @@ function squadDetails() {
                 natPos = 9;
             }
             $(this).last().append('<td align="center"><span class="tableText">' + ops[natPos] + '</span></td>');
-            if (SQUAD_HIGH) {
+            if (JSON.parse(localStorage.getItem("SQUAD_HIGH"))) {
                 if (ops[ops['pos']] > ops[natPos]) {
                     $(this).last().append('<td align="center"><span class="tableText"><strong>' + ops[ops['pos']] + '</strong></span></td>');
                 } else {
@@ -366,7 +360,7 @@ function squadDetails() {
             }
         } else if (count > 1) {
             $(this).last().append('<td align="center"><span class="tableText">0</span></td>');
-            if (SQUAD_HIGH) {
+            if (JSON.parse(localStorage.getItem("SQUAD_HIGH"))) {
                 $(this).last().append('<td align="center"><span class="tableText">0</span></td>');
             }
         }
@@ -410,8 +404,8 @@ function tacticsDetails() {
 
         var div = null;
         if (decoration == true) {
-            $(this).css('text-decoration', 'underline');
-            $(this).css('font-weight', 'bold');
+            $(this).parent().parent().css('text-decoration', 'underline');
+            $(this).parent().parent().css('font-weight', 'bold');
         }
 
         $.each(subs, function(key, value) {
@@ -421,8 +415,8 @@ function tacticsDetails() {
             }
         });
         if (subdecoration == true) {
-            $(this).css('font-weight', 'bold');
-            $(this).css('color', 'blue');
+            $(this).parent().parent().css('font-weight', 'bold');
+            $(this).parent().parent().css('color', 'blue');
         }
 
         $("#" + playerId + " table tr").each(function() {
@@ -476,10 +470,8 @@ function tacticsDetails() {
 }
 
 function secondaryClock() {
-    if (SECONDARY_CLOCK) {
-        $('#footer').append('<div class="time_display" id="servertime2" style="top: 12px;border:1px solid #fff"></div>');
-        setInterval(serverTime, 1000);
-    }
+    $('#footer').append('<div class="time_display" id="servertime2" style="top: 12px;border:1px solid #fff"></div>');
+    setInterval(serverTime, 1000);
 }
 
 function getLanguage() {
@@ -500,360 +492,447 @@ function getLanguage() {
 };
 
 function dropdownMenu() {
-    if (DROPDWON_MENU) {
-        var css = '.dropdown-content{text-align: left;top:0px;border-radius: 15px;margin-top:40px;display:none;position:absolute;background-color:#f1f1f1;min-width:160px;box-shadow:0 8px 16px 0 rgba(0,0,0,.2);z-index:1}.dropdown-content a{border-radius: 15px;color:#000;padding:12px 16px;text-decoration:none;display:block}.dropdown-content a:hover{background-color:#ddd}.menu_button:hover .dropdown-content{display:block}.menu_button:hover .dropbtn{background-color:#3e8e41}';
-        applyStyle(css);
+    var css = '.dropdown-content{text-align: left;top:0px;border-radius: 15px;margin-top:40px;display:none;position:absolute;background-color:#f1f1f1;min-width:160px;box-shadow:0 8px 16px 0 rgba(0,0,0,.2);z-index:1}.dropdown-content a{border-radius: 15px;color:#000;padding:12px 16px;text-decoration:none;display:block}.dropdown-content a:hover{background-color:#ddd}.menu_button:hover .dropdown-content{display:block}.menu_button:hover .dropbtn{background-color:#3e8e41}';
+    applyStyle(css);
 
-        const translation = {
-            home_home: {
-                en: "Home",
-                br: "Início"
-            },
-            home_news: {
-                en: "News",
-                br: "Notícias"
-            },
-            home_rules: {
-                en: "Rules",
-                br: "Regras"
-            },
-            home_help: {
-                en: "Help",
-                br: "Ajuda"
-            },
+    const translation = {
+        home_home: {
+            en: "Home",
+            br: "Início"
+        },
+        home_news: {
+            en: "News",
+            br: "Notícias"
+        },
+        home_rules: {
+            en: "Rules",
+            br: "Regras"
+        },
+        home_help: {
+            en: "Help",
+            br: "Ajuda"
+        },
 
-            club_info: {
-                en: "Info",
-                br: "Informações"
-            },
-            club_bids: {
-                en: "Bids",
-                br: "Ofertas"
-            },
-            club_transfers: {
-                en: "Transfers",
-                br: "Transferências"
-            },
-            club_players: {
-                en: "Players",
-                br: "Jogadores"
-            },
-            club_players_youth: {
-                en: "Players (youth)",
-                br: "Jogadores (juvenil)"
-            },
-            scout_report: {
-                en: "Scout Report",
-                br: "Relatório do Espião"
-            },
-            club_staff: {
-                en: "Staff",
-                br: "Comissão Técnica"
-            },
-            club_settings: {
-                en: "Settings",
-                br: "Configurações"
-            },
+        club_info: {
+            en: "Info",
+            br: "Informações"
+        },
+        club_bids: {
+            en: "Bids",
+            br: "Ofertas"
+        },
+        club_transfers: {
+            en: "Transfers",
+            br: "Transferências"
+        },
+        club_players: {
+            en: "Players",
+            br: "Jogadores"
+        },
+        club_players_youth: {
+            en: "Players (youth)",
+            br: "Jogadores (juvenil)"
+        },
+        scout_report: {
+            en: "Scout Report",
+            br: "Relatório do Espião"
+        },
+        club_staff: {
+            en: "Staff",
+            br: "Comissão Técnica"
+        },
+        club_settings: {
+            en: "Settings",
+            br: "Configurações"
+        },
 
-            players_nt: {
-                en: "Players",
-                br: "Jogadores"
-            },
-            tactics_nt: {
-                en: "Tactics",
-                br: "Táticas"
-            },
+        players_nt: {
+            en: "Players",
+            br: "Jogadores"
+        },
+        tactics_nt: {
+            en: "Tactics",
+            br: "Táticas"
+        },
 
-            management_finances: {
-                en: "Finances",
-                br: "Finanças"
-            },
-            management_stadium: {
-                en: "Stadium",
-                br: "Estádio"
-            },
-            management_facilities: {
-                en: "Facilities",
-                br: "Instalações"
-            },
-            management_sponsors: {
-                en: "Sponsors",
-                br: "Patrocinadores"
-            },
-            management_calendar: {
-                en: "Calendar",
-                br: "Calendário"
-            },
+        management_finances: {
+            en: "Finances",
+            br: "Finanças"
+        },
+        management_stadium: {
+            en: "Stadium",
+            br: "Estádio"
+        },
+        management_facilities: {
+            en: "Facilities",
+            br: "Instalações"
+        },
+        management_sponsors: {
+            en: "Sponsors",
+            br: "Patrocinadores"
+        },
+        management_calendar: {
+            en: "Calendar",
+            br: "Calendário"
+        },
 
-            tactics_fiest: {
-                en: "Tactics",
-                br: "Táticas"
-            },
-            tactics_youth: {
-                en: "Tactics (youth)",
-                br: "Táticas (juvenil)"
-            },
+        tactics_fiest: {
+            en: "Tactics",
+            br: "Táticas"
+        },
+        tactics_youth: {
+            en: "Tactics (youth)",
+            br: "Táticas (juvenil)"
+        },
 
-            training_training: {
-                en: "Training",
-                br: "Treinamento"
-            },
-            training_physios: {
-                en: "Physios",
-                br: "Fisioterapeutas"
-            },
-            training_physio_report: {
-                en: "Physio Report",
-                br: "Relatório de lesões"
-            },
+        training_training: {
+            en: "Training",
+            br: "Treinamento"
+        },
+        training_physios: {
+            en: "Physios",
+            br: "Fisioterapeutas"
+        },
+        training_physio_report: {
+            en: "Physio Report",
+            br: "Relatório de lesões"
+        },
 
-            search__players: {
-                en: "Players",
-                br: "Jogadores"
-            },
-            search_clubs: {
-                en: "Clubs",
-                br: "Clubes"
-            },
-            search_national: {
-                en: "National",
-                br: "Seleções"
-            },
-            search_coaches: {
-                en: "Coaches",
-                br: "Treinadores"
-            },
-            search_physios: {
-                en: "Physios",
-                br: "Fisioterapeutas"
-            },
-            search_transfers: {
-                en: "transfers",
-                br: "Transferências"
-            },
+        search__players: {
+            en: "Players",
+            br: "Jogadores"
+        },
+        search_clubs: {
+            en: "Clubs",
+            br: "Clubes"
+        },
+        search_national: {
+            en: "National",
+            br: "Seleções"
+        },
+        search_coaches: {
+            en: "Coaches",
+            br: "Treinadores"
+        },
+        search_physios: {
+            en: "Physios",
+            br: "Fisioterapeutas"
+        },
+        search_transfers: {
+            en: "transfers",
+            br: "Transferências"
+        },
 
-            community_forum: {
-                en: "Forum",
-                br: "Fórum"
-            },
-            community_rules: {
-                en: "Rules",
-                br: "Regras"
-            },
-            community_profile: {
-                en: "Profile",
-                br: "Perfil"
-            },
-            community_links: {
-                en: "Links",
-                br: "Links"
-            },
-        };
-        let language = getLanguage();
-        if (language!="en" && language!="br") language = "en";
-        let i = 1;
-        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/home/none/">${translation.home_home[language]}</a> <a href="https://www.dugout-online.com/news/none/">${translation.home_news[language]}</a> <a href="https://www.dugout-online.com/rules/none/">${translation.home_rules[language]}</a> <a href="https://www.dugout-online.com/helpmain/none/">${translation.home_help[language]}</a></div>`));
+        community_forum: {
+            en: "Forum",
+            br: "Fórum"
+        },
+        community_rules: {
+            en: "Rules",
+            br: "Regras"
+        },
+        community_profile: {
+            en: "Profile",
+            br: "Perfil"
+        },
+        community_links: {
+            en: "Links",
+            br: "Links"
+        },
+    };
+    let language = getLanguage();
+    if (language!="en" && language!="br") language = "en";
+    let i = 1;
+    $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/home/none/">${translation.home_home[language]}</a> <a href="https://www.dugout-online.com/news/none/">${translation.home_news[language]}</a> <a href="https://www.dugout-online.com/rules/none/">${translation.home_rules[language]}</a> <a href="https://www.dugout-online.com/helpmain/none/">${translation.home_help[language]}</a></div>`));
+    i++;
+    $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/clubinfo/none/">${translation.club_info[language]}</a><a href="https://www.dugout-online.com/clubinfo/bids/">${translation.club_bids[language]}</a><a href="https://www.dugout-online.com/clubinfo/transfers/">${translation.club_transfers[language]}</a><a href="https://www.dugout-online.com/players/none/">${translation.club_players[language]}</a><a href="https://www.dugout-online.com/players/none/view/youth/">${translation.club_players_youth[language]}</a><a href="https://www.dugout-online.com/staff/none/">${translation.club_staff[language]}</a><a href="https://www.dugout-online.com/settings/none/">${translation.club_settings[language]}</a></div>`));
+    i++;
+    if ($(".menu_button").length > 7) {
+        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/players_nt/none/">${translation.players_nt[language]}</a><a href="https://www.dugout-online.com/tactics_nt/none/">${translation.tactics_nt[language]}</a></div>`));
         i++;
-        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/clubinfo/none/">${translation.club_info[language]}</a><a href="https://www.dugout-online.com/clubinfo/bids/">${translation.club_bids[language]}</a><a href="https://www.dugout-online.com/clubinfo/transfers/">${translation.club_transfers[language]}</a><a href="https://www.dugout-online.com/players/none/">${translation.club_players[language]}</a><a href="https://www.dugout-online.com/players/none/view/youth/">${translation.club_players_youth[language]}</a><a href="https://www.dugout-online.com/staff/none/">${translation.club_staff[language]}</a><a href="https://www.dugout-online.com/settings/none/">${translation.club_settings[language]}</a></div>`));
-        i++;
-        if ($(".menu_button").length > 7) {
-            $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/players_nt/none/">${translation.players_nt[language]}</a><a href="https://www.dugout-online.com/tactics_nt/none/">${translation.tactics_nt[language]}</a></div>`));
-            i++;
-        }
-        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/finances/none/">${translation.management_finances[language]}</a> <a href="https://www.dugout-online.com/stadium/none/">${translation.management_stadium[language]}</a> <a href="https://www.dugout-online.com/facilities/none/">${translation.management_facilities[language]}</a> <a href="https://www.dugout-online.com/sponsors/none/">${translation.management_sponsors[language]}</a> <a href="https://www.dugout-online.com/calendar/none/">${translation.management_calendar[language]}</a></div>`));
-        i++;
-        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/tactics/none/">${translation.tactics_fiest[language]}</a> <a href="https://www.dugout-online.com/tactics_youth/none/">${translation.tactics_youth[language]}</a></div>`));
-        i++;
-        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/training/none/">${translation.training_training[language]}</a> <a href="https://www.dugout-online.com/physios/none/">${translation.training_physios[language]}</a> <a href="https://www.dugout-online.com/physio_report/none">${translation.training_physio_report[language]}</a></div>`));
-        i++;
-        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/search_players/none/">${translation.search__players[language]}</a> <a href="https://www.dugout-online.com/search_clubs/none/">${translation.search_clubs[language]}</a> <a href="https://www.dugout-online.com/national_teams/none/">${translation.search_national[language]}</a> <a href="https://www.dugout-online.com/search_coaches/none/">${translation.search_coaches[language]}</a> <a href="https://www.dugout-online.com/search_physios/none/">${translation.search_physios[language]}</a> <a href="https://www.dugout-online.com/search_transfers/none/">${translation.search_transfers[language]}</a></div>`));
-        i++;
-        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/forum/none/">${translation.community_forum[language]}</a> <a href="https://www.dugout-online.com/community_rules/none/">${translation.community_rules[language]}</a> <a href="https://www.dugout-online.com/community_profile/none/">${translation.community_profile[language]}</a> <a href="https://www.dugout-online.com/links/none/">${translation.community_links[language]}</a></div>`));
-
-        // substitui divs do canto superior esquerdo por anchors para facilitar navegação
-        [...document.querySelectorAll('div#top_container > div')]
-        .filter(d => d.classList.contains(`${d.id}_ico`))
-            .forEach(d => {
-                const anchor = document.createElement('a');
-                anchor.href = d.onclick.toString().split('document.location.href=')[1].split('\'')[1];
-                anchor.classList.add(...d.classList.values())
-                anchor.id = d.id;
-                anchor.style.cssText = d.style.cssText;
-                anchor.title = d.title;
-                d.parentElement.insertBefore(anchor, d);
-                d.remove();
-            });
     }
+    $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/finances/none/">${translation.management_finances[language]}</a> <a href="https://www.dugout-online.com/stadium/none/">${translation.management_stadium[language]}</a> <a href="https://www.dugout-online.com/facilities/none/">${translation.management_facilities[language]}</a> <a href="https://www.dugout-online.com/sponsors/none/">${translation.management_sponsors[language]}</a> <a href="https://www.dugout-online.com/calendar/none/">${translation.management_calendar[language]}</a></div>`));
+    i++;
+    $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/tactics/none/">${translation.tactics_fiest[language]}</a> <a href="https://www.dugout-online.com/tactics_youth/none/">${translation.tactics_youth[language]}</a></div>`));
+    i++;
+    $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/training/none/">${translation.training_training[language]}</a> <a href="https://www.dugout-online.com/physios/none/">${translation.training_physios[language]}</a> <a href="https://www.dugout-online.com/physio_report/none">${translation.training_physio_report[language]}</a></div>`));
+    i++;
+    $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/search_players/none/">${translation.search__players[language]}</a> <a href="https://www.dugout-online.com/search_clubs/none/">${translation.search_clubs[language]}</a> <a href="https://www.dugout-online.com/national_teams/none/">${translation.search_national[language]}</a> <a href="https://www.dugout-online.com/search_coaches/none/">${translation.search_coaches[language]}</a> <a href="https://www.dugout-online.com/search_physios/none/">${translation.search_physios[language]}</a> <a href="https://www.dugout-online.com/search_transfers/none/">${translation.search_transfers[language]}</a></div>`));
+    i++;
+    $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/forum/none/">${translation.community_forum[language]}</a> <a href="https://www.dugout-online.com/community_rules/none/">${translation.community_rules[language]}</a> <a href="https://www.dugout-online.com/community_profile/none/">${translation.community_profile[language]}</a> <a href="https://www.dugout-online.com/links/none/">${translation.community_links[language]}</a></div>`));
+
+    // substitui divs do canto superior esquerdo por anchors para facilitar navegação
+    [...document.querySelectorAll('div#top_container > div')]
+        .filter(d => d.classList.contains(`${d.id}_ico`))
+        .forEach(d => {
+        const anchor = document.createElement('a');
+        anchor.href = d.onclick.toString().split('document.location.href=')[1].split('\'')[1];
+        anchor.classList.add(...d.classList.values())
+        anchor.id = d.id;
+        anchor.style.cssText = d.style.cssText;
+        anchor.title = d.title;
+        d.parentElement.insertBefore(anchor, d);
+        d.remove();
+    });
 }
 
 function pageTitle() {
-    if (PAGE_TITLE) {
-        var title = $(location).attr('pathname').split("/")[1];
-        title = title.charAt(0).toUpperCase() + title.slice(1);
-        $(document).prop('title', title.replace("_", " "));
-    }
+    var title = $(location).attr('pathname').split("/")[1];
+    title = title.charAt(0).toUpperCase() + title.slice(1);
+    $(document).prop('title', title.replace("_", " "));
 }
 
 function coachesWage() {
-    if (COACHES_WAGE) {
-        var max = 0;
-        var wage = 0;
-        $(".search_tbl tbody tr").first().append('<td width="36" class="table_header" valign="middle" align="center" style="cursor: default;" title="Approximate Wage">Wage</td>');
-        $(".search_tbl tbody tr").each(function() {
-            var data = Array();
-            var count = 0;
-            $(this).children('td').each(function() {
-                if ($.isNumeric($(this).text())) {
-                    data.push(parseInt($(this).text()));
-                } else {
-                    count++;
-                }
-            });
-            if (data.length > 0) {
-                data.shift();
-                data.pop();
-                data.pop();
-                data.pop();
-                data.pop();
-                data.pop();
-
-                max = Math.max.apply(Math, data);
-                if (max <= 42) {
-                    wage = (24.44889 * max - 138.145) * max;
-                } else {
-                    wage = (51.54712 * max - 1260) * max;
-                }
-                wage = parseFloat(wage, 10).toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, "$1,").toString();
-
-                $(this).last().append('<td align="center"><span class="tableText">' + wage + '</span></td>');
+    var max = 0;
+    var wage = 0;
+    $(".search_tbl tbody tr").first().append('<td width="36" class="table_header" valign="middle" align="center" style="cursor: default;" title="Approximate Wage">Wage</td>');
+    $(".search_tbl tbody tr").each(function() {
+        var data = Array();
+        var count = 0;
+        $(this).children('td').each(function() {
+            if ($.isNumeric($(this).text())) {
+                data.push(parseInt($(this).text()));
+            } else {
+                count++;
             }
         });
+        if (data.length > 0) {
+            data.shift();
+            data.pop();
+            data.pop();
+            data.pop();
+            data.pop();
+            data.pop();
 
-        $('.search_tbl th:first').wrapInner('<div />').find('div').unwrap().wrap('<th/>');
-        var header = $(".search_tbl tr:first").clone();
-        $(".search_tbl tr:first").remove();
-        $(".search_tbl tbody:first").before('<thead></thead>');
-        $(".search_tbl thead:first").append(header);
-        $(".search_tbl").dataTable({
-            "searching": false,
-            "bPaginate": false,
-            "bLengthChange": false,
-            "bFilter": true,
-            "bInfo": false,
-            "bAutoWidth": false,
-            "order": [[ 13, 'asc' ]]
-        });
-    }
+            max = Math.max.apply(Math, data);
+            if (max <= 42) {
+                wage = (24.44889 * max - 138.145) * max;
+            } else {
+                wage = (51.54712 * max - 1260) * max;
+            }
+            wage = parseFloat(wage, 10).toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, "$1,").toString();
+
+            $(this).last().append('<td align="center"><span class="tableText">' + wage + '</span></td>');
+        }
+    });
+
+    $('.search_tbl th:first').wrapInner('<div />').find('div').unwrap().wrap('<th/>');
+    var header = $(".search_tbl tr:first").clone();
+    $(".search_tbl tr:first").remove();
+    $(".search_tbl tbody:first").before('<thead></thead>');
+    $(".search_tbl thead:first").append(header);
+    $(".search_tbl").dataTable({
+        "searching": false,
+        "bPaginate": false,
+        "bLengthChange": false,
+        "bFilter": true,
+        "bInfo": false,
+        "bAutoWidth": false,
+        "order": [[ 13, 'asc' ]]
+    });
 }
 
 function readResume() {
-    if (READ_RESUME) {
-        let url = $(".maninfo a").attr('href');
-        let pos = url.indexOf('toid');
-        let toid = url.substring(pos+5);
-        url = "https://www.dugout-online.com/readresume.php?id=" + toid;
-        $(".clubname").append( "<a href=" + url + "> [Read Resume]</a>" );
-    }
+    let url = $(".maninfo a").attr('href');
+    let pos = url.indexOf('toid');
+    let toid = url.substring(pos+5);
+    url = "https://www.dugout-online.com/readresume.php?id=" + toid;
+    $(".clubname").append( "<a href=" + url + "> [Read Resume]</a>" );
 }
 
 function scoutButton() {
-    if (SCOUT_BUTTON) {
-        let clubid = 1000;
-        let sPageURL = $("a[href^='https://www.dugout-online.com/clubinfo/none/clubid/']")[1].href,
+    let clubid = 1000;
+    let sPageURL = $("a[href^='https://www.dugout-online.com/clubinfo/none/clubid/']")[1].href,
         sURLVariables = sPageURL.split('/'),
         sParameterName,
         i;
 
-        for (i = 0; i < sURLVariables.length; i++) {
-            sParameterName = sURLVariables[i].split('=');
+    for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i].split('=');
 
-            if (sParameterName[0] === 'clubid') {
-                clubid = sURLVariables[i+1];
-            }
+        if (sParameterName[0] === 'clubid') {
+            clubid = sURLVariables[i+1];
         }
-        i = $('table tbody tr').length - 18;
-
-        $('table > tbody  > tr').each(function(index, tr) {
-            if (index == i) {
-                $(this).append( '<td valign="middle" style="padding-left: 25px; padding-right: 1px;"><input type="button" value="Relatório do espião" style="" onclick="document.location.href=\'https://www.dugout-online.com/clubinfo/analysis/clubid/' + clubid + '\'"></td>' );
-            }
-        });
     }
+    i = $('table tbody tr').length - 18;
+
+    $('table > tbody  > tr').each(function(index, tr) {
+        if (index == i) {
+            $(this).append( '<td valign="middle" style="padding-left: 25px; padding-right: 1px;"><input type="button" value="Relatório do espião" style="" onclick="document.location.href=\'https://www.dugout-online.com/clubinfo/analysis/clubid/' + clubid + '\'"></td>' );
+        }
+    });
 }
 
 function loadTactics() {
-    if (LOAD_TACTICS) {
-        $('#field_cont table').append('<tr><td valign="middle" style="color: unset;" colspan="2"><textarea id="dataTtc" name="dataTtc" rows="2" cols="40"></textarea></td><td valign="middle" style="color: unset;"><input type="button" value="Apply" id="apply"><input type="button" value="getTtc" id="getTtc"></td></tr>');
+    $('#field_cont table').append('<tr><td valign="middle" style="color: unset;" colspan="2"><textarea id="dataTtc" name="dataTtc" rows="2" cols="40"></textarea></td><td valign="middle" style="color: unset;"><input type="button" value="Apply" id="apply"><input type="button" value="getTtc" id="getTtc"></td></tr>');
 
-        $("#getTtc").click(function() {
-            data="action=submit&players_ids="+players[0]+"&positions="+players[1]+"&players_x="+players[2]+"&players_y="+players[3]+"&substitutes="+substitutes[0]+"&actions="+actionsb;
-            data+="&options="+$("#agression_id").val()+"*"+$("#mentality_id option:selected").val()+"*"+$("#attack_wing_id option:selected").val();
-            data+="*"+$("#passing_id option:selected").val()+"*"+$("#capitan_sel option:selected").val()+"*"+$("#playmaker_sel option:selected").val();
-            data+="*"+$("#target_man_sel option:selected").val()+"*"+$("#penalty_sel option:selected").val();
-            if($("#counter_attacks_id").prop('checked'))
-                data+="*1";
-            else
-                data+="*0";
-            if($("#offside_trap_id").prop('checked'))
-                data+="*1";
-            else
-                data+="*0";
+    $("#getTtc").click(function() {
+        data="action=submit&players_ids="+players[0]+"&positions="+players[1]+"&players_x="+players[2]+"&players_y="+players[3]+"&substitutes="+substitutes[0]+"&actions="+actionsb;
+        data+="&options="+$("#agression_id").val()+"*"+$("#mentality_id option:selected").val()+"*"+$("#attack_wing_id option:selected").val();
+        data+="*"+$("#passing_id option:selected").val()+"*"+$("#capitan_sel option:selected").val()+"*"+$("#playmaker_sel option:selected").val();
+        data+="*"+$("#target_man_sel option:selected").val()+"*"+$("#penalty_sel option:selected").val();
+        if($("#counter_attacks_id").prop('checked'))
+            data+="*1";
+        else
+            data+="*0";
+        if($("#offside_trap_id").prop('checked'))
+            data+="*1";
+        else
+            data+="*0";
 
-            $("#dataTtc").val(data);
+        $("#dataTtc").val(data);
+    });
+
+    $("#apply").click(function() {
+        var xmlhttp;
+        if (window.XMLHttpRequest)
+            xmlhttp=new XMLHttpRequest();
+        else
+            xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+        let url = '';
+        if (page.match('/tactics/none/')) {
+            url = SERVER_URL + "/ajaxphp/tactics_save.php";
+        } else if (page.match('/tactics_youth/none/')) {
+            url = SERVER_URL + "/ajaxphp/tactics_youth_save.php";
+        } else if (page.match('/tactics_nt/none/')) {
+            url = SERVER_URL + "/ajaxphp/tactics_nt_save.php";
+        }
+        xmlhttp.open("POST", url,true);
+        xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+        xmlhttp.send($("#dataTtc").val());
+        location.reload();
+    });
+}
+
+function bidButton() {
+    if ($('input[name="riseoffer"]').length == 1) {
+        $('form[name="bidForm"]').addClass( "bidForm" );
+        $( ".bidForm input:last" ).addClass( "bidButton" );
+
+        let value = parseInt($('.bidForm input').val()) - 1000;
+        let val1 = new Intl.NumberFormat('en-DE').format(value + 100000);
+        let val2 = new Intl.NumberFormat('en-DE').format(value + 1000000);
+        if (value < 2000000) {
+            val2 = new Intl.NumberFormat('en-DE').format(parseInt(value + (value / 2)));
+        }
+
+        const translation = {
+            bid: {
+                en: "Bid",
+                br: "Oferta"
+            },
+        }
+        let language = getLanguage();
+        if (language!="en" && language!="br") language = "en";
+        $(`<input id="bid1" type="button" value="${translation.bid[language]} ${val1}"><input id="bid2" type="button" value="${translation.bid[language]} ${val2}"> "`).insertAfter( ".bidButton" );
+        $("#bid1").click(function() {
+            $('.bidForm input').val(val1);
+            document.bidForm.submit();
         });
-
-        $("#apply").click(function() {
-            var xmlhttp;
-            if (window.XMLHttpRequest)
-                xmlhttp=new XMLHttpRequest();
-            else
-                xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-            let url = '';
-            if (page.match('/tactics/none/')) {
-                url = SERVER_URL + "/ajaxphp/tactics_save.php";
-            } else if (page.match('/tactics_youth/none/')) {
-                url = SERVER_URL + "/ajaxphp/tactics_youth_save.php";
-            } else if (page.match('/tactics_nt/none/')) {
-                url = SERVER_URL + "/ajaxphp/tactics_nt_save.php";
-            }
-            xmlhttp.open("POST", url,true);
-            xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-            xmlhttp.send($("#dataTtc").val());
-            location.reload();
+        $("#bid2").click(function() {
+            $('.bidForm input').val(val2);
+            document.bidForm.submit();
         });
     }
 }
 
-function bidButton() {
-    if (BID_BUTTON) {
-        if ($('input[name="riseoffer"]').length == 1) {
-            $('form[name="bidForm"]').addClass( "bidForm" );
-            $( ".bidForm input:last" ).addClass( "bidButton" );
+function configMenu() {
+    let secondaryClock = JSON.parse(localStorage.getItem("SECONDARY_CLOCK") === null ? '"checked"' : localStorage.getItem("SECONDARY_CLOCK"));
+    let dropdownMenu = JSON.parse(localStorage.getItem("DROPDDOWN_MENU") === null ? '"checked"' : localStorage.getItem("DROPDDOWN_MENU"));
+    let pageTitle = JSON.parse(localStorage.getItem("PAGE_TITLE") === null ? '"checked"' : localStorage.getItem("PAGE_TITLE"));
+    let readResume = JSON.parse(localStorage.getItem("READ_RESUME") === null ? '"checked"' : localStorage.getItem("READ_RESUME"));
+    let playerOPS = JSON.parse(localStorage.getItem("PLAYER_OPS") === null ? '"checked"' : localStorage.getItem("PLAYER_OPS"));
+    let playerExp = JSON.parse(localStorage.getItem("PLAYER_EXP") === null ? '"checked"' : localStorage.getItem("PLAYER_EXP"));
+    let squadDetails = JSON.parse(localStorage.getItem("SQUAD_DETAILS") === null ? '"checked"' : localStorage.getItem("SQUAD_DETAILS"));
+    let squadHigh = JSON.parse(localStorage.getItem("SQUAD_HIGH") === null ? '"checked"' : localStorage.getItem("SQUAD_HIGH"));
+    let loadTactics = JSON.parse(localStorage.getItem("LOAD_TACTICS") === null ? '"checked"' : localStorage.getItem("LOAD_TACTICS"));
+    let tacticsDetails = JSON.parse(localStorage.getItem("TACTICS_DETAILS") === null ? '"checked"' : localStorage.getItem("TACTICS_DETAILS"));
+    let coachesWage = JSON.parse(localStorage.getItem("COACHES_WAGE") === null ? '"checked"' : localStorage.getItem("COACHES_WAGE"));
+    let scoutButton = JSON.parse(localStorage.getItem("SCOUT_BUTTON") === null ? '"checked"' : localStorage.getItem("SCOUT_BUTTON"));
+    let spreadsheetSquad = JSON.parse(localStorage.getItem("SPREADSHEET_SQUAD") === null ? '"checked"' : localStorage.getItem("SPREADSHEET_SQUAD"));
+    let bidButton = JSON.parse(localStorage.getItem("BID_BUTTON") === null ? '"checked"' : localStorage.getItem("BID_BUTTON"));
 
-            let value = parseInt($('.bidForm input').val()) - 1000;
-            let val1 = new Intl.NumberFormat('en-DE').format(value + 100000);
-            let val2 = new Intl.NumberFormat('en-DE').format(value + 1000000);
-            if (value < 2000000) {
-                val2 = new Intl.NumberFormat('en-DE').format(value + (value / 2));
-            }
-
-            const translation = {
-                bid: {
-                    en: "Bid",
-                    br: "Oferta"
-                },
-            }
-            let language = getLanguage();
-            if (language!="en" && language!="br") language = "en";
-            $(`<input id="bid1" type="button" value="${translation.bid[language]} ${val1}"><input id="bid2" type="button" value="${translation.bid[language]} ${val2}"> "`).insertAfter( ".bidButton" );
-            $("#bid1").click(function() {
-                $('.bidForm input').val(val1);
-                document.bidForm.submit();
-            });
-            $("#bid2").click(function() {
-                $('.bidForm input').val(val2);
-                document.bidForm.submit();
-            });
-        }
-    }
+    $(`<div class="gui_object" style="width: 468px; margin-left: 8px;">
+    <div class="window1_wrapper" style="margin-top: 4px; width: 468px;">
+        <div class="window1_header_start"></div>
+        <div class="window1_header" style="width: 460px;">
+            <div class="window1_header_text">&nbsp;DO Genie Assistant Configs</div>
+        </div>
+        <div class="window1_header_end"></div>
+    </div>
+    <div class="window1_wrapper" style="margin-top: 0px; width: 468px;">
+        <div class="window1_content" style="width: 466px; height: 252px;">
+            <form name="configForm" action="#" method="post" class="configForm">
+               <table width="99%" border="0" cellspacing="1" cellpadding="1" class="matches_tbl" style="margin-bottom: 0px; margin-left: 3px; margin-top: 2px;">
+                   <tbody>
+                       <tr class="table_top_row">
+                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
+                               Secondary Clock: <input type="checkbox" name="SECONDARY_CLOCK" ${secondaryClock}>
+                               Dropdown Menu: <input type="checkbox" name="DROPDDOWN_MENU" ${dropdownMenu}>
+                           </td>
+                       </tr>
+                       <tr class="table_top_row">
+                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
+                               Page Title: <input type="checkbox" name="PAGE_TITLE" ${pageTitle}>
+                               Read Resume: <input type="checkbox" name="READ_RESUME" ${readResume}>
+                           </td>
+                       </tr>
+                       <tr class="table_top_row">
+                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
+                               Player OPS: <input type="checkbox" name="PLAYER_OPS" ${playerOPS}>
+                               Player EXP: <input type="checkbox" name="PLAYER_EXP" ${playerExp}>
+                           </td>
+                       </tr>
+                       <tr class="table_top_row">
+                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
+                               Squad Details: <input type="checkbox" name="SQUAD_DETAILS" ${squadDetails}>
+                               Squad High: <input type="checkbox" name="SQUAD_HIGH" ${squadHigh}>
+                           </td>
+                       </tr>
+                       <tr class="table_top_row">
+                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
+                               Load Tactics: <input type="checkbox" name="LOAD_TACTICS" ${loadTactics}>
+                               Tatics Details: <input type="checkbox" name="TACTICS_DETAILS" ${tacticsDetails}>
+                           </td>
+                       </tr>
+                       <tr class="table_top_row">
+                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
+                               Coaches Wage: <input type="checkbox" name="COACHES_WAGE" ${coachesWage}>
+                               Scout Button: <input type="checkbox" name="SCOUT_BUTTON" ${scoutButton}>
+                           </td>
+                       </tr>
+                       <tr class="table_top_row">
+                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
+                               Sreadsheet Squad: <input type="checkbox" name="SPREADSHEET_SQUAD" ${spreadsheetSquad}>
+                               Bid Button: <input type="checkbox" name="BID_BUTTON" ${bidButton}>
+                           </td>
+                       </tr>
+                    </tbody>
+                </table>
+                <input id="saveConfig" type="submit" style="width: 140px;margin-top: 20px;" value="Save">
+            </form>
+        </div>
+    </div>
+    <div class="window1_wrapper" style="margin-top: 0px; width: 468px;">
+        <div class="window1_bottom_start"></div>
+        <div class="window1_bottom" style="width: 460px;"></div>
+        <div class="window1_bottom_end"></div>
+    </div>
+</div>`).insertAfter( "#footer" );
+    $("#saveConfig").click(function() {
+        localStorage.setItem("SECONDARY_CLOCK", JSON.stringify($('input[name="SECONDARY_CLOCK"]').is(":checked") ? "checked" : ""));
+        localStorage.setItem("DROPDDOWN_MENU", JSON.stringify($('input[name="DROPDDOWN_MENU"]').is(":checked") ? "checked" : ""));
+        localStorage.setItem("PAGE_TITLE", JSON.stringify($('input[name="PAGE_TITLE"]').is(":checked") ? "checked" : ""));
+        localStorage.setItem("READ_RESUME", JSON.stringify($('input[name="READ_RESUME"]').is(":checked") ? "checked" : ""));
+        localStorage.setItem("PLAYER_OPS", JSON.stringify($('input[name="PLAYER_OPS"]').is(":checked") ? "checked" : ""));
+        localStorage.setItem("PLAYER_EXP", JSON.stringify($('input[name="PLAYER_EXP"]').is(":checked") ? "checked" : ""));
+        localStorage.setItem("SQUAD_DETAILS", JSON.stringify($('input[name="SQUAD_DETAILS"]').is(":checked") ? "checked" : ""));
+        localStorage.setItem("SQUAD_HIGH", JSON.stringify($('input[name="SQUAD_HIGH"]').is(":checked") ? "checked" : ""));
+        localStorage.setItem("LOAD_TACTICS", JSON.stringify($('input[name="LOAD_TACTICS"]').is(":checked") ? "checked" : ""));
+        localStorage.setItem("TACTICS_DETAILS", JSON.stringify($('input[name="TACTICS_DETAILS"]').is(":checked") ? "checked" : ""));
+        localStorage.setItem("COACHES_WAGE", JSON.stringify($('input[name="COACHES_WAGE"]').is(":checked") ? "checked" : ""));
+        localStorage.setItem("SCOUT_BUTTON", JSON.stringify($('input[name="SCOUT_BUTTON"]').is(":checked") ? "checked" : ""));
+        localStorage.setItem("SPREADSHEET_SQUAD", JSON.stringify($('input[name="SPREADSHEET_SQUAD"]').is(":checked") ? "checked" : ""));
+        localStorage.setItem("BID_BUTTON", JSON.stringify($('input[name="BID_BUTTON"]').is(":checked") ? "checked" : ""));
+    });
 }
