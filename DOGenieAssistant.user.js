@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      21.1
+// @version      21.2
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -239,7 +239,7 @@ function doTable(selector) {
     $(selector + " tbody:first").before('<thead></thead>');
     $(selector + " thead:first").append(header);
 
-    if (SQUAD_HIGH) {
+    if (JSON.parse(localStorage.getItem("SQUAD_DETAILS")) !== "") {
         $(selector).dataTable({
             "searching": false,
             "bPaginate": false,
