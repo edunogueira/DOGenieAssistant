@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      21.2
+// @version      21.3
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -417,6 +417,7 @@ function tacticsDetails() {
         if (subdecoration == true) {
             $(this).parent().parent().css('font-weight', 'bold');
             $(this).parent().parent().css('color', 'blue');
+            $(this).css('color', 'blue');
         }
 
         $("#" + playerId + " table tr").each(function() {
