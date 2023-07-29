@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      21.0
+// @version      21.1
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -15,47 +15,47 @@ var page = document.URL;
 
 if (page.match('/players/details/')) {
     playerDetails();
-    if (JSON.parse(localStorage.getItem("BID_BUTTON"))) {
+    if (JSON.parse(localStorage.getItem("BID_BUTTON")) !== "") {
         bidButton();
     }
 } else if (page.match('/players/none/') || page.match('/players_nt/none/')) {
-    if (JSON.parse(localStorage.getItem("SQUAD_DETAILS"))) {
+    if (JSON.parse(localStorage.getItem("SQUAD_DETAILS")) !== "") {
         squadDetails();
     }
 } else if (page.match('/tactics/none/') || page.match('/tactics_youth/none/') || page.match('/tactics_nt/none/')) {
-    if (JSON.parse(localStorage.getItem("TACTICS_DETAILS"))) {
+    if (JSON.parse(localStorage.getItem("TACTICS_DETAILS")) !== "") {
         tacticsDetails();
     }
-    if (JSON.parse(localStorage.getItem("LOAD_TACTICS"))) {
+    if (JSON.parse(localStorage.getItem("LOAD_TACTICS")) !== "") {
         loadTactics();
     }
 } else if (page.match('/search_coaches/none/')) {
-    if (JSON.parse(localStorage.getItem("COACHES_WAGE"))) {
+    if (JSON.parse(localStorage.getItem("COACHES_WAGE")) !== "") {
         coachesWage();
     }
 } else if (page.match('/clubinfo/none/clubid/')) {
-    if (JSON.parse(localStorage.getItem("READ_RESUME"))) {
+    if (JSON.parse(localStorage.getItem("READ_RESUME")) !== "") {
         readResume();
     }
 } else if (page.match('/clubinfo/none/')) {
-    if (JSON.parse(localStorage.getItem("SCOUT_BUTTON"))) {
+    if (JSON.parse(localStorage.getItem("SCOUT_BUTTON")) !== "") {
         scoutButton();
     }
 } else if (page.match('/players/spreadsheet/')) {
-    if (JSON.parse(localStorage.getItem("SPREADSHEET_SQUAD"))) {
+    if (JSON.parse(localStorage.getItem("SPREADSHEET_SQUAD")) !== "") {
         doTable('.forumline');
     }
 } else if (page.match('/home/none/')) {
     configMenu();
 }
 
-if (JSON.parse(localStorage.getItem("PAGE_TITLE"))) {
+if (JSON.parse(localStorage.getItem("PAGE_TITLE")) !== "") {
     pageTitle();
 }
-if (JSON.parse(localStorage.getItem("DROPDDOWN_MENU"))) {
+if (JSON.parse(localStorage.getItem("DROPDDOWN_MENU")) !== "") {
     dropdownMenu();
 }
-if (JSON.parse(localStorage.getItem("SECONDARY_CLOCK"))) {
+if (JSON.parse(localStorage.getItem("SECONDARY_CLOCK")) !== "") {
     secondaryClock();
 }
 
@@ -268,7 +268,7 @@ function doTable(selector) {
 
 //features //----------------------------------------------//
 function playerDetails() {
-    if (JSON.parse(localStorage.getItem("PLAYER_OPS"))) {
+    if (JSON.parse(localStorage.getItem("PLAYER_OPS")) !== "") {
         var data = Array();
 
         $("#main-1 table tr").each(function(i, v) {
@@ -294,7 +294,7 @@ function playerDetails() {
             $('.player_name').append(' @ OPS ' + ops[natPos]);
         }
     }
-    if (JSON.parse(localStorage.getItem("PLAYER_EXP"))) {
+    if (JSON.parse(localStorage.getItem("PLAYER_EXP")) !== "") {
         var exp = getExp((new XMLSerializer()).serializeToString(document));
         $('.player_name').append(' | ' + exp + ' XP');
     }
@@ -304,7 +304,7 @@ function playerDetails() {
 function squadDetails() {
     $(".forumline .table_top_row").each(function() {
         $(this).last().append('<td align="center" width="20" title="Original Position Skills" class="tableHeader">OPS</td>');
-        if (JSON.parse(localStorage.getItem("SQUAD_HIGH"))) {
+        if (JSON.parse(localStorage.getItem("SQUAD_HIGH")) !== "") {
             $(this).last().append('<td align="center" width="20" title="Best Original Position Skills" class="tableHeader">HIGH</td>');
         }
     });
@@ -351,7 +351,7 @@ function squadDetails() {
                 natPos = 9;
             }
             $(this).last().append('<td align="center"><span class="tableText">' + ops[natPos] + '</span></td>');
-            if (JSON.parse(localStorage.getItem("SQUAD_HIGH"))) {
+            if (JSON.parse(localStorage.getItem("SQUAD_HIGH")) !== "") {
                 if (ops[ops['pos']] > ops[natPos]) {
                     $(this).last().append('<td align="center"><span class="tableText"><strong>' + ops[ops['pos']] + '</strong></span></td>');
                 } else {
@@ -360,7 +360,7 @@ function squadDetails() {
             }
         } else if (count > 1) {
             $(this).last().append('<td align="center"><span class="tableText">0</span></td>');
-            if (JSON.parse(localStorage.getItem("SQUAD_HIGH"))) {
+            if (JSON.parse(localStorage.getItem("SQUAD_HIGH")) !== "") {
                 $(this).last().append('<td align="center"><span class="tableText">0</span></td>');
             }
         }
