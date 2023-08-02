@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      21.3
+// @version      22.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -12,6 +12,16 @@
 // ==/UserScript==
 //page select ----------------------------------------------//
 var page = document.URL;
+
+if (JSON.parse(localStorage.getItem("PAGE_TITLE")) !== "") {
+    pageTitle();
+}
+if (JSON.parse(localStorage.getItem("DROPDDOWN_MENU")) !== "") {
+    dropdownMenu();
+}
+if (JSON.parse(localStorage.getItem("SECONDARY_CLOCK")) !== "") {
+    secondaryClock();
+}
 
 if (page.match('/players/details/')) {
     playerDetails();
@@ -47,16 +57,9 @@ if (page.match('/players/details/')) {
     }
 } else if (page.match('/home/none/')) {
     configMenu();
-}
-
-if (JSON.parse(localStorage.getItem("PAGE_TITLE")) !== "") {
-    pageTitle();
-}
-if (JSON.parse(localStorage.getItem("DROPDDOWN_MENU")) !== "") {
-    dropdownMenu();
-}
-if (JSON.parse(localStorage.getItem("SECONDARY_CLOCK")) !== "") {
-    secondaryClock();
+    if (JSON.parse(localStorage.getItem("TEAM_LINK")) !== "") {
+        teamLink();
+    }
 }
 
 //helper //----------------------------------------------//
@@ -837,6 +840,22 @@ function bidButton() {
     }
 }
 
+function teamLink() {
+    let homeLink = $(`.generic_badge:first`).attr('onclick');
+    homeLink = homeLink.substring(24);
+    homeLink = homeLink.substring(0,homeLink.length -1);
+    $(`.generic_badge:first`).before(`<a class="home_badge" style='cursor: pointer; float: left; position: relative; margin-left: 2px; margin-top: 5px; width: 120px; height: 120px;' href=${homeLink}>${ $(`.generic_badge:first`).html()}</a>`);
+    $(`.generic_badge:first`).remove();
+    $(`.home_badge`).addClass('generic_badge');
+
+    let awayLink = $(`.generic_badge:last`).attr('onclick');
+    awayLink = awayLink.substring(24);
+    awayLink = awayLink.substring(0,awayLink.length -1);
+    $(`.generic_badge:last`).before(`<a class="away_badge" style='cursor: pointer; float: left; position: relative; margin-left: 2px; margin-top: 5px; width: 120px; height: 120px;' href=${awayLink}>${ $(`.generic_badge:last`).html()}</a>`);
+    $(`.generic_badge:last`).remove();
+    $(`.away_badge`).addClass('generic_badge');
+}
+
 function configMenu() {
     let secondaryClock = JSON.parse(localStorage.getItem("SECONDARY_CLOCK") === null ? '"checked"' : localStorage.getItem("SECONDARY_CLOCK"));
     let dropdownMenu = JSON.parse(localStorage.getItem("DROPDDOWN_MENU") === null ? '"checked"' : localStorage.getItem("DROPDDOWN_MENU"));
@@ -852,6 +871,7 @@ function configMenu() {
     let scoutButton = JSON.parse(localStorage.getItem("SCOUT_BUTTON") === null ? '"checked"' : localStorage.getItem("SCOUT_BUTTON"));
     let spreadsheetSquad = JSON.parse(localStorage.getItem("SPREADSHEET_SQUAD") === null ? '"checked"' : localStorage.getItem("SPREADSHEET_SQUAD"));
     let bidButton = JSON.parse(localStorage.getItem("BID_BUTTON") === null ? '"checked"' : localStorage.getItem("BID_BUTTON"));
+    let teamLink = JSON.parse(localStorage.getItem("TEAM_LINK") === null ? '"checked"' : localStorage.getItem("TEAM_LINK"));
 
     $(`<div class="gui_object" style="width: 468px; margin-left: 8px;">
     <div class="window1_wrapper" style="margin-top: 4px; width: 468px;">
@@ -870,6 +890,7 @@ function configMenu() {
                            <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
                                Secondary Clock: <input type="checkbox" name="SECONDARY_CLOCK" ${secondaryClock}>
                                Dropdown Menu: <input type="checkbox" name="DROPDDOWN_MENU" ${dropdownMenu}>
+                               Team Link: <input type="checkbox" name="TEAM_LINK" ${teamLink}>
                            </td>
                        </tr>
                        <tr class="table_top_row">
@@ -935,5 +956,6 @@ function configMenu() {
         localStorage.setItem("SCOUT_BUTTON", JSON.stringify($('input[name="SCOUT_BUTTON"]').is(":checked") ? "checked" : ""));
         localStorage.setItem("SPREADSHEET_SQUAD", JSON.stringify($('input[name="SPREADSHEET_SQUAD"]').is(":checked") ? "checked" : ""));
         localStorage.setItem("BID_BUTTON", JSON.stringify($('input[name="BID_BUTTON"]').is(":checked") ? "checked" : ""));
+        localStorage.setItem("TEAM_LINK", JSON.stringify($('input[name="TEAM_LINK"]').is(":checked") ? "checked" : ""));
     });
 }
