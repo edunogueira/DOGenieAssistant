@@ -45,7 +45,7 @@
   <img src="scout_report.jpg">
 
   #### Botão para coletar os patrocinios
-  <img src="get_sponsor.JPG">
+  <img src="get_sponsors.JPG">
 
   #### Menu para ativar/desativar funcionalidades
   <img src="config_menu.png">
