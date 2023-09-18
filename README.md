@@ -44,6 +44,9 @@
   #### Botão de relatório espião no proprio time
   <img src="scout_report.jpg">
 
+  #### Botão para coletar os patrocinios
+  <img src="get_sponsor.JPG">
+
   #### Menu para ativar/desativar funcionalidades
   <img src="config_menu.png">
 
