@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      22.0
+// @version      23.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -59,6 +59,9 @@ if (page.match('/players/details/')) {
     configMenu();
     if (JSON.parse(localStorage.getItem("TEAM_LINK")) !== "") {
         teamLink();
+    }
+    if (JSON.parse(localStorage.getItem("GET_SPONSORS")) !== "") {
+        getSponsors();
     }
 }
 
@@ -856,6 +859,39 @@ function teamLink() {
     $(`.away_badge`).addClass('generic_badge');
 }
 
+function getSponsors() {
+    $(`#getSponsors`).css('visibility', 'visible');
+    $("#getSponsors").click(function(e) {
+        $.get( "https://www.dugout-online.com/sponsors/none/daily/1/slot/1/dailyID/1001", function( data ) {
+            $( ".result" ).html( data );
+        });
+        $.get( "https://www.dugout-online.com/sponsors/none/daily/1/slot/2/dailyID/1001", function( data ) {
+            $( ".result" ).html( data );
+        });
+        $.get( "https://www.dugout-online.com/sponsors/none/daily/1/slot/3/dailyID/1001", function( data ) {
+            $( ".result" ).html( data );
+        });
+        $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/1/dailyID/1002", function( data ) {
+            $( ".result" ).html( data );
+        });
+        $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/2/dailyID/1002", function( data ) {
+            $( ".result" ).html( data );
+        });
+        $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/3/dailyID/1002", function( data ) {
+            $( ".result" ).html( data );
+        });
+        $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/4/dailyID/1002", function( data ) {
+            $( ".result" ).html( data );
+        });
+        $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/5/dailyID/1002", function( data ) {
+            $( ".result" ).html( data );
+        });
+        $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/6/dailyID/1001", function( data ) {
+            $( ".result" ).html( data );
+        });
+        e.preventDefault();
+    });
+}
 function configMenu() {
     let secondaryClock = JSON.parse(localStorage.getItem("SECONDARY_CLOCK") === null ? '"checked"' : localStorage.getItem("SECONDARY_CLOCK"));
     let dropdownMenu = JSON.parse(localStorage.getItem("DROPDDOWN_MENU") === null ? '"checked"' : localStorage.getItem("DROPDDOWN_MENU"));
@@ -872,6 +908,7 @@ function configMenu() {
     let spreadsheetSquad = JSON.parse(localStorage.getItem("SPREADSHEET_SQUAD") === null ? '"checked"' : localStorage.getItem("SPREADSHEET_SQUAD"));
     let bidButton = JSON.parse(localStorage.getItem("BID_BUTTON") === null ? '"checked"' : localStorage.getItem("BID_BUTTON"));
     let teamLink = JSON.parse(localStorage.getItem("TEAM_LINK") === null ? '"checked"' : localStorage.getItem("TEAM_LINK"));
+    let getSponsors = JSON.parse(localStorage.getItem("GET_SPONSORS") === null ? '"checked"' : localStorage.getItem("GET_SPONSORS"));
 
     $(`<div class="gui_object" style="width: 468px; margin-left: 8px;">
     <div class="window1_wrapper" style="margin-top: 4px; width: 468px;">
@@ -897,6 +934,7 @@ function configMenu() {
                            <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
                                Page Title: <input type="checkbox" name="PAGE_TITLE" ${pageTitle}>
                                Read Resume: <input type="checkbox" name="READ_RESUME" ${readResume}>
+                               Get Sponsors: <input type="checkbox" name="GET_SPONSORS" ${getSponsors}>
                            </td>
                        </tr>
                        <tr class="table_top_row">
@@ -932,6 +970,7 @@ function configMenu() {
                     </tbody>
                 </table>
                 <input id="saveConfig" type="submit" style="width: 140px;margin-top: 20px;" value="Save">
+                <input id="getSponsors" type="submit" style="width: 140px;margin-top: 20px;visibility: hidden;" value="Get Sponsors">
             </form>
         </div>
     </div>
@@ -957,5 +996,6 @@ function configMenu() {
         localStorage.setItem("SPREADSHEET_SQUAD", JSON.stringify($('input[name="SPREADSHEET_SQUAD"]').is(":checked") ? "checked" : ""));
         localStorage.setItem("BID_BUTTON", JSON.stringify($('input[name="BID_BUTTON"]').is(":checked") ? "checked" : ""));
         localStorage.setItem("TEAM_LINK", JSON.stringify($('input[name="TEAM_LINK"]').is(":checked") ? "checked" : ""));
+        localStorage.setItem("GET_SPONSORS", JSON.stringify($('input[name="GET_SPONSORS"]').is(":checked") ? "checked" : ""));
     });
 }
