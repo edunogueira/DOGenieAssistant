@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      23.0
+// @version      23.1
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -24,6 +24,7 @@ if (JSON.parse(localStorage.getItem("SECONDARY_CLOCK")) !== "") {
 }
 
 if (page.match('/players/details/')) {
+    $(`<input id="show_training" type="button" value="Show Training" onclick="show_training()"> "`).insertBefore( ".player_header" );
     playerDetails();
     if (JSON.parse(localStorage.getItem("BID_BUTTON")) !== "") {
         bidButton();
@@ -274,37 +275,43 @@ function doTable(selector) {
 
 //features //----------------------------------------------//
 function playerDetails() {
-    if (JSON.parse(localStorage.getItem("PLAYER_OPS")) !== "") {
-        var data = Array();
+    let attrText = '';
+    var data = Array();
 
-        $("#main-1 table tr").each(function(i, v) {
-            $(this).children('td').each(function(ii, vv) {
-                if ($.isNumeric($(this).text())) {
-                    data.push(parseInt($(this).text()));
-                }
-            });
-        });
-        var ops = getOPS(data);
-        var position = getPos();
-        var natPos = 0;
-
-        for (var i = 0; i < position.length; ++i) {
-            if (position[i] == 1) {
-                natPos = i;
+    $("#main-1 table tr").each(function(i, v) {
+        $(this).children('td').each(function(ii, vv) {
+            if ($.isNumeric($(this).text())) {
+                data.push(parseInt($(this).text()));
             }
-        }
+        });
+    });
+    var ops = getOPS(data);
+    var position = getPos();
+    var natPos = 0;
 
-        if ((ops['pos'] != natPos)) {
-            $('.player_name').append(' @ OPS ' + ops[natPos] + '/' + ops[ops['pos']] + '*');
-        } else {
-            $('.player_name').append(' @ OPS ' + ops[natPos]);
+    for (var i = 0; i < position.length; ++i) {
+        if (position[i] == 1) {
+            natPos = i;
         }
+    }
+    if ((ops['pos'] != natPos)) {
+        attrText = ' @ OPS ' + ops[natPos] + '/' + ops[ops['pos']] + '*';
+    } else {
+        attrText = ' @ OPS ' + ops[natPos];
     }
     if (JSON.parse(localStorage.getItem("PLAYER_EXP")) !== "") {
         var exp = getExp((new XMLSerializer()).serializeToString(document));
-        $('.player_name').append(' | ' + exp + ' XP');
+        attrText = attrText + ' | ' + exp + ' XP';
     }
-    $(document).prop('title', $('.player_name').text());
+    if (JSON.parse(localStorage.getItem("PLAYER_OPS_ID")) !== "") {
+        $('.player_id_txt').text($('.player_id_txt').text() + attrText);
+    }
+    if (JSON.parse(localStorage.getItem("PLAYER_OPS_NAME")) !== "") {
+        $('.player_name').text($('.player_name').text() + attrText);
+    }
+    if (JSON.parse(localStorage.getItem("PAGE_TITLE")) !== "") {
+        $(document).prop('title', $('.player_name').text() + attrText);
+    }
 }
 
 function squadDetails() {
@@ -897,7 +904,8 @@ function configMenu() {
     let dropdownMenu = JSON.parse(localStorage.getItem("DROPDDOWN_MENU") === null ? '"checked"' : localStorage.getItem("DROPDDOWN_MENU"));
     let pageTitle = JSON.parse(localStorage.getItem("PAGE_TITLE") === null ? '"checked"' : localStorage.getItem("PAGE_TITLE"));
     let readResume = JSON.parse(localStorage.getItem("READ_RESUME") === null ? '"checked"' : localStorage.getItem("READ_RESUME"));
-    let playerOPS = JSON.parse(localStorage.getItem("PLAYER_OPS") === null ? '"checked"' : localStorage.getItem("PLAYER_OPS"));
+    let playerOPSName = JSON.parse(localStorage.getItem("PLAYER_OPS_NAME") === null ? '"checked"' : localStorage.getItem("PLAYER_OPS_NAME"));
+    let playerOPSId = JSON.parse(localStorage.getItem("PLAYER_OPS_ID") === null ? '"checked"' : localStorage.getItem("PLAYER_OPS_ID"));
     let playerExp = JSON.parse(localStorage.getItem("PLAYER_EXP") === null ? '"checked"' : localStorage.getItem("PLAYER_EXP"));
     let squadDetails = JSON.parse(localStorage.getItem("SQUAD_DETAILS") === null ? '"checked"' : localStorage.getItem("SQUAD_DETAILS"));
     let squadHigh = JSON.parse(localStorage.getItem("SQUAD_HIGH") === null ? '"checked"' : localStorage.getItem("SQUAD_HIGH"));
@@ -939,7 +947,8 @@ function configMenu() {
                        </tr>
                        <tr class="table_top_row">
                            <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
-                               Player OPS: <input type="checkbox" name="PLAYER_OPS" ${playerOPS}>
+                               Player OPS on Name: <input type="checkbox" name="PLAYER_OPS_NAME" ${playerOPSName}>
+                               Player OPS on Id: <input type="checkbox" name="PLAYER_OPS_ID" ${playerOPSId}>
                                Player EXP: <input type="checkbox" name="PLAYER_EXP" ${playerExp}>
                            </td>
                        </tr>
@@ -985,7 +994,8 @@ function configMenu() {
         localStorage.setItem("DROPDDOWN_MENU", JSON.stringify($('input[name="DROPDDOWN_MENU"]').is(":checked") ? "checked" : ""));
         localStorage.setItem("PAGE_TITLE", JSON.stringify($('input[name="PAGE_TITLE"]').is(":checked") ? "checked" : ""));
         localStorage.setItem("READ_RESUME", JSON.stringify($('input[name="READ_RESUME"]').is(":checked") ? "checked" : ""));
-        localStorage.setItem("PLAYER_OPS", JSON.stringify($('input[name="PLAYER_OPS"]').is(":checked") ? "checked" : ""));
+        localStorage.setItem("PLAYER_OPS_NAME", JSON.stringify($('input[name="PLAYER_OPS_NAME"]').is(":checked") ? "checked" : ""));
+        localStorage.setItem("PLAYER_OPS_ID", JSON.stringify($('input[name="PLAYER_OPS_ID"]').is(":checked") ? "checked" : ""));
         localStorage.setItem("PLAYER_EXP", JSON.stringify($('input[name="PLAYER_EXP"]').is(":checked") ? "checked" : ""));
         localStorage.setItem("SQUAD_DETAILS", JSON.stringify($('input[name="SQUAD_DETAILS"]').is(":checked") ? "checked" : ""));
         localStorage.setItem("SQUAD_HIGH", JSON.stringify($('input[name="SQUAD_HIGH"]').is(":checked") ? "checked" : ""));
