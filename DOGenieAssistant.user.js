@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      23.1
+// @version      23.2
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -24,7 +24,6 @@ if (JSON.parse(localStorage.getItem("SECONDARY_CLOCK")) !== "") {
 }
 
 if (page.match('/players/details/')) {
-    $(`<input id="show_training" type="button" value="Show Training" onclick="show_training()"> "`).insertBefore( ".player_header" );
     playerDetails();
     if (JSON.parse(localStorage.getItem("BID_BUTTON")) !== "") {
         bidButton();
