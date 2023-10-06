@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      23.2
+// @version      23.3
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -245,31 +245,17 @@ function doTable(selector) {
     $(selector + " tbody:first").before('<thead></thead>');
     $(selector + " thead:first").append(header);
 
-    if (JSON.parse(localStorage.getItem("SQUAD_DETAILS")) !== "") {
-        $(selector).dataTable({
-            "searching": false,
-            "bPaginate": false,
-            "bLengthChange": false,
-            "bFilter": true,
-            "bInfo": false,
-            "bAutoWidth": false,
-            "order": [
-                [$(selector + ' .table_top_row th').size() - 2, "desc"]
-            ]
-        });
-    } else {
-        $(selector).dataTable({
-            "searching": false,
-            "bPaginate": false,
-            "bLengthChange": false,
-            "bFilter": true,
-            "bInfo": false,
-            "bAutoWidth": false,
-            "order": [
-                [$(selector + ' .table_top_row th').size() - 1, "desc"]
-            ]
-        });
-    }
+    $(selector).dataTable({
+        "searching": false,
+        "bPaginate": false,
+        "bLengthChange": false,
+        "bFilter": true,
+        "bInfo": false,
+        "bAutoWidth": false,
+        "order": [
+            [$(selector + ' .table_top_row th').size() - 1, "desc"]
+        ]
+    });
 }
 
 //features //----------------------------------------------//
@@ -307,6 +293,8 @@ function playerDetails() {
     }
     if (JSON.parse(localStorage.getItem("PLAYER_OPS_NAME")) !== "") {
         $('.player_name').text($('.player_name').text() + attrText);
+        $('.player_name').css('position', 'absolute');
+        $('.player_name').css('margin-left', '35px');
     }
     if (JSON.parse(localStorage.getItem("PAGE_TITLE")) !== "") {
         $(document).prop('title', $('.player_name').text() + attrText);
