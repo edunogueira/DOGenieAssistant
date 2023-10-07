@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      23.4
+// @version      23.5
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -286,18 +286,20 @@ function playerDetails() {
     }
     var exp = getExp((new XMLSerializer()).serializeToString(document));
     if (JSON.parse(localStorage.getItem("PLAYER_OPS_ID")) !== "") {
-        if (JSON.parse(localStorage.getItem("PLAYER_EXP")) !== "") {
-            attrText = attrText + ' | ' + exp + ' XP';
-        }
         $('.player_id_txt').text($('.player_id_txt').text() + attrText);
     }
     if (JSON.parse(localStorage.getItem("PLAYER_OPS_NAME")) !== "") {
-        if (JSON.parse(localStorage.getItem("PLAYER_EXP")) !== "") {
-            attrText = attrText + ' | ' + exp + ' XP';
-        }
         $('.player_name').text($('.player_name').text() + attrText);
         $('.player_id_txt').css('position', 'absolute');
         $('.player_id_txt').css('right', '30px');
+    }
+    if (JSON.parse(localStorage.getItem("PLAYER_EXP")) !== "") {
+        if (JSON.parse(localStorage.getItem("PLAYER_OPS_NAME")) !== "") {
+             $('.player_name').text($('.player_name').text() + ' | ' + exp + ' XP');
+        }
+        if (JSON.parse(localStorage.getItem("PLAYER_OPS_NAME")) !== "") {
+             $('.player_id_txt').text($('.player_id_txt').text() + ' | ' + exp + ' XP');
+        }
     }
     if (JSON.parse(localStorage.getItem("PAGE_TITLE")) !== "") {
         $(document).prop('title', $('.player_name').text() + attrText);
