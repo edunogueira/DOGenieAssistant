@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      23.5
+// @version      24.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -12,7 +12,6 @@
 // ==/UserScript==
 //page select ----------------------------------------------//
 var page = document.URL;
-
 if (JSON.parse(localStorage.getItem("PAGE_TITLE")) !== "") {
     pageTitle();
 }
@@ -62,6 +61,10 @@ if (page.match('/players/details/')) {
     }
     if (JSON.parse(localStorage.getItem("GET_SPONSORS")) !== "") {
         getSponsors();
+    }
+} else if (page.match('/game/none/gameid/')) {
+    if (JSON.parse(localStorage.getItem("GOAL_SOUND")) !== "") {
+        goalSound();
     }
 }
 
@@ -891,6 +894,24 @@ function getSponsors() {
         e.preventDefault();
     });
 }
+
+function goalSound() {
+    let trackID = localStorage.getItem("TRACK_ID")  === null ? 1579437467 : localStorage.getItem("TRACK_ID");
+    $(".submenu_container").html(`<input type="text" style="width: 120px; text-align: right;" id="trackID" value="${trackID}"><input id="saveTrackId" type="submit" value="Track ID">`);
+    $("#saveTrackId").click(function(e) {
+        localStorage.setItem("TRACK_ID", $("#trackID").val());
+        location.reload();
+    });
+
+     if ($("#events_content td:first").html().indexOf('icon-goal') > 1) {
+         let lastGoal = $("#events_content td:nth-child(2)").html();
+         if (localStorage.getItem("LAST_GOAL") == lastGoal) {
+             localStorage.setItem("LAST_GOAL", lastGoal);
+             $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${trackID}&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
+         }
+    }
+}
+
 function configMenu() {
     let secondaryClock = JSON.parse(localStorage.getItem("SECONDARY_CLOCK") === null ? '"checked"' : localStorage.getItem("SECONDARY_CLOCK"));
     let dropdownMenu = JSON.parse(localStorage.getItem("DROPDDOWN_MENU") === null ? '"checked"' : localStorage.getItem("DROPDDOWN_MENU"));
@@ -909,6 +930,7 @@ function configMenu() {
     let bidButton = JSON.parse(localStorage.getItem("BID_BUTTON") === null ? '"checked"' : localStorage.getItem("BID_BUTTON"));
     let teamLink = JSON.parse(localStorage.getItem("TEAM_LINK") === null ? '"checked"' : localStorage.getItem("TEAM_LINK"));
     let getSponsors = JSON.parse(localStorage.getItem("GET_SPONSORS") === null ? '"checked"' : localStorage.getItem("GET_SPONSORS"));
+    let goalSound = JSON.parse(localStorage.getItem("GOAL_SOUND") === null ? '"checked"' : localStorage.getItem("GOAL_SOUND"));
 
     $(`<div class="gui_object" style="width: 468px; margin-left: 8px;">
     <div class="window1_wrapper" style="margin-top: 4px; width: 468px;">
@@ -966,16 +988,13 @@ function configMenu() {
                            <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
                                Sreadsheet Squad: <input type="checkbox" name="SPREADSHEET_SQUAD" ${spreadsheetSquad}>
                                Bid Button: <input type="checkbox" name="BID_BUTTON" ${bidButton}>
+                               Goal Sound: <input type="checkbox" name="GOAL_SOUND" ${goalSound}>
                            </td>
                        </tr>
                     </tbody>
                 </table>
                 <input id="saveConfig" type="submit" style="width: 140px;margin-top: 20px;" value="Save">
                 <input id="getSponsors" type="submit" style="width: 140px;margin-top: 20px;visibility: hidden;" value="Get Sponsors">
-            </form>
-        </div>
-    </div>
-    <div class="window1_wrapper" style="margin-top: 0px; width: 468px;">
         <div class="window1_bottom_start"></div>
         <div class="window1_bottom" style="width: 460px;"></div>
         <div class="window1_bottom_end"></div>
@@ -999,5 +1018,8 @@ function configMenu() {
         localStorage.setItem("BID_BUTTON", JSON.stringify($('input[name="BID_BUTTON"]').is(":checked") ? "checked" : ""));
         localStorage.setItem("TEAM_LINK", JSON.stringify($('input[name="TEAM_LINK"]').is(":checked") ? "checked" : ""));
         localStorage.setItem("GET_SPONSORS", JSON.stringify($('input[name="GET_SPONSORS"]').is(":checked") ? "checked" : ""));
+        localStorage.setItem("GOAL_SOUND", JSON.stringify($('input[name="GOAL_SOUND"]').is(":checked") ? "checked" : ""));
     });
 }
+
+
