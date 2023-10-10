@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      24.0
+// @version      24.1
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -905,7 +905,7 @@ function goalSound() {
 
      if ($("#events_content td:first").html().indexOf('icon-goal') > 1) {
          let lastGoal = $("#events_content td:nth-child(2)").html();
-         if (localStorage.getItem("LAST_GOAL") == lastGoal) {
+         if (localStorage.getItem("LAST_GOAL") != lastGoal) {
              localStorage.setItem("LAST_GOAL", lastGoal);
              $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${trackID}&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
          }
@@ -1021,5 +1021,3 @@ function configMenu() {
         localStorage.setItem("GOAL_SOUND", JSON.stringify($('input[name="GOAL_SOUND"]').is(":checked") ? "checked" : ""));
     });
 }
-
-
