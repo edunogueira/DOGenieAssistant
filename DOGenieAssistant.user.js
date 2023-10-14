@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      24.1
+// @version      25.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -12,58 +12,64 @@
 // ==/UserScript==
 //page select ----------------------------------------------//
 var page = document.URL;
-if (JSON.parse(localStorage.getItem("PAGE_TITLE")) !== "") {
+var configs = {};
+configs = getStorage(localStorage.getItem("DOGenieAssistant.configs"));
+
+if (page.match('/home/none/')) {
+    configMenu();
+}
+if (configs["PAGE_TITLE"] !== "") {
     pageTitle();
 }
-if (JSON.parse(localStorage.getItem("DROPDDOWN_MENU")) !== "") {
+if (configs["DROPDDOWN_MENU"] !== "") {
     dropdownMenu();
 }
-if (JSON.parse(localStorage.getItem("SECONDARY_CLOCK")) !== "") {
+if (configs["SECONDARY_CLOCK"] !== "") {
     secondaryClock();
 }
 
-if (page.match('/players/details/')) {
-    playerDetails();
-    if (JSON.parse(localStorage.getItem("BID_BUTTON")) !== "") {
-        bidButton();
+if (page.match('/home/none/')) {
+    if (configs["TEAM_LINK"] !== "") {
+        teamLink();
     }
-} else if (page.match('/players/none/') || page.match('/players_nt/none/')) {
-    if (JSON.parse(localStorage.getItem("SQUAD_DETAILS")) !== "") {
-        squadDetails();
+    if (configs["GET_SPONSORS"] !== "") {
+        getSponsors();
     }
-} else if (page.match('/tactics/none/') || page.match('/tactics_youth/none/') || page.match('/tactics_nt/none/')) {
-    if (JSON.parse(localStorage.getItem("TACTICS_DETAILS")) !== "") {
-        tacticsDetails();
-    }
-    if (JSON.parse(localStorage.getItem("LOAD_TACTICS")) !== "") {
-        loadTactics();
-    }
+    clearStorage();
 } else if (page.match('/search_coaches/none/')) {
-    if (JSON.parse(localStorage.getItem("COACHES_WAGE")) !== "") {
+    if (configs["COACHES_WAGE"] !== "") {
         coachesWage();
     }
 } else if (page.match('/clubinfo/none/clubid/')) {
-    if (JSON.parse(localStorage.getItem("READ_RESUME")) !== "") {
+    if (configs["READ_RESUME"] !== "") {
         readResume();
     }
 } else if (page.match('/clubinfo/none/')) {
-    if (JSON.parse(localStorage.getItem("SCOUT_BUTTON")) !== "") {
+    if (configs["SCOUT_BUTTON"] !== "") {
         scoutButton();
     }
+} else if (page.match('/players/details/')) {
+    playerDetails();
+    if (configs["BID_BUTTON"] !== "") {
+        bidButton();
+    }
+} else if (page.match('/players/none/') || page.match('/players_nt/none/')) {
+    if (configs["SQUAD_DETAILS"] !== "") {
+        squadDetails();
+    }
+} else if (page.match('/tactics/none/') || page.match('/tactics_youth/none/') || page.match('/tactics_nt/none/')) {
+    if (configs["TACTICS_DETAILS"] !== "") {
+        tacticsDetails();
+    }
+    if (configs["LOAD_TACTICS"] !== "") {
+        loadTactics();
+    }
 } else if (page.match('/players/spreadsheet/')) {
-    if (JSON.parse(localStorage.getItem("SPREADSHEET_SQUAD")) !== "") {
+    if (configs["SPREADSHEET_SQUAD"] !== "") {
         doTable('.forumline');
     }
-} else if (page.match('/home/none/')) {
-    configMenu();
-    if (JSON.parse(localStorage.getItem("TEAM_LINK")) !== "") {
-        teamLink();
-    }
-    if (JSON.parse(localStorage.getItem("GET_SPONSORS")) !== "") {
-        getSponsors();
-    }
 } else if (page.match('/game/none/gameid/')) {
-    if (JSON.parse(localStorage.getItem("GOAL_SOUND")) !== "") {
+    if (configs["GOAL_SOUND"] !== "") {
         goalSound();
     }
 }
@@ -288,23 +294,23 @@ function playerDetails() {
         attrText = ' @ OPS ' + ops[natPos];
     }
     var exp = getExp((new XMLSerializer()).serializeToString(document));
-    if (JSON.parse(localStorage.getItem("PLAYER_OPS_ID")) !== "") {
+    if (configs["PLAYER_OPS_ID"] !== "") {
         $('.player_id_txt').text($('.player_id_txt').text() + attrText);
     }
-    if (JSON.parse(localStorage.getItem("PLAYER_OPS_NAME")) !== "") {
+    if (configs["PLAYER_OPS_NAME"] !== "") {
         $('.player_name').text($('.player_name').text() + attrText);
         $('.player_id_txt').css('position', 'absolute');
         $('.player_id_txt').css('right', '30px');
     }
-    if (JSON.parse(localStorage.getItem("PLAYER_EXP")) !== "") {
-        if (JSON.parse(localStorage.getItem("PLAYER_OPS_NAME")) !== "") {
+    if (configs["PLAYER_EXP"] !== "") {
+        if (configs["PLAYER_OPS_NAME"] !== "") {
              $('.player_name').text($('.player_name').text() + ' | ' + exp + ' XP');
         }
-        if (JSON.parse(localStorage.getItem("PLAYER_OPS_NAME")) !== "") {
+        if (configs["PLAYER_OPS_ID"] !== "") {
              $('.player_id_txt').text($('.player_id_txt').text() + ' | ' + exp + ' XP');
         }
     }
-    if (JSON.parse(localStorage.getItem("PAGE_TITLE")) !== "") {
+    if (configs["PAGE_TITLE"] !== "") {
         $(document).prop('title', $('.player_name').text() + attrText);
     }
 }
@@ -312,7 +318,7 @@ function playerDetails() {
 function squadDetails() {
     $(".forumline .table_top_row").each(function() {
         $(this).last().append('<td align="center" width="20" title="Original Position Skills" class="tableHeader">OPS</td>');
-        if (JSON.parse(localStorage.getItem("SQUAD_HIGH")) !== "") {
+        if (configs["SQUAD_HIGH"] !== "") {
             $(this).last().append('<td align="center" width="20" title="Best Original Position Skills" class="tableHeader">HIGH</td>');
         }
     });
@@ -359,7 +365,7 @@ function squadDetails() {
                 natPos = 9;
             }
             $(this).last().append('<td align="center"><span class="tableText">' + ops[natPos] + '</span></td>');
-            if (JSON.parse(localStorage.getItem("SQUAD_HIGH")) !== "") {
+            if (configs["SQUAD_HIGH"] !== "") {
                 if (ops[ops['pos']] > ops[natPos]) {
                     $(this).last().append('<td align="center"><span class="tableText"><strong>' + ops[ops['pos']] + '</strong></span></td>');
                 } else {
@@ -368,7 +374,7 @@ function squadDetails() {
             }
         } else if (count > 1) {
             $(this).last().append('<td align="center"><span class="tableText">0</span></td>');
-            if (JSON.parse(localStorage.getItem("SQUAD_HIGH")) !== "") {
+            if (configs["SQUAD_HIGH"] !== "") {
                 $(this).last().append('<td align="center"><span class="tableText">0</span></td>');
             }
         }
@@ -896,41 +902,54 @@ function getSponsors() {
 }
 
 function goalSound() {
-    let trackID = localStorage.getItem("TRACK_ID")  === null ? 1579437467 : localStorage.getItem("TRACK_ID");
+    let match = localStorage.getItem("DOGenieAssistant.match") === null ? {} : localStorage.getItem("DOGenieAssistant.match");
+
+    if (Object.keys(match).length == 0){
+        match['SOUND_GOAL'] = '1579437467';
+        match['LAST_GOAL'] = null;
+    } else {
+        match = JSON.parse(match);
+    }
+
+    let trackID = match['SOUND_GOAL'];
     $(".submenu_container").html(`<input type="text" style="width: 120px; text-align: right;" id="trackID" value="${trackID}"><input id="saveTrackId" type="submit" value="Track ID">`);
     $("#saveTrackId").click(function(e) {
-        localStorage.setItem("TRACK_ID", $("#trackID").val());
+        match['SOUND_GOAL'] = $("#trackID").val();
+        localStorage.setItem('DOGenieAssistant.match', JSON.stringify(match));
         location.reload();
     });
 
-     if ($("#events_content td:first").html().indexOf('icon-goal') > 1) {
-         let lastGoal = $("#events_content td:nth-child(2)").html();
-         if (localStorage.getItem("LAST_GOAL") != lastGoal) {
-             localStorage.setItem("LAST_GOAL", lastGoal);
-             $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${trackID}&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
-         }
+    for (var i = 0; i < 5; i++) {
+        if ($("#events_content td:nth-child(1)").eq(i).html().indexOf('icon-goal') > 1) {
+            let lastGoal = $("#events_content td:nth-child(2)").eq(i).html();
+            if (match['LAST_GOAL'] != lastGoal) {
+                match['LAST_GOAL'] = lastGoal;
+                localStorage.setItem('DOGenieAssistant.match', JSON.stringify(match));
+                $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${trackID}&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
+            }
+        }
     }
 }
 
 function configMenu() {
-    let secondaryClock = JSON.parse(localStorage.getItem("SECONDARY_CLOCK") === null ? '"checked"' : localStorage.getItem("SECONDARY_CLOCK"));
-    let dropdownMenu = JSON.parse(localStorage.getItem("DROPDDOWN_MENU") === null ? '"checked"' : localStorage.getItem("DROPDDOWN_MENU"));
-    let pageTitle = JSON.parse(localStorage.getItem("PAGE_TITLE") === null ? '"checked"' : localStorage.getItem("PAGE_TITLE"));
-    let readResume = JSON.parse(localStorage.getItem("READ_RESUME") === null ? '"checked"' : localStorage.getItem("READ_RESUME"));
-    let playerOPSName = JSON.parse(localStorage.getItem("PLAYER_OPS_NAME") === null ? '"checked"' : localStorage.getItem("PLAYER_OPS_NAME"));
-    let playerOPSId = JSON.parse(localStorage.getItem("PLAYER_OPS_ID") === null ? '"checked"' : localStorage.getItem("PLAYER_OPS_ID"));
-    let playerExp = JSON.parse(localStorage.getItem("PLAYER_EXP") === null ? '"checked"' : localStorage.getItem("PLAYER_EXP"));
-    let squadDetails = JSON.parse(localStorage.getItem("SQUAD_DETAILS") === null ? '"checked"' : localStorage.getItem("SQUAD_DETAILS"));
-    let squadHigh = JSON.parse(localStorage.getItem("SQUAD_HIGH") === null ? '"checked"' : localStorage.getItem("SQUAD_HIGH"));
-    let loadTactics = JSON.parse(localStorage.getItem("LOAD_TACTICS") === null ? '"checked"' : localStorage.getItem("LOAD_TACTICS"));
-    let tacticsDetails = JSON.parse(localStorage.getItem("TACTICS_DETAILS") === null ? '"checked"' : localStorage.getItem("TACTICS_DETAILS"));
-    let coachesWage = JSON.parse(localStorage.getItem("COACHES_WAGE") === null ? '"checked"' : localStorage.getItem("COACHES_WAGE"));
-    let scoutButton = JSON.parse(localStorage.getItem("SCOUT_BUTTON") === null ? '"checked"' : localStorage.getItem("SCOUT_BUTTON"));
-    let spreadsheetSquad = JSON.parse(localStorage.getItem("SPREADSHEET_SQUAD") === null ? '"checked"' : localStorage.getItem("SPREADSHEET_SQUAD"));
-    let bidButton = JSON.parse(localStorage.getItem("BID_BUTTON") === null ? '"checked"' : localStorage.getItem("BID_BUTTON"));
-    let teamLink = JSON.parse(localStorage.getItem("TEAM_LINK") === null ? '"checked"' : localStorage.getItem("TEAM_LINK"));
-    let getSponsors = JSON.parse(localStorage.getItem("GET_SPONSORS") === null ? '"checked"' : localStorage.getItem("GET_SPONSORS"));
-    let goalSound = JSON.parse(localStorage.getItem("GOAL_SOUND") === null ? '"checked"' : localStorage.getItem("GOAL_SOUND"));
+    let secondaryClock = configs["SECONDARY_CLOCK"] === null ? 'checked' : configs["SECONDARY_CLOCK"];
+    let dropdownMenu = configs["DROPDDOWN_MENU"] === null ? 'checked' : configs["DROPDDOWN_MENU"];
+    let pageTitle = configs["PAGE_TITLE"] === null ? 'checked' : configs["PAGE_TITLE"];
+    let readResume = configs["READ_RESUME"] === null ? 'checked' : configs["READ_RESUME"];
+    let playerOPSName = configs["PLAYER_OPS_NAME"] === null ? 'checked' : configs["PLAYER_OPS_NAME"];
+    let playerOPSId = configs["PLAYER_OPS_ID"] === null ? 'checked' : configs["PLAYER_OPS_ID"];
+    let playerExp = configs["PLAYER_EXP"] === null ? 'checked' : configs["PLAYER_EXP"];
+    let squadDetails = configs["SQUAD_DETAILS"] === null ? 'checked' : configs["SQUAD_DETAILS"];
+    let squadHigh = configs["SQUAD_HIGH"] === null ? 'checked' : configs["SQUAD_HIGH"];
+    let loadTactics = configs["LOAD_TACTICS"] === null ? 'checked' : configs["LOAD_TACTICS"];
+    let tacticsDetails = configs["TACTICS_DETAILS"] === null ? 'checked' : configs["TACTICS_DETAILS"];
+    let coachesWage = configs["COACHES_WAGE"] === null ? 'checked' : configs["COACHES_WAGE"];
+    let scoutButton = configs["SCOUT_BUTTON"] === null ? 'checked' : configs["SCOUT_BUTTON"];
+    let spreadsheetSquad = configs["SPREADSHEET_SQUAD"] === null ? 'checked' : configs["SPREADSHEET_SQUAD"];
+    let bidButton = configs["BID_BUTTON"] === null ? 'checked' : configs["BID_BUTTON"];
+    let teamLink = configs["TEAM_LINK"] === null ? 'checked' : configs["TEAM_LINK"];
+    let getSponsors = configs["GET_SPONSORS"] === null ? 'checked' : configs["GET_SPONSORS"];
+    let goalSound = configs["GOAL_SOUND"] === null ? 'checked' : configs["GOAL_SOUND"];
 
     $(`<div class="gui_object" style="width: 468px; margin-left: 8px;">
     <div class="window1_wrapper" style="margin-top: 4px; width: 468px;">
@@ -949,14 +968,27 @@ function configMenu() {
                            <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
                                Secondary Clock: <input type="checkbox" name="SECONDARY_CLOCK" ${secondaryClock}>
                                Dropdown Menu: <input type="checkbox" name="DROPDDOWN_MENU" ${dropdownMenu}>
-                               Team Link: <input type="checkbox" name="TEAM_LINK" ${teamLink}>
+                               Page Title: <input type="checkbox" name="PAGE_TITLE" ${pageTitle}>
                            </td>
                        </tr>
                        <tr class="table_top_row">
                            <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
-                               Page Title: <input type="checkbox" name="PAGE_TITLE" ${pageTitle}>
-                               Read Resume: <input type="checkbox" name="READ_RESUME" ${readResume}>
+                               Team Link: <input type="checkbox" name="TEAM_LINK" ${teamLink}>
                                Get Sponsors: <input type="checkbox" name="GET_SPONSORS" ${getSponsors}>
+                           </td>
+                       </tr>
+                       <tr class="table_top_row">
+                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
+                               Coaches Wage: <input type="checkbox" name="COACHES_WAGE" ${coachesWage}>
+                               Read Resume: <input type="checkbox" name="READ_RESUME" ${readResume}>
+                               Scout Button: <input type="checkbox" name="SCOUT_BUTTON" ${scoutButton}>
+                           </td>
+                       </tr>
+                       <tr class="table_top_row">
+                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
+                               Squad Details: <input type="checkbox" name="SQUAD_DETAILS" ${squadDetails}>
+                               Squad High: <input type="checkbox" name="SQUAD_HIGH" ${squadHigh}>
+                               Sreadsheet Squad: <input type="checkbox" name="SPREADSHEET_SQUAD" ${spreadsheetSquad}>
                            </td>
                        </tr>
                        <tr class="table_top_row">
@@ -968,25 +1000,12 @@ function configMenu() {
                        </tr>
                        <tr class="table_top_row">
                            <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
-                               Squad Details: <input type="checkbox" name="SQUAD_DETAILS" ${squadDetails}>
-                               Squad High: <input type="checkbox" name="SQUAD_HIGH" ${squadHigh}>
-                           </td>
-                       </tr>
-                       <tr class="table_top_row">
-                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
                                Load Tactics: <input type="checkbox" name="LOAD_TACTICS" ${loadTactics}>
                                Tatics Details: <input type="checkbox" name="TACTICS_DETAILS" ${tacticsDetails}>
                            </td>
                        </tr>
                        <tr class="table_top_row">
                            <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
-                               Coaches Wage: <input type="checkbox" name="COACHES_WAGE" ${coachesWage}>
-                               Scout Button: <input type="checkbox" name="SCOUT_BUTTON" ${scoutButton}>
-                           </td>
-                       </tr>
-                       <tr class="table_top_row">
-                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
-                               Sreadsheet Squad: <input type="checkbox" name="SPREADSHEET_SQUAD" ${spreadsheetSquad}>
                                Bid Button: <input type="checkbox" name="BID_BUTTON" ${bidButton}>
                                Goal Sound: <input type="checkbox" name="GOAL_SOUND" ${goalSound}>
                            </td>
@@ -995,29 +1014,84 @@ function configMenu() {
                 </table>
                 <input id="saveConfig" type="submit" style="width: 140px;margin-top: 20px;" value="Save">
                 <input id="getSponsors" type="submit" style="width: 140px;margin-top: 20px;visibility: hidden;" value="Get Sponsors">
+                <input id="clearStorage" type="submit" style="width: 140px;margin-top: 20px;" value="Clear Old Storage">
         <div class="window1_bottom_start"></div>
         <div class="window1_bottom" style="width: 460px;"></div>
         <div class="window1_bottom_end"></div>
     </div>
 </div>`).insertAfter( "#footer" );
     $("#saveConfig").click(function() {
-        localStorage.setItem("SECONDARY_CLOCK", JSON.stringify($('input[name="SECONDARY_CLOCK"]').is(":checked") ? "checked" : ""));
-        localStorage.setItem("DROPDDOWN_MENU", JSON.stringify($('input[name="DROPDDOWN_MENU"]').is(":checked") ? "checked" : ""));
-        localStorage.setItem("PAGE_TITLE", JSON.stringify($('input[name="PAGE_TITLE"]').is(":checked") ? "checked" : ""));
-        localStorage.setItem("READ_RESUME", JSON.stringify($('input[name="READ_RESUME"]').is(":checked") ? "checked" : ""));
-        localStorage.setItem("PLAYER_OPS_NAME", JSON.stringify($('input[name="PLAYER_OPS_NAME"]').is(":checked") ? "checked" : ""));
-        localStorage.setItem("PLAYER_OPS_ID", JSON.stringify($('input[name="PLAYER_OPS_ID"]').is(":checked") ? "checked" : ""));
-        localStorage.setItem("PLAYER_EXP", JSON.stringify($('input[name="PLAYER_EXP"]').is(":checked") ? "checked" : ""));
-        localStorage.setItem("SQUAD_DETAILS", JSON.stringify($('input[name="SQUAD_DETAILS"]').is(":checked") ? "checked" : ""));
-        localStorage.setItem("SQUAD_HIGH", JSON.stringify($('input[name="SQUAD_HIGH"]').is(":checked") ? "checked" : ""));
-        localStorage.setItem("LOAD_TACTICS", JSON.stringify($('input[name="LOAD_TACTICS"]').is(":checked") ? "checked" : ""));
-        localStorage.setItem("TACTICS_DETAILS", JSON.stringify($('input[name="TACTICS_DETAILS"]').is(":checked") ? "checked" : ""));
-        localStorage.setItem("COACHES_WAGE", JSON.stringify($('input[name="COACHES_WAGE"]').is(":checked") ? "checked" : ""));
-        localStorage.setItem("SCOUT_BUTTON", JSON.stringify($('input[name="SCOUT_BUTTON"]').is(":checked") ? "checked" : ""));
-        localStorage.setItem("SPREADSHEET_SQUAD", JSON.stringify($('input[name="SPREADSHEET_SQUAD"]').is(":checked") ? "checked" : ""));
-        localStorage.setItem("BID_BUTTON", JSON.stringify($('input[name="BID_BUTTON"]').is(":checked") ? "checked" : ""));
-        localStorage.setItem("TEAM_LINK", JSON.stringify($('input[name="TEAM_LINK"]').is(":checked") ? "checked" : ""));
-        localStorage.setItem("GET_SPONSORS", JSON.stringify($('input[name="GET_SPONSORS"]').is(":checked") ? "checked" : ""));
-        localStorage.setItem("GOAL_SOUND", JSON.stringify($('input[name="GOAL_SOUND"]').is(":checked") ? "checked" : ""));
+        configs['SECONDARY_CLOCK'] = $('input[name="SECONDARY_CLOCK"]').is(":checked") ? "checked" : "";
+        configs['DROPDDOWN_MENU'] = $('input[name="DROPDDOWN_MENU"]').is(":checked") ? "checked" : "";
+        configs['PAGE_TITLE'] = $('input[name="PAGE_TITLE"]').is(":checked") ? "checked" : "";
+        configs['READ_RESUME'] = $('input[name="READ_RESUME"]').is(":checked") ? "checked" : "";
+        configs['PLAYER_OPS_NAME'] = $('input[name="PLAYER_OPS_NAME"]').is(":checked") ? "checked" : "";
+        configs['PLAYER_OPS_ID'] = $('input[name="PLAYER_OPS_ID"]').is(":checked") ? "checked" : "";
+        configs['PLAYER_EXP'] = $('input[name="PLAYER_EXP"]').is(":checked") ? "checked" : "";
+        configs['SQUAD_DETAILS'] = $('input[name="SQUAD_DETAILS"]').is(":checked") ? "checked" : "";
+        configs['SQUAD_HIGH'] = $('input[name="SQUAD_HIGH"]').is(":checked") ? "checked" : "";
+        configs['LOAD_TACTICS'] = $('input[name="LOAD_TACTICS"]').is(":checked") ? "checked" : "";
+        configs['TACTICS_DETAILS'] = $('input[name="TACTICS_DETAILS"]').is(":checked") ? "checked" : "";
+        configs['COACHES_WAGE'] = $('input[name="COACHES_WAGE"]').is(":checked") ? "checked" : "";
+        configs['SCOUT_BUTTON'] = $('input[name="SCOUT_BUTTON"]').is(":checked") ? "checked" : "";
+        configs['SPREADSHEET_SQUAD'] = $('input[name="SPREADSHEET_SQUAD"]').is(":checked") ? "checked" : "";
+        configs['BID_BUTTON'] = $('input[name="BID_BUTTON"]').is(":checked") ? "checked" : "";
+        configs['TEAM_LINK'] = $('input[name="TEAM_LINK"]').is(":checked") ? "checked" : "";
+        configs['GET_SPONSORS'] = $('input[name="GET_SPONSORS"]').is(":checked") ? "checked" : "";
+        configs['GOAL_SOUND'] = $('input[name="GOAL_SOUND"]').is(":checked") ? "checked" : "";
+        localStorage.setItem('DOGenieAssistant.configs', JSON.stringify(configs));
+    });
+}
+
+function getStorage(storageConfigs) {
+    if ((storageConfigs == null) || (storageConfigs == '[]')){
+        configs['SECONDARY_CLOCK'] = null;
+        configs['DROPDDOWN_MENU'] = null;
+        configs['PAGE_TITLE'] = null;
+        configs['READ_RESUME'] = null;
+        configs['PLAYER_OPS_NAME'] = null;
+        configs['PLAYER_OPS_ID'] = null;
+        configs['PLAYER_EXP'] = null;
+        configs['SQUAD_DETAILS'] = null;
+        configs['SQUAD_HIGH'] = null;
+        configs['LOAD_TACTICS'] = null;
+        configs['TACTICS_DETAILS'] = null;
+        configs['COACHES_WAGE'] = null;
+        configs['SCOUT_BUTTON'] = null;
+        configs['SPREADSHEET_SQUAD'] = null;
+        configs['BID_BUTTON'] = null;
+        configs['TEAM_LINK'] = null;
+        configs['GET_SPONSORS'] = null;
+        configs['GOAL_SOUND'] = null;
+    } else {
+        configs = JSON.parse(storageConfigs);
+    }
+    return configs;
+}
+
+function clearStorage() {
+    $("#clearStorage").click(function(e) {
+        localStorage.removeItem("PAGE_TITLE");
+        localStorage.removeItem("TACTICS_DETAILS");
+        localStorage.removeItem("LAST_GOAL");
+        localStorage.removeItem("SECONDARY_CLOCK");
+        localStorage.removeItem("GET_SPONSORS");
+        localStorage.removeItem("TRACK_ID");
+        localStorage.removeItem("TEAM_LINK");
+        localStorage.removeItem("LOAD_TACTICS");
+        localStorage.removeItem("BID_BUTTON");
+        localStorage.removeItem("PLAYER_EXP");
+        localStorage.removeItem("COACHES_WAGE");
+        localStorage.removeItem("PLAYER_OPS");
+        localStorage.removeItem("PLAYER_OPS_ID");
+        localStorage.removeItem("SQUAD_DETAILS");
+        localStorage.removeItem("PLAYER_OPS_NAME");
+        localStorage.removeItem("SQUAD_HIGH");
+        localStorage.removeItem("READ_RESUME");
+        localStorage.removeItem("GOAL_SOUND");
+        localStorage.removeItem("SPREADSHEET_SQUAD");
+        localStorage.removeItem("SCOUT_BUTTON");
+        localStorage.removeItem("DROPDDOWN_MENU");
+        e.preventDefault();
     });
 }
