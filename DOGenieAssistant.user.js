@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      25.1
+// @version      25.2
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -916,8 +916,8 @@ function matchSound() {
 
     for (var i = 0; i < 5; i++) {
         if ($("#events_content td:nth-child(1)").eq(i).html().indexOf('icon-goal') > 1) {
-            let lastGoal = $("#events_content td:nth-child(2)").eq(i).html();
-            if (match['LAST_GOAL'] != lastGoal) {
+            let lastGoal = formatTime($("#events_content td:nth-child(2)").eq(i).html());
+            if (formatTime(match['LAST_GOAL']) < lastGoal) {
                 match['LAST_GOAL'] = lastGoal;
                 localStorage.setItem('DOGenieAssistant.match.'  + gameId, JSON.stringify(match));
                 $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${trackID}&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
@@ -926,8 +926,8 @@ function matchSound() {
             }
         }
         if ($("#events_content td:nth-child(1)").eq(i).html().indexOf('icon-offside') > 1) {
-            let lastOffside = $("#events_content td:nth-child(2)").eq(i).html();
-            if (match['LAST_OFFSIDE'] != lastOffside) {
+            let lastOffside = formatTime($("#events_content td:nth-child(2)").eq(i).html());
+            if (formatTime(match['LAST_OFFSIDE']) < lastOffside) {
                 match['LAST_OFFSIDE'] = lastOffside;
                 localStorage.setItem('DOGenieAssistant.match.'  + gameId, JSON.stringify(match));
                 $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1636263519&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
@@ -937,8 +937,8 @@ function matchSound() {
         }
     }
     if ($("#events_content td:nth-child(3)").eq(0).html().substring(0,9) == 'Game ends') {
-        let gameEnds = $("#events_content td:nth-child(2)").eq(0).html();
-        if (match['GAME_ENDS'] != gameEnds) {
+        let gameEnds = formatTime($("#events_content td:nth-child(2)").eq(0).html());
+        if (formatTime(match['GAME_ENDS']) != gameEnds) {
             match['GAME_ENDS'] = gameEnds;
             localStorage.setItem('DOGenieAssistant.match.'  + gameId, JSON.stringify(match));
             $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1636248255&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
@@ -962,6 +962,17 @@ function getUrlParameter(sParam) {
     }
     return false;
 };
+
+function formatTime(str) {
+    if (str === null) {
+        str = "00,00";
+    }
+    str = str.replace('[', '');
+    str = str.replace(']', '');
+    str = str.replace(':', ',');
+    str = str.replace(' ', '');
+    return str.replace( /(<([^>]+)>)/ig, '');
+}
 
 function configMenu() {
     let secondaryClock = configs["SECONDARY_CLOCK"] === null ? 'checked' : configs["SECONDARY_CLOCK"];
