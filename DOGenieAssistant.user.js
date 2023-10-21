@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      25.0
+// @version      25.1
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -69,8 +69,8 @@ if (page.match('/home/none/')) {
         doTable('.forumline');
     }
 } else if (page.match('/game/none/gameid/')) {
-    if (configs["GOAL_SOUND"] !== "") {
-        goalSound();
+    if (configs["MATCH_SOUND"] !== "") {
+        matchSound();
     }
 }
 
@@ -901,35 +901,67 @@ function getSponsors() {
     });
 }
 
-function goalSound() {
-    let match = localStorage.getItem("DOGenieAssistant.match") === null ? {} : localStorage.getItem("DOGenieAssistant.match");
+function matchSound() {
+    let gameId = getUrlParameter('gameid');
+    let match = localStorage.getItem("DOGenieAssistant.match." + gameId) === null ? {} : localStorage.getItem("DOGenieAssistant.match." + gameId);
+    let trackID = configs['GOAL_ID'] === undefined ? '1636248327' : configs["GOAL_ID"];
 
     if (Object.keys(match).length == 0){
-        match['SOUND_GOAL'] = '1579437467';
         match['LAST_GOAL'] = null;
+        match['LAST_OFFSIDE'] = null;
+        match['GAME_ENDS'] = null;
     } else {
         match = JSON.parse(match);
     }
-
-    let trackID = match['SOUND_GOAL'];
-    $(".submenu_container").html(`<input type="text" style="width: 120px; text-align: right;" id="trackID" value="${trackID}"><input id="saveTrackId" type="submit" value="Track ID">`);
-    $("#saveTrackId").click(function(e) {
-        match['SOUND_GOAL'] = $("#trackID").val();
-        localStorage.setItem('DOGenieAssistant.match', JSON.stringify(match));
-        location.reload();
-    });
 
     for (var i = 0; i < 5; i++) {
         if ($("#events_content td:nth-child(1)").eq(i).html().indexOf('icon-goal') > 1) {
             let lastGoal = $("#events_content td:nth-child(2)").eq(i).html();
             if (match['LAST_GOAL'] != lastGoal) {
                 match['LAST_GOAL'] = lastGoal;
-                localStorage.setItem('DOGenieAssistant.match', JSON.stringify(match));
+                localStorage.setItem('DOGenieAssistant.match.'  + gameId, JSON.stringify(match));
                 $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${trackID}&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
+                $("#events_content").delay(2000);
+                break;
+            }
+        }
+        if ($("#events_content td:nth-child(1)").eq(i).html().indexOf('icon-offside') > 1) {
+            let lastOffside = $("#events_content td:nth-child(2)").eq(i).html();
+            if (match['LAST_OFFSIDE'] != lastOffside) {
+                match['LAST_OFFSIDE'] = lastOffside;
+                localStorage.setItem('DOGenieAssistant.match.'  + gameId, JSON.stringify(match));
+                $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1636263519&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
+                $("#events_content").delay(2000);
+                break;
             }
         }
     }
+    if ($("#events_content td:nth-child(3)").eq(0).html().substring(0,9) == 'Game ends') {
+        let gameEnds = $("#events_content td:nth-child(2)").eq(0).html();
+        if (match['GAME_ENDS'] != gameEnds) {
+            match['GAME_ENDS'] = gameEnds;
+            localStorage.setItem('DOGenieAssistant.match.'  + gameId, JSON.stringify(match));
+            $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1636248255&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
+            $("#events_content").delay(2000);
+        }
+    }
 }
+
+function getUrlParameter(sParam) {
+    var sPageURL = window.location.href,
+        sURLVariables = sPageURL.split('/'),
+        sParameterName,
+        i;
+
+    for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i];
+
+        if (sParameterName === sParam) {
+            return sURLVariables[i+1] === undefined ? true : decodeURIComponent(sURLVariables[i+1]);
+        }
+    }
+    return false;
+};
 
 function configMenu() {
     let secondaryClock = configs["SECONDARY_CLOCK"] === null ? 'checked' : configs["SECONDARY_CLOCK"];
@@ -949,7 +981,8 @@ function configMenu() {
     let bidButton = configs["BID_BUTTON"] === null ? 'checked' : configs["BID_BUTTON"];
     let teamLink = configs["TEAM_LINK"] === null ? 'checked' : configs["TEAM_LINK"];
     let getSponsors = configs["GET_SPONSORS"] === null ? 'checked' : configs["GET_SPONSORS"];
-    let goalSound = configs["GOAL_SOUND"] === null ? 'checked' : configs["GOAL_SOUND"];
+    let matchSound = configs["MATCH_SOUND"] === undefined ? 'checked' : configs["MATCH_SOUND"];
+    let goalId = configs["GOAL_ID"] === undefined ? '1636248327' : configs["GOAL_ID"];
 
     $(`<div class="gui_object" style="width: 468px; margin-left: 8px;">
     <div class="window1_wrapper" style="margin-top: 4px; width: 468px;">
@@ -1007,7 +1040,8 @@ function configMenu() {
                        <tr class="table_top_row">
                            <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
                                Bid Button: <input type="checkbox" name="BID_BUTTON" ${bidButton}>
-                               Goal Sound: <input type="checkbox" name="GOAL_SOUND" ${goalSound}>
+                               Match Sound: <input type="checkbox" name="MATCH_SOUND" ${matchSound}>
+                               Goal Id*: <input type="text" name="GOAL_ID" value='${goalId}'>
                            </td>
                        </tr>
                     </tbody>
@@ -1038,7 +1072,8 @@ function configMenu() {
         configs['BID_BUTTON'] = $('input[name="BID_BUTTON"]').is(":checked") ? "checked" : "";
         configs['TEAM_LINK'] = $('input[name="TEAM_LINK"]').is(":checked") ? "checked" : "";
         configs['GET_SPONSORS'] = $('input[name="GET_SPONSORS"]').is(":checked") ? "checked" : "";
-        configs['GOAL_SOUND'] = $('input[name="GOAL_SOUND"]').is(":checked") ? "checked" : "";
+        configs['MATCH_SOUND'] = $('input[name="MATCH_SOUND"]').is(":checked") ? "checked" : "";
+        configs['GOAL_ID'] = $('input[name="GOAL_ID"]')[0].value ? $('input[name="GOAL_ID"]')[0].value : "1636248327";
         localStorage.setItem('DOGenieAssistant.configs', JSON.stringify(configs));
     });
 }
@@ -1062,7 +1097,8 @@ function getStorage(storageConfigs) {
         configs['BID_BUTTON'] = null;
         configs['TEAM_LINK'] = null;
         configs['GET_SPONSORS'] = null;
-        configs['GOAL_SOUND'] = null;
+        configs['MATCH_SOUND'] = null;
+        configs['GOAL_ID'] = '1636248327';
     } else {
         configs = JSON.parse(storageConfigs);
     }
@@ -1092,6 +1128,17 @@ function clearStorage() {
         localStorage.removeItem("SPREADSHEET_SQUAD");
         localStorage.removeItem("SCOUT_BUTTON");
         localStorage.removeItem("DROPDDOWN_MENU");
+
+        let arr = [];
+        let i =0
+        for (i = 0; i < localStorage.length; i++){
+            if (localStorage.key(i).substring(0,22) == 'DOGenieAssistant.match') {
+                arr.push(localStorage.key(i));
+            }
+        }
+        for (i = 0; i < arr.length; i++) {
+            localStorage.removeItem(arr[i]);
+        }
         e.preventDefault();
     });
 }
