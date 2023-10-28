@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      25.2
+// @version      26.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -12,11 +12,15 @@
 // ==/UserScript==
 //page select ----------------------------------------------//
 var page = document.URL;
-var configs = {};
+var configs = {}, soundConfig = {};
 configs = getStorage(localStorage.getItem("DOGenieAssistant.configs"));
+soundConfig = getSoundStorage(localStorage.getItem("DOGenieAssistant.soundConfig"));
 
 if (page.match('/home/none/')) {
     configMenu();
+    configSound();
+    clearStorage();
+    clearMatchStorage();
 }
 if (configs["PAGE_TITLE"] !== "") {
     pageTitle();
@@ -35,7 +39,6 @@ if (page.match('/home/none/')) {
     if (configs["GET_SPONSORS"] !== "") {
         getSponsors();
     }
-    clearStorage();
 } else if (page.match('/search_coaches/none/')) {
     if (configs["COACHES_WAGE"] !== "") {
         coachesWage();
@@ -69,7 +72,7 @@ if (page.match('/home/none/')) {
         doTable('.forumline');
     }
 } else if (page.match('/game/none/gameid/')) {
-    if (configs["MATCH_SOUND"] !== "") {
+    if (soundConfig["MATCH_SOUND"] !== "") {
         matchSound();
     }
 }
@@ -904,7 +907,6 @@ function getSponsors() {
 function matchSound() {
     let gameId = getUrlParameter('gameid');
     let match = localStorage.getItem("DOGenieAssistant.match." + gameId) === null ? {} : localStorage.getItem("DOGenieAssistant.match." + gameId);
-    let trackID = configs['GOAL_ID'] === undefined ? '1636248327' : configs["GOAL_ID"];
 
     if (Object.keys(match).length == 0){
         match['LAST_GOAL'] = null;
@@ -915,34 +917,45 @@ function matchSound() {
     }
 
     for (var i = 0; i < 5; i++) {
-        if ($("#events_content td:nth-child(1)").eq(i).html().indexOf('icon-goal') > 1) {
-            let lastGoal = formatTime($("#events_content td:nth-child(2)").eq(i).html());
-            if (formatTime(match['LAST_GOAL']) < lastGoal) {
-                match['LAST_GOAL'] = lastGoal;
-                localStorage.setItem('DOGenieAssistant.match.'  + gameId, JSON.stringify(match));
-                $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${trackID}&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
-                $("#events_content").delay(2000);
-                break;
+        if (soundConfig["GOAL_SOUND"] !== "") {
+            if ($("#events_content td:nth-child(1)").eq(i).html().indexOf('icon-goal') > 1) {
+                let lastGoal = formatTime($("#events_content td:nth-child(2)").eq(i).html());
+                if (formatTime(match['LAST_GOAL']) < lastGoal) {
+                    match['LAST_GOAL'] = lastGoal;
+                    localStorage.setItem('DOGenieAssistant.match.'  + gameId, JSON.stringify(match));
+                    if ($("#events_content td:nth-child(3) a").eq(0).text() == $('.header_clubname').text()) {
+                        $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${soundConfig['HOME_GOAL_ID']}&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
+                    } else {
+                        $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${soundConfig['AWAY_GOAL_ID']}&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
+                    }
+                    $("#events_content").delay(2000);
+                    break;
+                }
             }
         }
-        if ($("#events_content td:nth-child(1)").eq(i).html().indexOf('icon-offside') > 1) {
-            let lastOffside = formatTime($("#events_content td:nth-child(2)").eq(i).html());
-            if (formatTime(match['LAST_OFFSIDE']) < lastOffside) {
-                match['LAST_OFFSIDE'] = lastOffside;
-                localStorage.setItem('DOGenieAssistant.match.'  + gameId, JSON.stringify(match));
-                $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1636263519&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
-                $("#events_content").delay(2000);
-                break;
+
+        if (soundConfig["OFFSIDE_SOUND"] !== "") {
+            if ($("#events_content td:nth-child(1)").eq(i).html().indexOf('icon-offside') > 1) {
+                let lastOffside = formatTime($("#events_content td:nth-child(2)").eq(i).html());
+                if (formatTime(match['LAST_OFFSIDE']) < lastOffside) {
+                    match['LAST_OFFSIDE'] = lastOffside;
+                    localStorage.setItem('DOGenieAssistant.match.'  + gameId, JSON.stringify(match));
+                    $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${soundConfig['OFFSIDE_SOUND']}&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
+                    $("#events_content").delay(2000);
+                    break;
+                }
             }
         }
     }
-    if ($("#events_content td:nth-child(3)").eq(0).html().substring(0,9) == 'Game ends') {
-        let gameEnds = formatTime($("#events_content td:nth-child(2)").eq(0).html());
-        if (formatTime(match['GAME_ENDS']) != gameEnds) {
-            match['GAME_ENDS'] = gameEnds;
-            localStorage.setItem('DOGenieAssistant.match.'  + gameId, JSON.stringify(match));
-            $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1636248255&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
-            $("#events_content").delay(2000);
+    if (soundConfig["GAME_END_SOUND"] !== "") {
+        if ($("#events_content td:nth-child(3)").eq(0).html().substring(0,9) == 'Game ends') {
+            let gameEnds = formatTime($("#events_content td:nth-child(2)").eq(0).html());
+            if (formatTime(match['GAME_ENDS']) != gameEnds) {
+                match['GAME_ENDS'] = gameEnds;
+                localStorage.setItem('DOGenieAssistant.match.'  + gameId, JSON.stringify(match));
+                $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${soundConfig['GAME_END_ID']}&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
+                $("#events_content").delay(2000);
+            }
         }
     }
 }
@@ -992,8 +1005,6 @@ function configMenu() {
     let bidButton = configs["BID_BUTTON"] === null ? 'checked' : configs["BID_BUTTON"];
     let teamLink = configs["TEAM_LINK"] === null ? 'checked' : configs["TEAM_LINK"];
     let getSponsors = configs["GET_SPONSORS"] === null ? 'checked' : configs["GET_SPONSORS"];
-    let matchSound = configs["MATCH_SOUND"] === undefined ? 'checked' : configs["MATCH_SOUND"];
-    let goalId = configs["GOAL_ID"] === undefined ? '1636248327' : configs["GOAL_ID"];
 
     $(`<div class="gui_object" style="width: 468px; margin-left: 8px;">
     <div class="window1_wrapper" style="margin-top: 4px; width: 468px;">
@@ -1004,7 +1015,7 @@ function configMenu() {
         <div class="window1_header_end"></div>
     </div>
     <div class="window1_wrapper" style="margin-top: 0px; width: 468px;">
-        <div class="window1_content" style="width: 466px; height: 252px;">
+        <div class="window1_content" style="width: 466px;">
             <form name="configForm" action="#" method="post" class="configForm">
                <table width="99%" border="0" cellspacing="1" cellpadding="1" class="matches_tbl" style="margin-bottom: 0px; margin-left: 3px; margin-top: 2px;">
                    <tbody>
@@ -1046,20 +1057,14 @@ function configMenu() {
                            <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
                                Load Tactics: <input type="checkbox" name="LOAD_TACTICS" ${loadTactics}>
                                Tatics Details: <input type="checkbox" name="TACTICS_DETAILS" ${tacticsDetails}>
-                           </td>
-                       </tr>
-                       <tr class="table_top_row">
-                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
                                Bid Button: <input type="checkbox" name="BID_BUTTON" ${bidButton}>
-                               Match Sound: <input type="checkbox" name="MATCH_SOUND" ${matchSound}>
-                               Goal Id*: <input type="text" name="GOAL_ID" value='${goalId}'>
                            </td>
                        </tr>
                     </tbody>
                 </table>
                 <input id="saveConfig" type="submit" style="width: 140px;margin-top: 20px;" value="Save">
                 <input id="getSponsors" type="submit" style="width: 140px;margin-top: 20px;visibility: hidden;" value="Get Sponsors">
-                <input id="clearStorage" type="submit" style="width: 140px;margin-top: 20px;" value="Clear Old Storage">
+                <input id="clearStorage" type="submit" style="width: 140px;margin-top: 20px;" value="Clear Config Storage">
         <div class="window1_bottom_start"></div>
         <div class="window1_bottom" style="width: 460px;"></div>
         <div class="window1_bottom_end"></div>
@@ -1083,37 +1088,8 @@ function configMenu() {
         configs['BID_BUTTON'] = $('input[name="BID_BUTTON"]').is(":checked") ? "checked" : "";
         configs['TEAM_LINK'] = $('input[name="TEAM_LINK"]').is(":checked") ? "checked" : "";
         configs['GET_SPONSORS'] = $('input[name="GET_SPONSORS"]').is(":checked") ? "checked" : "";
-        configs['MATCH_SOUND'] = $('input[name="MATCH_SOUND"]').is(":checked") ? "checked" : "";
-        configs['GOAL_ID'] = $('input[name="GOAL_ID"]')[0].value ? $('input[name="GOAL_ID"]')[0].value : "1636248327";
         localStorage.setItem('DOGenieAssistant.configs', JSON.stringify(configs));
     });
-}
-
-function getStorage(storageConfigs) {
-    if ((storageConfigs == null) || (storageConfigs == '[]')){
-        configs['SECONDARY_CLOCK'] = null;
-        configs['DROPDDOWN_MENU'] = null;
-        configs['PAGE_TITLE'] = null;
-        configs['READ_RESUME'] = null;
-        configs['PLAYER_OPS_NAME'] = null;
-        configs['PLAYER_OPS_ID'] = null;
-        configs['PLAYER_EXP'] = null;
-        configs['SQUAD_DETAILS'] = null;
-        configs['SQUAD_HIGH'] = null;
-        configs['LOAD_TACTICS'] = null;
-        configs['TACTICS_DETAILS'] = null;
-        configs['COACHES_WAGE'] = null;
-        configs['SCOUT_BUTTON'] = null;
-        configs['SPREADSHEET_SQUAD'] = null;
-        configs['BID_BUTTON'] = null;
-        configs['TEAM_LINK'] = null;
-        configs['GET_SPONSORS'] = null;
-        configs['MATCH_SOUND'] = null;
-        configs['GOAL_ID'] = '1636248327';
-    } else {
-        configs = JSON.parse(storageConfigs);
-    }
-    return configs;
 }
 
 function clearStorage() {
@@ -1139,7 +1115,109 @@ function clearStorage() {
         localStorage.removeItem("SPREADSHEET_SQUAD");
         localStorage.removeItem("SCOUT_BUTTON");
         localStorage.removeItem("DROPDDOWN_MENU");
+        localStorage.removeItem("DOGenieAssistant.configs");
+        e.preventDefault();
+    });
+}
 
+function getStorage(storageConfigs) {
+    if ((storageConfigs == null) || (storageConfigs == '[]')){
+        configs['SECONDARY_CLOCK'] = 'checked';
+        configs['DROPDDOWN_MENU'] = 'checked';
+        configs['PAGE_TITLE'] = 'checked';
+        configs['READ_RESUME'] = 'checked';
+        configs['PLAYER_OPS_NAME'] = 'checked';
+        configs['PLAYER_OPS_ID'] = 'checked';
+        configs['PLAYER_EXP'] = 'checked';
+        configs['SQUAD_DETAILS'] = 'checked';
+        configs['SQUAD_HIGH'] = 'checked';
+        configs['LOAD_TACTICS'] = 'checked';
+        configs['TACTICS_DETAILS'] = 'checked';
+        configs['COACHES_WAGE'] = 'checked';
+        configs['SCOUT_BUTTON'] = 'checked';
+        configs['SPREADSHEET_SQUAD'] = 'checked';
+        configs['BID_BUTTON'] = 'checked';
+        configs['TEAM_LINK'] = 'checked';
+        configs['GET_SPONSORS'] = 'checked';
+        localStorage.setItem('DOGenieAssistant.configs', JSON.stringify(configs));
+    } else {
+        configs = JSON.parse(storageConfigs);
+    }
+    return configs;
+}
+
+function configSound() {
+    let matchSound = soundConfig["MATCH_SOUND"] === null ? 'checked' : soundConfig["MATCH_SOUND"];
+    let goalSound = soundConfig["GOAL_SOUND"] === null ? 'checked' : soundConfig["GOAL_SOUND"];
+    let goalId = soundConfig["HOME_GOAL_ID"] === null ? '1579437467' : soundConfig["HOME_GOAL_ID"];
+    let awayGoalId = soundConfig["AWAY_GOAL_ID"] === null ? '1636248327' : soundConfig["AWAY_GOAL_ID"];
+    let offsideSound = soundConfig["OFFSIDE_SOUND"] === null ? 'checked' : soundConfig["OFFSIDE_SOUND"];
+    let offsideId = soundConfig["OFFSIDE_ID"] === null ? '1636263519' : soundConfig["OFFSIDE_ID"];
+    let gameEndSound = soundConfig["GAME_END_SOUND"] === null ? 'checked' : soundConfig["GAME_END_SOUND"];
+    let gameEndId = soundConfig["GAME_END_ID"] === null ? '1636248255' : soundConfig["GAME_END_ID"];
+
+    $(`<div class="gui_object" style="width: 468px; margin-left: 8px;">
+    <div class="window1_wrapper" style="margin-top: 4px; width: 468px;">
+        <div class="window1_header_start"></div>
+        <div class="window1_header" style="width: 460px;">
+            <div class="window1_header_text">&nbsp;DO Genie Assistant Sound Configs</div>
+        </div>
+        <div class="window1_header_end"></div>
+    </div>
+    <div class="window1_wrapper" style="margin-top: 0px; width: 468px;">
+        <div class="window1_content" style="width: 466px;">
+            <form name="configForm" action="#" method="post" class="configForm">
+               <table width="99%" border="0" cellspacing="1" cellpadding="1" class="matches_tbl" style="margin-bottom: 0px; margin-left: 3px; margin-top: 2px;">
+                   <tbody>
+                       <tr class="table_top_row">
+                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
+                               Match Sounds: <input type="checkbox" name="MATCH_SOUND" ${matchSound}>
+                           </td>
+                       </tr>
+                       <tr class="table_top_row">
+                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
+                               Goal Sound: <input type="checkbox" name="GOAL_SOUND" ${goalSound}>
+                               <br>Home Goal Sound Id: <input type="text" name="HOME_GOAL_ID" value='${goalId}'>
+                               <br>Away Goal Sound Id: <input type="text" name="AWAY_GOAL_ID" value='${awayGoalId}'>
+                           </td>
+                       </tr>
+                       <tr class="table_top_row">
+                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
+                               Offside Sound: <input type="checkbox" name="OFFSIDE_SOUND" ${offsideSound}>
+                               Offside Sound Id: <input type="text" name="OFFSIDE_ID" value='${offsideId}'>
+                           </td>
+                       </tr>
+                       <tr class="table_top_row">
+                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
+                               Game End Sound: <input type="checkbox" name="GAME_END_SOUND" ${gameEndSound}>
+                               Game End Sound Id: <input type="text" name="GAME_END_ID" value='${gameEndId}'>
+                           </td>
+                       </tr>
+                    </tbody>
+                </table>
+                <input id="saveSoundConfig" type="submit" style="width: 140px;margin-top: 20px;" value="Save">
+                <input id="clearMatchStorage" type="submit" style="width: 140px;margin-top: 20px;" value="Clear Match Storage">
+        <div class="window1_bottom_start"></div>
+        <div class="window1_bottom" style="width: 460px;"></div>
+        <div class="window1_bottom_end"></div>
+    </div>
+</div>`).insertAfter( "#footer" );
+    $("#saveSoundConfig").click(function() {
+        soundConfig['MATCH_SOUND'] = $('input[name="MATCH_SOUND"]').is(":checked") ? "checked" : "";
+        soundConfig['GOAL_SOUND'] = $('input[name="GOAL_SOUND"]').is(":checked") ? "checked" : "";
+        soundConfig['HOME_GOAL_ID'] = $('input[name="HOME_GOAL_ID"]')[0].value ? $('input[name="HOME_GOAL_ID"]')[0].value : "1579437467";
+        soundConfig['AWAY_GOAL_ID'] = $('input[name="AWAY_GOAL_ID"]')[0].value ? $('input[name="AWAY_GOAL_ID"]')[0].value : "1636248327";
+        soundConfig['OFFSIDE_SOUND'] = $('input[name="OFFSIDE_SOUND"]').is(":checked") ? "checked" : "";
+        soundConfig['OFFSIDE_ID'] = $('input[name="OFFSIDE_ID"]')[0].value ? $('input[name="OFFSIDE_ID"]')[0].value : "1636263519";
+        soundConfig['GAME_END_SOUND'] = $('input[name="GAME_END_SOUND"]').is(":checked") ? "checked" : "";
+        soundConfig['GAME_END_ID'] = $('input[name="GAME_END_ID"]')[0].value ? $('input[name="GAME_END_ID"]')[0].value : "1636248255";
+
+        localStorage.setItem('DOGenieAssistant.soundConfig', JSON.stringify(soundConfig));
+    });
+}
+
+function clearMatchStorage() {
+     $("#clearMatchStorage").click(function(e) {
         let arr = [];
         let i =0
         for (i = 0; i < localStorage.length; i++){
@@ -1152,4 +1230,21 @@ function clearStorage() {
         }
         e.preventDefault();
     });
+}
+
+function getSoundStorage(storageConfigs) {
+    if ((storageConfigs == null) || (storageConfigs == '[]')){
+        soundConfig['MATCH_SOUND'] = 'checked';
+        soundConfig['GOAL_SOUND'] = 'checked';
+        soundConfig['HOME_GOAL_ID'] = '1579437467';
+        soundConfig['AWAY_GOAL_ID'] = '1636248327';
+        soundConfig['OFFSIDE_SOUND'] = 'checked';
+        soundConfig['OFFSIDE_ID'] = '1636263519';
+        soundConfig['GAME_END_SOUND'] = 'checked';
+        soundConfig['GAME_END_ID'] = '1636248255';
+        localStorage.setItem('DOGenieAssistant.soundConfig', JSON.stringify(soundConfig));
+    } else {
+        soundConfig = JSON.parse(storageConfigs);
+    }
+    return soundConfig;
 }
