@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      26.1
+// @version      27.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -874,37 +874,43 @@ function teamLink() {
 }
 
 function getSponsors() {
+    let lastSponsor = localStorage.getItem('DOGenieAssistant.lastSponsor') != null ? localStorage.getItem('DOGenieAssistant.lastSponsor') : '01/01/2000';
+    let today = new Date(Date.now()).toLocaleString().split(',')[0];
+
+    if (today == lastSponsor) {
+        return;
+    }
+
     $(`#getSponsors`).css('visibility', 'visible');
-    $("#getSponsors").click(function(e) {
-        $.get( "https://www.dugout-online.com/sponsors/none/daily/1/slot/1/dailyID/1001", function( data ) {
-            $( ".result" ).html( data );
-        });
-        $.get( "https://www.dugout-online.com/sponsors/none/daily/1/slot/2/dailyID/1001", function( data ) {
-            $( ".result" ).html( data );
-        });
-        $.get( "https://www.dugout-online.com/sponsors/none/daily/1/slot/3/dailyID/1001", function( data ) {
-            $( ".result" ).html( data );
-        });
-        $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/1/dailyID/1002", function( data ) {
-            $( ".result" ).html( data );
-        });
-        $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/2/dailyID/1002", function( data ) {
-            $( ".result" ).html( data );
-        });
-        $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/3/dailyID/1002", function( data ) {
-            $( ".result" ).html( data );
-        });
-        $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/4/dailyID/1002", function( data ) {
-            $( ".result" ).html( data );
-        });
-        $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/5/dailyID/1002", function( data ) {
-            $( ".result" ).html( data );
-        });
-        $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/6/dailyID/1001", function( data ) {
-            $( ".result" ).html( data );
-        });
-        e.preventDefault();
+    $.get( "https://www.dugout-online.com/sponsors/none/daily/1/slot/1/dailyID/1001", function( data ) {
+        $( ".result" ).html( data );
     });
+    $.get( "https://www.dugout-online.com/sponsors/none/daily/1/slot/2/dailyID/1001", function( data ) {
+        $( ".result" ).html( data );
+    });
+    $.get( "https://www.dugout-online.com/sponsors/none/daily/1/slot/3/dailyID/1001", function( data ) {
+        $( ".result" ).html( data );
+    });
+    $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/1/dailyID/1002", function( data ) {
+        $( ".result" ).html( data );
+    });
+    $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/2/dailyID/1002", function( data ) {
+        $( ".result" ).html( data );
+    });
+    $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/3/dailyID/1002", function( data ) {
+        $( ".result" ).html( data );
+    });
+    $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/4/dailyID/1002", function( data ) {
+        $( ".result" ).html( data );
+    });
+    $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/5/dailyID/1002", function( data ) {
+        $( ".result" ).html( data );
+    });
+    $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/6/dailyID/1001", function( data ) {
+        $( ".result" ).html( data );
+    });
+
+    localStorage.setItem('DOGenieAssistant.lastSponsor', today);
 }
 
 function matchSound() {
@@ -1014,6 +1020,9 @@ function configMenu() {
         <div class="window1_header_start"></div>
         <div class="window1_header" style="width: 460px;">
             <div class="window1_header_text">&nbsp;DO Genie Assistant Configs</div>
+            <a href="https://github.com/edunogueira/DOGenieAssistant/raw/main/DOGenieAssistant.user.js/" target="_blank" style="margin-left: 10px;">
+                <button>Update extension</button>
+            </a>
         </div>
         <div class="window1_header_end"></div>
     </div>
@@ -1247,7 +1256,7 @@ function getSoundStorage(storageConfigs) {
         soundConfig['GAME_END_ID'] = '1636248255';
         localStorage.setItem('DOGenieAssistant.soundConfig', JSON.stringify(soundConfig));
     } else {
-        soundConfig = JSON.parse(storageConfigs);
+       soundConfig = JSON.parse(storageConfigs);
     }
     return soundConfig;
 }
