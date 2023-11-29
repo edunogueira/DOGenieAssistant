@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      26.0
+// @version      26.1
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -856,6 +856,9 @@ function bidButton() {
 
 function teamLink() {
     let homeLink = $(`.generic_badge:first`).attr('onclick');
+    if (!homeLink) {
+        return;
+    }
     homeLink = homeLink.substring(24);
     homeLink = homeLink.substring(0,homeLink.length -1);
     $(`.generic_badge:first`).before(`<a class="home_badge" style='cursor: pointer; float: left; position: relative; margin-left: 2px; margin-top: 5px; width: 120px; height: 120px;' href=${homeLink}>${ $(`.generic_badge:first`).html()}</a>`);
