@@ -883,8 +883,6 @@ function getSponsors() {
         return;
     }
     sendSponsorsRequest();
-
-    localStorage.setItem('DOGenieAssistant.lastSponsor', today);
 }
 
 function sendSponsorsRequest() {
