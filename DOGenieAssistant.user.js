@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      27.2
+// @version      27.1
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -879,9 +879,15 @@ function getSponsors() {
     $(`#getSponsors`).css('visibility', 'visible');
 
     if (today == lastSponsor) {
+        $(`#getSponsors`).css('font-style', 'italic');
         return;
     }
+    sendSponsorsRequest();
 
+    localStorage.setItem('DOGenieAssistant.lastSponsor', today);
+}
+
+function sendSponsorsRequest() {
     $.get( "https://www.dugout-online.com/sponsors/none/daily/1/slot/1/dailyID/1001", function( data ) {
         $( ".result" ).html( data );
     });
@@ -909,11 +915,10 @@ function getSponsors() {
     $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/6/dailyID/1001", function( data ) {
         $( ".result" ).html( data );
     });
-    localStorage.setItem('DOGenieAssistant.lastSponsor', today);
 }
 
-$("#getSponsors").click(function() {
-    getSponsors();
+$("#getSponsors").click(function(e) {
+    sendSponsorsRequest();
     e.preventDefault();
 });
 
