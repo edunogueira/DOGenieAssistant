@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      27.0
+// @version      27.1
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
