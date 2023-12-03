@@ -912,7 +912,7 @@ function getSponsors() {
     localStorage.setItem('DOGenieAssistant.lastSponsor', today);
 }
 
-$("#saveConfig").click(function() {
+$("#getSponsors").click(function() {
     getSponsors();
     e.preventDefault();
 });
