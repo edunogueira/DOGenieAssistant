@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      27.1
+// @version      28.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
 // @icon         https://www.google.com/s2/favicons?domain=dugout-online.com
 // @require	 http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js
-// @require      https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js
+// @require      https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js
 // @include      http*dugout-online.com/*
 // @include      https://www.dugout-online.com/*
 // ==/UserScript==
@@ -258,10 +258,10 @@ function doTable(selector) {
     $(selector + " thead:first").append(header);
 
     $(selector).dataTable({
-        "searching": false,
+        "searching": true,
         "bPaginate": false,
         "bLengthChange": false,
-        "bFilter": true,
+        "bFilter": false,
         "bInfo": false,
         "bAutoWidth": false,
         "order": [
@@ -391,6 +391,71 @@ function squadDetails() {
     doTable('.forumline.dcs');
     doTable('.forumline.mcs');
     doTable('.forumline.pls');
+
+$("#top_positions").before('<table class="inputs"><tbody><tr><td>Min Age</td><td><input type="search" id="minAge" name="minAge"></td><td>Min Rat</td><td><input type="search" id="minRat" name="minRat"></td><td>Min OPS</td><td><input type="search" id="minOPS" name="minOPS"></td><td><button id="clearButton" onclick="">Clear Fields</button></td></tr><tr><td>Max Age</td><td><input type="search" id="maxAge" name="maxAge"></td><td>Max Rat</td><td><input type="search" id="maxRat" name="maxRat"></td><td>Max OPS</td><td><input type="search" id="maxOPS" name="maxOPS"></td></tr></tbody></table>');
+
+    const minAge = document.querySelector('#minAge');
+    const maxAge = document.querySelector('#maxAge');
+    const minRat = document.querySelector('#minRat');
+    const maxRat = document.querySelector('#maxRat');
+    const minOPS = document.querySelector('#minOPS');
+    const maxOPS = document.querySelector('#maxOPS');
+    const i = (document.querySelector('.compare_players_wrapper')) ? 1 : 0;
+
+    // Custom range filtering function
+    DataTable.ext.search.push(function (settings, data, dataIndex) {
+        let minA = parseInt(minAge.value, 10);
+        let maxA = parseInt(maxAge.value, 10);
+        let age = parseFloat(data[3 + i]) || 0;
+        let minR = parseFloat(minRat.value) || 0;
+        let maxR = parseFloat(maxRat.value) || Number.POSITIVE_INFINITY;
+        let rat = parseFloat(data[5 + i]) || 0;
+        let minO = parseFloat(minOPS.value) || 0;
+        let maxO = parseFloat(maxOPS.value) || Number.POSITIVE_INFINITY;
+        let ops = parseFloat(data[6 + i]) || 0;
+
+        if (
+            (isNaN(minA) || minA <= age) &&
+            (isNaN(maxA) || age <= maxA) &&
+            (isNaN(minR) || minR <= rat) &&
+            (isNaN(maxR) || rat <= maxR) &&
+            (isNaN(minO) || minO <= ops) &&
+            (isNaN(maxO) || ops <= maxO)
+        ) {
+            return true;
+        }
+
+        return false;
+    });
+    $('#clearButton').on('click', function() {
+        $('input[type="search"]').val('').change();;
+        $('.forumline').DataTable().search('').draw();
+    });
+
+    // Changes to the inputs will trigger a redraw to update the table
+    minAge.addEventListener('input', function () {
+        $('.forumline').DataTable().draw();
+    });
+
+    maxAge.addEventListener('input', function () {
+        $('.forumline').DataTable().draw();
+    });
+
+    minRat.addEventListener('input', function () {
+        $('.forumline').DataTable().draw();
+    });
+
+    maxRat.addEventListener('input', function () {
+        $('.forumline').DataTable().draw();
+    });
+
+    minOPS.addEventListener('input', function () {
+        $('.forumline').DataTable().draw();
+    });
+
+    maxOPS.addEventListener('input', function () {
+        $('.forumline').DataTable().draw();
+    });
 }
 
 function tacticsDetails() {
