@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      29.0
+// @version      29.1
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -1159,6 +1159,7 @@ function clearStorage() {
 }
 
 function getStorage(storageConfigs) {
+    var configs = {};
     if ((storageConfigs == null) || (storageConfigs == '[]')){
         configs['SECONDARY_CLOCK'] = 'checked';
         configs['DROPDDOWN_MENU'] = 'checked';
@@ -1273,6 +1274,7 @@ function clearMatchStorage() {
 }
 
 function getSoundStorage(storageConfigs) {
+    var soundConfig = {};
     if ((storageConfigs == null) || (storageConfigs == '[]')){
         soundConfig['MATCH_SOUND'] = 'checked';
         soundConfig['GOAL_SOUND'] = 'checked';
