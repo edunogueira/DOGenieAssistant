@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      28.0
+// @version      29.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -12,241 +12,152 @@
 // ==/UserScript==
 //page select ----------------------------------------------//
 var page = document.URL;
-var configs = {}, soundConfig = {};
-configs = getStorage(localStorage.getItem("DOGenieAssistant.configs"));
-soundConfig = getSoundStorage(localStorage.getItem("DOGenieAssistant.soundConfig"));
+var configs = getStorage(localStorage.getItem("DOGenieAssistant.configs")) || {};
+var soundConfig = getSoundStorage(localStorage.getItem("DOGenieAssistant.soundConfig")) || {};
 
-if (page.match('/home/none/')) {
+function checkAndExecute(config, func) {
+    if ((config) || (typeof config === 'undefined')) {
+        func();
+    }
+}
+
+checkAndExecute(configs["PAGE_TITLE"], pageTitle);
+checkAndExecute(configs["DROPDDOWN_MENU"], dropdownMenu);
+checkAndExecute(configs["SECONDARY_CLOCK"], secondaryClock);
+
+if (page.includes('/home/none/')) {
     configMenu();
     configSound();
     clearStorage();
     clearMatchStorage();
-}
-if (configs["PAGE_TITLE"] !== "") {
-    pageTitle();
-}
-if (configs["DROPDDOWN_MENU"] !== "") {
-    dropdownMenu();
-}
-if (configs["SECONDARY_CLOCK"] !== "") {
-    secondaryClock();
-}
+    clearPlayerImages();
 
-if (page.match('/home/none/')) {
-    if (configs["TEAM_LINK"] !== "") {
+    if (configs["TEAM_LINK"]) {
         teamLink();
     }
-    if (configs["GET_SPONSORS"] !== "") {
+    if (configs["GET_SPONSORS"]) {
         getSponsors();
     }
-} else if (page.match('/search_coaches/none/')) {
-    if (configs["COACHES_WAGE"] !== "") {
-        coachesWage();
-    }
-} else if (page.match('/clubinfo/none/clubid/')) {
-    if (configs["READ_RESUME"] !== "") {
-        readResume();
-    }
-} else if (page.match('/clubinfo/none/')) {
-    if (configs["SCOUT_BUTTON"] !== "") {
-        scoutButton();
-    }
-} else if (page.match('/players/details/')) {
+} else if (page.includes('/search_coaches/none/')) {
+    checkAndExecute(configs["COACHES_WAGE"], coachesWage);
+} else if (page.includes('/clubinfo/none/clubid/')) {
+    checkAndExecute(configs["READ_RESUME"], readResume);
+} else if (page.includes('/clubinfo/none/')) {
+    checkAndExecute(configs["SCOUT_BUTTON"], scoutButton);
+} else if (page.includes('/players/details/')) {
     playerDetails();
-    if (configs["BID_BUTTON"] !== "") {
-        bidButton();
-    }
-} else if (page.match('/players/none/') || page.match('/players_nt/none/')) {
-    if (configs["SQUAD_DETAILS"] !== "") {
-        squadDetails();
-    }
-} else if (page.match('/tactics/none/') || page.match('/tactics_youth/none/') || page.match('/tactics_nt/none/')) {
-    if (configs["TACTICS_DETAILS"] !== "") {
-        tacticsDetails();
-    }
-    if (configs["LOAD_TACTICS"] !== "") {
-        loadTactics();
-    }
-} else if (page.match('/players/spreadsheet/')) {
-    if (configs["SPREADSHEET_SQUAD"] !== "") {
-        doTable('.forumline');
-    }
-} else if (page.match('/game/none/gameid/')) {
-    if (soundConfig["MATCH_SOUND"] !== "") {
-        matchSound();
-    }
+    checkAndExecute(configs["BID_BUTTON"], bidButton);
+    checkAndExecute(configs["PLAYER_IMAGE"], playerImage);
+} else if (page.includes('/players/none/') || page.includes('/players_nt/none/')) {
+    checkAndExecute(configs["SQUAD_DETAILS"], squadDetails);
+    checkAndExecute(configs["SQUAD_FILTERS"], squadFilters);
+} else if (page.includes('/tactics/none/') || page.includes('/tactics_youth/none/') || page.includes('/tactics_nt/none/')) {
+    checkAndExecute(configs["TACTICS_DETAILS"], tacticsDetails);
+    checkAndExecute(configs["LOAD_TACTICS"], loadTactics);
+} else if (page.includes('/players/spreadsheet/')) {
+    checkAndExecute(configs["SPREADSHEET_SQUAD"], function() { doTable('.forumline'); });
+} else if (page.includes('/game/none/gameid/')) {
+    checkAndExecute(soundConfig["MATCH_SOUND"], matchSound);
 }
+
 
 //helper //----------------------------------------------//
 function serverTime() {
     const d = new Date();
-    let h = addZero(d.getHours());
-    let m = addZero(d.getMinutes());
-    let s = addZero(d.getSeconds());
-    let time = h + ":" + m + ":" + s;
+    const time = `${addZero(d.getHours())}:${addZero(d.getMinutes())}:${addZero(d.getSeconds())}`;
     $('#servertime2').text(time);
 }
 
 function addZero(i) {
-    if (i < 10) {
-        i = "0" + i
-    }
-
-    return i;
+    return i < 10 ? "0" + i : i;
 }
 
 function applyStyle(css) {
-    'use strict';
-    var head,
-        style;
-    head = document.getElementsByTagName('head')[0];
+    const head = document.head || document.getElementsByTagName('head')[0];
 
-    if (!head) {
-        return;
+    if (head) {
+        const style = document.createElement('style');
+        style.type = 'text/css';
+        style.appendChild(document.createTextNode(css));
+        head.appendChild(style);
     }
-
-    style = document.createElement('style');
-    style.type = 'text/css';
-    style.innerHTML = css;
-    head.appendChild(style);
 }
 
-function getExp(string1) {
-    var retval = string1.substring(0, string1.indexOf(" XP\""));
-    retval = retval.substring(retval.lastIndexOf("\"") + "\"".length);
-    retval = parseInt(retval);
-    return retval;
+function getExp() {
+    return $('div[title]')
+        .map(function() {
+            var titleString = $(this).attr('title');
+            return /^\d+ XP$/.test(titleString) ? titleString : null;
+        })
+        .get();
 }
 
 function getPos() {
-    var posArray = new Array();
-    // Prepopulate with zero values, because threre are no div elements with /positions-0.png:
-    posArray[0] = "0"; // GK  (always 0 or 1 and never 2 or 3)
-    posArray[1] = "0"; // DL
-    posArray[2] = "0"; // DC
-    posArray[3] = "0"; // DR
-    posArray[4] = "0"; // ML
-    posArray[5] = "0"; // MC
-    posArray[6] = "0"; // MR
-    posArray[7] = "0"; // FL
-    posArray[8] = "0"; // FC
-    posArray[9] = "0"; // FR
-    // Find the correct main div element with all the positions:
-    var imgs = document.getElementsByTagName("img");
-    var mainDiv,
-        i,
-        img;
+    var posArray = Array.from({ length: 10 }, function() { return "0"; });
 
-    for (i in imgs) {
-        img = imgs[i];
+    var mainDiv = document.querySelector('img[src*="positions-field"]').parentNode;
 
-        if (img != undefined && img.src.indexOf("positions-field") > 0) {
-            mainDiv = img.parentNode;
-            break;
-        }
-    }
+    var positions = [
+        { top: "69px", left: "10px", index: 0 }, // GK
+        { top: "20px", left: "40px", index: 1 }, // DL
+        { top: "69px", left: "40px", index: 2 }, // DC
+        { top: "117px", left: "40px", index: 3 }, // DR
+        { top: "20px", left: "108px", index: 4 }, // ML
+        { top: "69px", left: "108px", index: 5 }, // MC
+        { top: "117px", left: "108px", index: 6 }, // MR
+        { top: "20px", left: "185px", index: 7 }, // FL
+        { top: "69px", left: "185px", index: 8 }, // FC
+        { top: "117px", left: "185px", index: 9 } // FR
+    ];
 
-    // Go thru all div elements (positions):
-    var posDivs = mainDiv.getElementsByTagName("div");
+    positions.forEach(function (pos) {
+        var posDiv = Array.from(mainDiv.querySelectorAll('div[style*="background"]')).find(function (div) {
+            return div.style.top === pos.top && div.style.left === pos.left;
+        });
 
-    for (i in posDivs) {
-        var posDiv = posDivs[i];
-
-        if (posDiv.style != undefined) {
-            // Get position number:
-            img = posDiv.style.background;
+        if (posDiv) {
+            var img = posDiv.style.background;
             var num = img.substring(img.indexOf("positions-") + "positions-".length, img.indexOf(".png"));
-            var t = posDiv.style.top;
-            var l = posDiv.style.left;
-            // Fill posArray with position numbers:
-            if (t == "69px" && l == "10px") posArray[0] = num; // GK
-            if (t == "69px" && l == "40px") posArray[2] = num; // DC
-            if (t == "20px" && l == "40px") posArray[1] = num; // DL
-            if (t == "117px" && l == "40px") posArray[3] = num; // DR
-            if (t == "69px" && l == "108px") posArray[5] = num; // MC
-            if (t == "20px" && l == "108px") posArray[4] = num; // ML
-            if (t == "117px" && l == "108px") posArray[6] = num; // MR
-            if (t == "69px" && l == "185px") posArray[8] = num; // FC
-            if (t == "20px" && l == "185px") posArray[7] = num; // FL
-            if (t == "117px" && l == "185px") posArray[9] = num; // FR
+            posArray[pos.index] = num;
         }
-    }
+    });
 
-    // posArray now contains values from 0-3 (none, green, yellow, red)
-    // posArray[0] = GK  (always 0 or 1 and never 2 or 3)
-    // posArray[1] = DL
-    // posArray[2] = DC
-    // posArray[3] = DR
-    // posArray[4] = ML
-    // posArray[5] = MC
-    // posArray[6] = MR
-    // posArray[7] = FL
-    // posArray[8] = FC
-    // posArray[9] = FR
     return posArray;
 }
 
 function getOPS(data) {
-    var ops = new Array();
-    var bestPos, maxOPS = 0;
+    var ops = [];
+    var positions = [
+        [0, 5, 10, 15, 13],
+        [16, 6, 1, 15, 13],
+        [6, 11, 1, 15, 13],
+        [16, 6, 1, 15, 13],
+        [16, 17, 7, 2, 13],
+        [12, 17, 7, 2, 13],
+        [16, 17, 7, 2, 13],
+        [3, 8, 17, 16, 13],
+        [3, 8, 17, 11, 13],
+        [3, 8, 17, 16, 13],
+        [1, 6, 7, 2, 13],
+        [12, 2, 7, 3, 8]
+    ];
 
-    ops[0] = (data[0] + data[5] + data[10] + data[15] + data[13]);
-    ops[1] = (data[16] + data[6] + data[1] + data[15] + data[13]);
-    ops[2] = (data[6] + data[11] + data[1] + data[15] + data[13]);
-    ops[3] = (data[16] + data[6] + data[1] + data[15] + data[13]);
-    ops[4] = (data[16] + data[17] + data[7] + data[2] + data[13]);
-    ops[5] = (data[12] + data[17] + data[7] + data[2] + data[13]);
-    ops[6] = (data[16] + data[17] + data[7] + data[2] + data[13]);
-    ops[7] = (data[3] + data[8] + data[17] + data[16] + data[13]);
-    ops[8] = (data[3] + data[8] + data[17] + data[11] + data[13]);
-    ops[9] = (data[3] + data[8] + data[17] + data[16] + data[13]);
-
-    ops[10] = (data[1] + data[6] + data[7] + data[2] + data[13]);
-    ops[11] = (data[12] + data[2] + data[7] + data[3] + data[8]);
     ops['pos'] = 0;
 
-    for (var i = 0; i < ops.length; ++i) {
+    for (var i = 0; i < positions.length; ++i) {
+        ops[i] = positions[i].reduce(function(sum, index) {
+            return sum + data[index];
+        }, 0);
+
         if (isNaN(ops[i])) {
             ops[i] = 0;
         }
-        if (ops[i] < maxOPS) continue;
-        if (ops[i] > maxOPS) {
-            maxOPS = ops[i];
+
+        if (ops[i] >= ops[ops['pos']]) {
             ops['pos'] = i;
         }
     }
-    return ops;
-}
 
-function getCoachOPS(data) {
-    var ops = new Array();
-    var bestPos, maxOPS = 0;
-
-    ops[0] = (data[0] + data[5] + data[10] + data[15] + data[13]);
-    ops[1] = (data[16] + data[6] + data[1] + data[15] + data[13]);
-    ops[2] = (data[6] + data[11] + data[1] + data[15] + data[13]);
-    ops[3] = (data[16] + data[6] + data[1] + data[15] + data[13]);
-    ops[4] = (data[16] + data[17] + data[7] + data[2] + data[13]);
-    ops[5] = (data[12] + data[17] + data[7] + data[2] + data[13]);
-    ops[6] = (data[16] + data[17] + data[7] + data[2] + data[13]);
-    ops[7] = (data[3] + data[8] + data[17] + data[16] + data[13]);
-    ops[8] = (data[3] + data[8] + data[17] + data[11] + data[13]);
-    ops[9] = (data[3] + data[8] + data[17] + data[16] + data[13]);
-
-    ops[10] = (data[1] + data[6] + data[7] + data[2] + data[13]);
-    ops[11] = (data[12] + data[2] + data[7] + data[3] + data[8]);
-    ops['pos'] = 0;
-
-    for (var i = 0; i < ops.length; ++i) {
-        if (isNaN(ops[i])) {
-            ops[i] = 0;
-        }
-        if (ops[i] < maxOPS) continue;
-        if (ops[i] > maxOPS) {
-            maxOPS = ops[i];
-            ops['pos'] = i;
-        }
-    }
     return ops;
 }
 
@@ -257,17 +168,31 @@ function doTable(selector) {
     $(selector + " tbody:first").before('<thead></thead>');
     $(selector + " thead:first").append(header);
 
-    $(selector).dataTable({
-        "searching": true,
-        "bPaginate": false,
-        "bLengthChange": false,
-        "bFilter": false,
-        "bInfo": false,
-        "bAutoWidth": false,
-        "order": [
-            [$(selector + ' .table_top_row th').size() - 1, "desc"]
-        ]
-    });
+    if ((configs["SQUAD_FILTERS"]) || (typeof configs["SQUAD_FILTERS"] === 'undefined')) {
+        $(selector).dataTable({
+            "searching": true,
+            "bPaginate": false,
+            "bLengthChange": false,
+            "bFilter": false,
+            "bInfo": false,
+            "bAutoWidth": false,
+            "order": [
+                [$(selector + ' .table_top_row th').size() - 1, "desc"]
+            ]
+        });
+    } else {
+        $(selector).dataTable({
+            "searching": false,
+            "bPaginate": false,
+            "bLengthChange": false,
+            "bFilter": false,
+            "bInfo": false,
+            "bAutoWidth": false,
+            "order": [
+                [$(selector + ' .table_top_row th').size() - 1, "desc"]
+            ]
+        });
+    }
 }
 
 //features //----------------------------------------------//
@@ -291,28 +216,38 @@ function playerDetails() {
             natPos = i;
         }
     }
-    if ((ops['pos'] != natPos)) {
+    if (ops['pos'] !== natPos) {
         attrText = ' @ OPS ' + ops[natPos] + '/' + ops[ops['pos']] + '*';
     } else {
         attrText = ' @ OPS ' + ops[natPos];
     }
-    var exp = getExp((new XMLSerializer()).serializeToString(document));
+
+    const exp = getExp();
+
     if (configs["PLAYER_OPS_ID"] !== "") {
         $('.player_id_txt').text($('.player_id_txt').text() + attrText);
     }
+
     if (configs["PLAYER_OPS_NAME"] !== "") {
         $('.player_name').text($('.player_name').text() + attrText);
-        $('.player_id_txt').css('position', 'absolute');
-        $('.player_id_txt').css('right', '30px');
+        $('.player_id_txt').css({
+            'position': 'absolute',
+            'right': '30px'
+        });
     }
+
     if (configs["PLAYER_EXP"] !== "") {
+        const expText = ' | ' + exp;
+
         if (configs["PLAYER_OPS_NAME"] !== "") {
-             $('.player_name').text($('.player_name').text() + ' | ' + exp + ' XP');
+            $('.player_name').text($('.player_name').text() + expText);
         }
+
         if (configs["PLAYER_OPS_ID"] !== "") {
-             $('.player_id_txt').text($('.player_id_txt').text() + ' | ' + exp + ' XP');
+            $('.player_id_txt').text($('.player_id_txt').text() + expText);
         }
     }
+
     if (configs["PAGE_TITLE"] !== "") {
         $(document).prop('title', $('.player_name').text() + attrText);
     }
@@ -320,15 +255,16 @@ function playerDetails() {
 
 function squadDetails() {
     $(".forumline .table_top_row").each(function() {
-        $(this).last().append('<td align="center" width="20" title="Original Position Skills" class="tableHeader">OPS</td>');
+        const headerRow = $(this).last();
+        headerRow.append('<td align="center" width="20" title="Original Position Skills" class="tableHeader">OPS</td>');
         if (configs["SQUAD_HIGH"] !== "") {
-            $(this).last().append('<td align="center" width="20" title="Best Original Position Skills" class="tableHeader">HIGH</td>');
+            headerRow.append('<td align="center" width="20" title="Best Original Position Skills" class="tableHeader">HIGH</td>');
         }
     });
 
     $(".forumline [class*=matches_row]").each(function() {
-        var data = Array();
-        var count = 0;
+        const data = Array();
+        let count = 0;
         $(this).find(".tableHeader").remove();
 
         $(this).find("tr").each(function() {
@@ -342,38 +278,16 @@ function squadDetails() {
         });
 
         if (data.length > 0) {
-            var position = $(this).find(" [class*=_icon]").text();
-            var ops = getOPS(data);
-            var natPos = 0;
+            const position = $(this).find(" [class*=_icon]").text();
+            const ops = getOPS(data);
+            const natPos = getPositionIndex(position);
 
-            if (position == "GK") {
-                natPos = 0;
-            } else if ((position == "DL")) {
-                natPos = 1;
-            } else if (position == "DC") {
-                natPos = 2;
-            } else if (position == "DR") {
-                natPos = 3;
-            } else if (position == "ML") {
-                natPos = 4;
-            } else if (position == "MC") {
-                natPos = 5;
-            } else if (position == "MR") {
-                natPos = 6;
-            } else if (position == "FL") {
-                natPos = 7;
-            } else if (position == "FC") {
-                natPos = 8;
-            } else if (position == "FR") {
-                natPos = 9;
-            }
             $(this).last().append('<td align="center"><span class="tableText">' + ops[natPos] + '</span></td>');
+
             if (configs["SQUAD_HIGH"] !== "") {
-                if (ops[ops['pos']] > ops[natPos]) {
-                    $(this).last().append('<td align="center"><span class="tableText"><strong>' + ops[ops['pos']] + '</strong></span></td>');
-                } else {
-                    $(this).last().append('<td align="center"><span class="tableText">' + ops[ops['pos']] + '</span></td>');
-                }
+                const highOps = ops[ops['pos']];
+                const cellText = highOps > ops[natPos] ? '<strong>' + highOps + '</strong>' : highOps;
+                $(this).last().append('<td align="center"><span class="tableText">' + cellText + '</span></td>');
             }
         } else if (count > 1) {
             $(this).last().append('<td align="center"><span class="tableText">0</span></td>');
@@ -391,28 +305,28 @@ function squadDetails() {
     doTable('.forumline.dcs');
     doTable('.forumline.mcs');
     doTable('.forumline.pls');
+}
 
-$("#top_positions").before('<table class="inputs"><tbody><tr><td>Min Age</td><td><input type="search" id="minAge" name="minAge"></td><td>Min Rat</td><td><input type="search" id="minRat" name="minRat"></td><td>Min OPS</td><td><input type="search" id="minOPS" name="minOPS"></td><td><button id="clearButton" onclick="">Clear Fields</button></td></tr><tr><td>Max Age</td><td><input type="search" id="maxAge" name="maxAge"></td><td>Max Rat</td><td><input type="search" id="maxRat" name="maxRat"></td><td>Max OPS</td><td><input type="search" id="maxOPS" name="maxOPS"></td></tr></tbody></table>');
+function squadFilters () {
+    $("#top_positions").before('<table class="inputs"><tbody><tr><td>Min Age</td><td><input type="search" id="minAge" name="minAge"></td><td>Min Rat</td><td><input type="search" id="minRat" name="minRat"></td><td>Min OPS</td><td><input type="search" id="minOPS" name="minOPS"></td><td><button id="clearButton" onclick="">Clear Fields</button></td></tr><tr><td>Max Age</td><td><input type="search" id="maxAge" name="maxAge"></td><td>Max Rat</td><td><input type="search" id="maxRat" name="maxRat"></td><td>Max OPS</td><td><input type="search" id="maxOPS" name="maxOPS"></td></tr></tbody></table>');
 
-    const minAge = document.querySelector('#minAge');
-    const maxAge = document.querySelector('#maxAge');
-    const minRat = document.querySelector('#minRat');
-    const maxRat = document.querySelector('#maxRat');
-    const minOPS = document.querySelector('#minOPS');
-    const maxOPS = document.querySelector('#maxOPS');
+    $('#clearButton').on('click', function() {
+        $('input[type="search"]').val('').change();;
+        $('.forumline').DataTable().search('').draw();
+    });
+
+    const inputIds = ["minAge", "maxAge", "minRat", "maxRat", "minOPS", "maxOPS"];
+    const inputs = inputIds.map(id => document.querySelector(`#${id}`));
     const i = (document.querySelector('.compare_players_wrapper')) ? 1 : 0;
-
-    // Custom range filtering function
     DataTable.ext.search.push(function (settings, data, dataIndex) {
-        let minA = parseInt(minAge.value, 10);
-        let maxA = parseInt(maxAge.value, 10);
-        let age = parseFloat(data[3 + i]) || 0;
-        let minR = parseFloat(minRat.value) || 0;
-        let maxR = parseFloat(maxRat.value) || Number.POSITIVE_INFINITY;
-        let rat = parseFloat(data[5 + i]) || 0;
-        let minO = parseFloat(minOPS.value) || 0;
-        let maxO = parseFloat(maxOPS.value) || Number.POSITIVE_INFINITY;
-        let ops = parseFloat(data[6 + i]) || 0;
+        const [minA, maxA, age, minR, maxR, rat, minO, maxO, ops] = [
+            parseInt(inputs[0].value, 10), parseInt(inputs[1].value, 10),
+            parseFloat(data[3 + i]) || 0,
+            parseFloat(inputs[2].value) || 0, parseFloat(inputs[3].value) || Number.POSITIVE_INFINITY,
+            parseFloat(data[5 + i]) || 0,
+            parseFloat(inputs[4].value) || 0, parseFloat(inputs[5].value) || Number.POSITIVE_INFINITY,
+            parseFloat(data[6 + i]) || 0
+        ];
 
         if (
             (isNaN(minA) || minA <= age) &&
@@ -427,35 +341,28 @@ $("#top_positions").before('<table class="inputs"><tbody><tr><td>Min Age</td><td
 
         return false;
     });
-    $('#clearButton').on('click', function() {
-        $('input[type="search"]').val('').change();;
-        $('.forumline').DataTable().search('').draw();
-    });
 
-    // Changes to the inputs will trigger a redraw to update the table
-    minAge.addEventListener('input', function () {
-        $('.forumline').DataTable().draw();
+    inputs.forEach(input => {
+        input.addEventListener('input', function () {
+            $('.forumline').DataTable().draw();
+        });
     });
+}
 
-    maxAge.addEventListener('input', function () {
-        $('.forumline').DataTable().draw();
-    });
-
-    minRat.addEventListener('input', function () {
-        $('.forumline').DataTable().draw();
-    });
-
-    maxRat.addEventListener('input', function () {
-        $('.forumline').DataTable().draw();
-    });
-
-    minOPS.addEventListener('input', function () {
-        $('.forumline').DataTable().draw();
-    });
-
-    maxOPS.addEventListener('input', function () {
-        $('.forumline').DataTable().draw();
-    });
+function getPositionIndex(position) {
+    switch (position) {
+        case "GK": return 0;
+        case "DL": return 1;
+        case "DC": return 2;
+        case "DR": return 3;
+        case "ML": return 4;
+        case "MC": return 5;
+        case "MR": return 6;
+        case "FL": return 7;
+        case "FC": return 8;
+        case "FR": return 9;
+        default: return 0;
+    }
 }
 
 function tacticsDetails() {
@@ -919,6 +826,41 @@ function bidButton() {
     }
 }
 
+function playerImage() {
+    const playerId = getUrlParameter('playerID');
+    let playerInfo = JSON.parse(localStorage.getItem(`DOGenieAssistant.player.${playerId}`)) || { img: "" };
+    const url = `https://sortitoutsi.b-cdn.net/uploads/face/${playerInfo.img}.png`;
+
+    const playerImg = $(".tabbed_pane img").eq(1);
+    playerImg.after(`
+        <input id="imgId" type="text" value="${playerInfo.img}" style="position: absolute; left: 38px; top: 150px; width: 96px;">
+        <button id="refresh" type="button" style="position: absolute; left: 10px; top: 150px;">
+            <i class="fa fa-refresh"></i>
+        </button>
+    `);
+    if (playerInfo.img) {
+        replacePlayerImg(url);
+    }
+
+    $("#refresh").click(function() {
+        const newImgValue = $("#imgId").val();
+        playerInfo.img = (newImgValue !== "" && !isNaN(newImgValue)) ? parseInt(newImgValue) : "";
+        replacePlayerImg(`https://sortitoutsi.b-cdn.net/uploads/face/${playerInfo.img}.png`);
+        if (playerInfo.img){
+            replacePlayerImg(`https://sortitoutsi.b-cdn.net/uploads/face/${playerInfo.img}.png`);
+            localStorage.setItem(`DOGenieAssistant.player.${playerId}`, JSON.stringify(playerInfo));
+        } else {
+            replacePlayerImg("https://www.dugout-online.com/images/club/profile/player-pic-default.png");
+            localStorage.removeItem(`DOGenieAssistant.player.${playerId}`);
+        }
+    });
+}
+
+function replacePlayerImg(url) {
+    const playerImg = $(".tabbed_pane img").eq(1);
+    playerImg.attr("src", url).css({ width: "150px", height: "150px" });
+}
+
 function teamLink() {
     let homeLink = $(`.generic_badge:first`).attr('onclick');
     if (!homeLink) {
@@ -1073,28 +1015,30 @@ function formatTime(str) {
 }
 
 function configMenu() {
-    let secondaryClock = configs["SECONDARY_CLOCK"] === null ? 'checked' : configs["SECONDARY_CLOCK"];
-    let dropdownMenu = configs["DROPDDOWN_MENU"] === null ? 'checked' : configs["DROPDDOWN_MENU"];
-    let pageTitle = configs["PAGE_TITLE"] === null ? 'checked' : configs["PAGE_TITLE"];
-    let readResume = configs["READ_RESUME"] === null ? 'checked' : configs["READ_RESUME"];
-    let playerOPSName = configs["PLAYER_OPS_NAME"] === null ? 'checked' : configs["PLAYER_OPS_NAME"];
-    let playerOPSId = configs["PLAYER_OPS_ID"] === null ? 'checked' : configs["PLAYER_OPS_ID"];
-    let playerExp = configs["PLAYER_EXP"] === null ? 'checked' : configs["PLAYER_EXP"];
-    let squadDetails = configs["SQUAD_DETAILS"] === null ? 'checked' : configs["SQUAD_DETAILS"];
-    let squadHigh = configs["SQUAD_HIGH"] === null ? 'checked' : configs["SQUAD_HIGH"];
-    let loadTactics = configs["LOAD_TACTICS"] === null ? 'checked' : configs["LOAD_TACTICS"];
-    let tacticsDetails = configs["TACTICS_DETAILS"] === null ? 'checked' : configs["TACTICS_DETAILS"];
-    let coachesWage = configs["COACHES_WAGE"] === null ? 'checked' : configs["COACHES_WAGE"];
-    let scoutButton = configs["SCOUT_BUTTON"] === null ? 'checked' : configs["SCOUT_BUTTON"];
-    let spreadsheetSquad = configs["SPREADSHEET_SQUAD"] === null ? 'checked' : configs["SPREADSHEET_SQUAD"];
-    let bidButton = configs["BID_BUTTON"] === null ? 'checked' : configs["BID_BUTTON"];
-    let teamLink = configs["TEAM_LINK"] === null ? 'checked' : configs["TEAM_LINK"];
-    let getSponsors = configs["GET_SPONSORS"] === null ? 'checked' : configs["GET_SPONSORS"];
+    let secondaryClock = typeof configs["SECONDARY_CLOCK"] !== 'undefined' || configs["SECONDARY_CLOCK"] === null ? configs["SECONDARY_CLOCK"] : 'checked';
+    let dropdownMenu = typeof configs["DROPDDOWN_MENU"] !== 'undefined' || configs["DROPDDOWN_MENU"] === null ? configs["DROPDDOWN_MENU"] : 'checked';
+    let pageTitle = typeof configs["PAGE_TITLE"] !== 'undefined' || configs["PAGE_TITLE"] === null ? configs["PAGE_TITLE"] : 'checked';
+    let readResume = typeof configs["READ_RESUME"] !== 'undefined' || configs["READ_RESUME"] === null ? configs["READ_RESUME"] : 'checked';
+    let playerOPSName = typeof configs["PLAYER_OPS_NAME"] !== 'undefined' || configs["PLAYER_OPS_NAME"] === null ? configs["PLAYER_OPS_NAME"] : 'checked';
+    let playerOPSId = typeof configs["PLAYER_OPS_ID"] !== 'undefined' || configs["PLAYER_OPS_ID"] === null ? configs["PLAYER_OPS_ID"] : 'checked';
+    let playerExp = typeof configs["PLAYER_EXP"] !== 'undefined' || configs["PLAYER_EXP"] === null ? configs["PLAYER_EXP"] : 'checked';
+    let squadDetails = typeof configs["SQUAD_DETAILS"] !== 'undefined' || configs["SQUAD_DETAILS"] === null ? configs["SQUAD_DETAILS"] : 'checked';
+    let squadFilters = typeof configs["SQUAD_FILTERS"] !== 'undefined' || configs["SQUAD_FILTERS"] === null ? configs["SQUAD_FILTERS"] : 'checked';
+    let squadHigh = typeof configs["SQUAD_HIGH"] !== 'undefined' || configs["SQUAD_HIGH"] === null ? configs["SQUAD_HIGH"] : 'checked';
+    let loadTactics = typeof configs["LOAD_TACTICS"] !== 'undefined' || configs["LOAD_TACTICS"] === null ? configs["LOAD_TACTICS"] : 'checked';
+    let tacticsDetails = typeof configs["TACTICS_DETAILS"] !== 'undefined' || configs["TACTICS_DETAILS"] === null ? configs["TACTICS_DETAILS"] : 'checked';
+    let coachesWage = typeof configs["COACHES_WAGE"] !== 'undefined' || configs["COACHES_WAGE"] === null ? configs["COACHES_WAGE"] : 'checked';
+    let scoutButton = typeof configs["SCOUT_BUTTON"] !== 'undefined' || configs["SCOUT_BUTTON"] === null ? configs["SCOUT_BUTTON"] : 'checked';
+    let spreadsheetSquad = typeof configs["SPREADSHEET_SQUAD"] !== 'undefined' || configs["SPREADSHEET_SQUAD"] === null ? configs["SPREADSHEET_SQUAD"] : 'checked';
+    let bidButton = typeof configs["BID_BUTTON"] !== 'undefined' || configs["BID_BUTTON"] === null ? configs["BID_BUTTON"] : 'checked';
+    let teamLink = typeof configs["TEAM_LINK"] !== 'undefined' || configs["TEAM_LINK"] === null ? configs["TEAM_LINK"] : 'checked';
+    let getSponsors = typeof configs["GET_SPONSORS"] !== 'undefined' || configs["GET_SPONSORS"] === null ? configs["GET_SPONSORS"] : 'checked';
+    let playerImage = typeof configs["PLAYER_IMAGE"] !== 'undefined' || configs["PLAYER_IMAGE"] === null ? configs["PLAYER_IMAGE"] : 'checked';
 
     $(`<div class="gui_object" style="width: 468px; margin-left: 8px;">
-    <div class="window1_wrapper" style="margin-top: 4px; width: 468px;">
+    <div class="window1_wrapper" style="margin-top: 4px; width: 490px;">
         <div class="window1_header_start"></div>
-        <div class="window1_header" style="width: 460px;">
+        <div class="window1_header" style="width: 480px;">
             <div class="window1_header_text">&nbsp;DO Genie Assistant Configs</div>
             <a href="https://github.com/edunogueira/DOGenieAssistant/raw/main/DOGenieAssistant.user.js/" target="_blank" style="margin-left: 10px;">
                 <button>Update extension</button>
@@ -1103,7 +1047,7 @@ function configMenu() {
         <div class="window1_header_end"></div>
     </div>
     <div class="window1_wrapper" style="margin-top: 0px; width: 468px;">
-        <div class="window1_content" style="width: 466px;">
+        <div class="window1_content" style="width: 486px;">
             <form name="configForm" action="#" method="post" class="configForm">
                <table width="99%" border="0" cellspacing="1" cellpadding="1" class="matches_tbl" style="margin-bottom: 0px; margin-left: 3px; margin-top: 2px;">
                    <tbody>
@@ -1130,6 +1074,7 @@ function configMenu() {
                        <tr class="table_top_row">
                            <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
                                Squad Details: <input type="checkbox" name="SQUAD_DETAILS" ${squadDetails}>
+                               Squad Filters: <input type="checkbox" name="SQUAD_FILTERS" ${squadFilters}>
                                Squad High: <input type="checkbox" name="SQUAD_HIGH" ${squadHigh}>
                                Sreadsheet Squad: <input type="checkbox" name="SPREADSHEET_SQUAD" ${spreadsheetSquad}>
                            </td>
@@ -1139,6 +1084,7 @@ function configMenu() {
                                Player OPS on Name: <input type="checkbox" name="PLAYER_OPS_NAME" ${playerOPSName}>
                                Player OPS on Id: <input type="checkbox" name="PLAYER_OPS_ID" ${playerOPSId}>
                                Player EXP: <input type="checkbox" name="PLAYER_EXP" ${playerExp}>
+                               Player Image: <input type="checkbox" name="PLAYER_IMAGE" ${playerImage}>
                            </td>
                        </tr>
                        <tr class="table_top_row">
@@ -1153,8 +1099,8 @@ function configMenu() {
                 <input id="saveConfig" type="submit" style="width: 140px;margin-top: 20px;" value="Save">
                 <input id="getSponsors" type="submit" style="width: 140px;margin-top: 20px;visibility: hidden;" value="Get Sponsors">
                 <input id="clearStorage" type="submit" style="width: 140px;margin-top: 20px;" value="Clear Config Storage">
-        <div class="window1_bottom_start"></div>
-        <div class="window1_bottom" style="width: 460px;"></div>
+                <input id="clearPlayerImages" type="submit" style="width: 140px;margin-top: 20px;" value="Clear Player Images">
+        <div class="window1_bottom" style="width: 482px;"></div>
         <div class="window1_bottom_end"></div>
     </div>
 </div>`).insertAfter( "#footer" );
@@ -1167,6 +1113,7 @@ function configMenu() {
         configs['PLAYER_OPS_ID'] = $('input[name="PLAYER_OPS_ID"]').is(":checked") ? "checked" : "";
         configs['PLAYER_EXP'] = $('input[name="PLAYER_EXP"]').is(":checked") ? "checked" : "";
         configs['SQUAD_DETAILS'] = $('input[name="SQUAD_DETAILS"]').is(":checked") ? "checked" : "";
+        configs['SQUAD_FILTERS'] = $('input[name="SQUAD_FILTERS"]').is(":checked") ? "checked" : "";
         configs['SQUAD_HIGH'] = $('input[name="SQUAD_HIGH"]').is(":checked") ? "checked" : "";
         configs['LOAD_TACTICS'] = $('input[name="LOAD_TACTICS"]').is(":checked") ? "checked" : "";
         configs['TACTICS_DETAILS'] = $('input[name="TACTICS_DETAILS"]').is(":checked") ? "checked" : "";
@@ -1176,6 +1123,7 @@ function configMenu() {
         configs['BID_BUTTON'] = $('input[name="BID_BUTTON"]').is(":checked") ? "checked" : "";
         configs['TEAM_LINK'] = $('input[name="TEAM_LINK"]').is(":checked") ? "checked" : "";
         configs['GET_SPONSORS'] = $('input[name="GET_SPONSORS"]').is(":checked") ? "checked" : "";
+        configs['PLAYER_IMAGE'] = $('input[name="PLAYER_IMAGE"]').is(":checked") ? "checked" : "";
         localStorage.setItem('DOGenieAssistant.configs', JSON.stringify(configs));
     });
 }
@@ -1196,6 +1144,7 @@ function clearStorage() {
         localStorage.removeItem("PLAYER_OPS");
         localStorage.removeItem("PLAYER_OPS_ID");
         localStorage.removeItem("SQUAD_DETAILS");
+        localStorage.removeItem("SQUAD_FILTERS");
         localStorage.removeItem("PLAYER_OPS_NAME");
         localStorage.removeItem("SQUAD_HIGH");
         localStorage.removeItem("READ_RESUME");
@@ -1203,6 +1152,7 @@ function clearStorage() {
         localStorage.removeItem("SPREADSHEET_SQUAD");
         localStorage.removeItem("SCOUT_BUTTON");
         localStorage.removeItem("DROPDDOWN_MENU");
+        localStorage.removeItem("PLAYER_IMAGE");
         localStorage.removeItem("DOGenieAssistant.configs");
         e.preventDefault();
     });
@@ -1218,6 +1168,7 @@ function getStorage(storageConfigs) {
         configs['PLAYER_OPS_ID'] = 'checked';
         configs['PLAYER_EXP'] = 'checked';
         configs['SQUAD_DETAILS'] = 'checked';
+        configs['SQUAD_FILTERS'] = 'checked';
         configs['SQUAD_HIGH'] = 'checked';
         configs['LOAD_TACTICS'] = 'checked';
         configs['TACTICS_DETAILS'] = 'checked';
@@ -1227,6 +1178,7 @@ function getStorage(storageConfigs) {
         configs['BID_BUTTON'] = 'checked';
         configs['TEAM_LINK'] = 'checked';
         configs['GET_SPONSORS'] = 'checked';
+        configs['PLAYER_IMAGE'] = 'checked';
         localStorage.setItem('DOGenieAssistant.configs', JSON.stringify(configs));
     } else {
         configs = JSON.parse(storageConfigs);
@@ -1335,4 +1287,20 @@ function getSoundStorage(storageConfigs) {
        soundConfig = JSON.parse(storageConfigs);
     }
     return soundConfig;
+}
+
+function clearPlayerImages() {
+     $("#clearPlayerImages").click(function(e) {
+        let arr = [];
+        let i =0
+        for (i = 0; i < localStorage.length; i++){
+            if (localStorage.key(i).substring(0,23) == 'DOGenieAssistant.player') {
+                arr.push(localStorage.key(i));
+            }
+        }
+        for (i = 0; i < arr.length; i++) {
+            localStorage.removeItem(arr[i]);
+        }
+        e.preventDefault();
+    });
 }
