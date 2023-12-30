@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      29.1
+// @version      30.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -28,16 +28,13 @@ checkAndExecute(configs["SECONDARY_CLOCK"], secondaryClock);
 if (page.includes('/home/none/')) {
     configMenu();
     configSound();
-    clearStorage();
+    defaultConfigStorage();
+    defaultSoundStorage();
     clearMatchStorage();
     clearPlayerImages();
 
-    if (configs["TEAM_LINK"]) {
-        teamLink();
-    }
-    if (configs["GET_SPONSORS"]) {
-        getSponsors();
-    }
+    checkAndExecute(configs["TEAM_LINK"], teamLink);
+    checkAndExecute(configs["GET_SPONSORS"], getSponsors);
 } else if (page.includes('/search_coaches/none/')) {
     checkAndExecute(configs["COACHES_WAGE"], coachesWage);
 } else if (page.includes('/clubinfo/none/clubid/')) {
@@ -59,7 +56,6 @@ if (page.includes('/home/none/')) {
 } else if (page.includes('/game/none/gameid/')) {
     checkAndExecute(soundConfig["MATCH_SOUND"], matchSound);
 }
-
 
 //helper //----------------------------------------------//
 function serverTime() {
@@ -163,10 +159,14 @@ function getOPS(data) {
 
 function doTable(selector) {
     $(selector + ' tr:first td').wrapInner('<div />').find('div').unwrap().wrap('<th/>');
-    var header = $(selector + " .table_top_row:first").clone();
+    let header = $(selector + " .table_top_row:first").clone();
     $(selector + " .table_top_row:first").remove();
     $(selector + " tbody:first").before('<thead></thead>');
     $(selector + " thead:first").append(header);
+    let order = $(selector + ' .table_top_row th').size() - 1;
+    if ((configs["SQUAD_HIGH"]) || (typeof configs["SQUAD_HIGH"] === 'undefined')) {
+        order = $(selector + ' .table_top_row th').size() - 2;
+    }
 
     if ((configs["SQUAD_FILTERS"]) || (typeof configs["SQUAD_FILTERS"] === 'undefined')) {
         $(selector).dataTable({
@@ -177,7 +177,7 @@ function doTable(selector) {
             "bInfo": false,
             "bAutoWidth": false,
             "order": [
-                [$(selector + ' .table_top_row th').size() - 1, "desc"]
+                [$(selector + ' .table_top_row th').size() - 2, "desc"]
             ]
         });
     } else {
@@ -189,7 +189,7 @@ function doTable(selector) {
             "bInfo": false,
             "bAutoWidth": false,
             "order": [
-                [$(selector + ' .table_top_row th').size() - 1, "desc"]
+                [$(selector + ' .table_top_row th').size() - 2, "desc"]
             ]
         });
     }
@@ -367,48 +367,38 @@ function getPositionIndex(position) {
 
 function tacticsDetails() {
     $('td').css('color', 'unset');
-    var players = Array();
-    $("#capitan_sel > option").each(function() {
-        players.push(this.value);
-    });
 
-    var subs = Array();
-    $("#sub_with > option").each(function() {
-        subs.push(this.value);
-    });
+    var players = $("#capitan_sel > option").map(function() {
+        return this.value;
+    }).get();
+
+    var subs = $("#sub_with > option").map(function() {
+        return this.value;
+    }).get();
 
     $(".player").each(function() {
-        var data = Array();
-        var i = 0;
-        var decoration = false;
-        var subdecoration = false;
+        var $parentRow = $(this).closest('tr');
         var playerId = $(this).attr('rel').split('|')[0];
+        var isCaptain = players.includes(playerId);
+        var isSub = subs.includes(playerId);
 
-        $.each(players, function(key, value) {
-            if (value == playerId) {
-                decoration = true;
-                return false;
-            }
-        });
-
-        var div = null;
-        if (decoration == true) {
-            $(this).parent().parent().css('text-decoration', 'underline');
-            $(this).parent().parent().css('font-weight', 'bold');
+        if (isCaptain) {
+            $parentRow.css({
+                'text-decoration': 'underline',
+                'font-weight': 'bold'
+            });
         }
 
-        $.each(subs, function(key, value) {
-            if (value == playerId) {
-                subdecoration = true;
-                return false;
-            }
-        });
-        if (subdecoration == true) {
-            $(this).parent().parent().css('font-weight', 'bold');
-            $(this).parent().parent().css('color', 'blue');
+        if (isSub) {
+            $parentRow.css({
+                'font-weight': 'bold',
+                'color': 'blue'
+            });
             $(this).css('color', 'blue');
         }
 
+        let data = Array();
+        let i =0;
         $("#" + playerId + " table tr").each(function() {
             $(this).children('td').each(function() {
                 if ($.isNumeric($(this).text())) {
@@ -438,19 +428,19 @@ function tacticsDetails() {
             var position = array[0];
             var ops = 0;
 
-            if (position == "GK") {
+            if (position === "GK") {
                 ops = (data[0] + data[5] + data[10] + data[15] + data[13]);
-            } else if (position == "DC") {
+            } else if (position === "DC") {
                 ops = (data[6] + data[11] + data[1] + data[15] + data[13]);
-            } else if ((position == "DL") || (position == "DR")) {
+            } else if (position === "DL" || position === "DR") {
                 ops = (data[16] + data[6] + data[1] + data[15] + data[13]);
-            } else if ((position == "ML") || (position == "MR")) {
+            } else if (position === "ML" || position === "MR") {
                 ops = (data[16] + data[17] + data[7] + data[2] + data[13]);
-            } else if (position == "MC") {
+            } else if (position === "MC") {
                 ops = (data[12] + data[17] + data[7] + data[2] + data[13]);
-            } else if ((position == "FL") || (position == "FR")) {
+            } else if (position === "FL" || position === "FR") {
                 ops = (data[3] + data[8] + data[17] + data[16] + data[13]);
-            } else if (position == "FC") {
+            } else if (position === "FC") {
                 ops = (data[3] + data[8] + data[17] + data[11] + data[13]);
             }
 
@@ -469,248 +459,552 @@ function getLanguage() {
     const languages = {
         Postavke: "bh",
         Settings: "en",
-        Configuraciones: "sp",
+        Configuraciones: "es",
         Impostazioni: "it",
-        Instellingen: "du",
+        Instellingen: "nl",
         Configurações: "br",
         Setări: "ro",
-        Nastavitve: "si",
-        Ayarlar: "tu",
-        설정: "sk",
+        Nastavitve: "sl",
+        Ayarlar: "tr",
+        설정: "ko",
     };
     return languages[settingsTitle];
 };
+
+function getTranslation() {
+    return {
+        bid: {
+            en: "Bid",
+            br: "Oferta",
+            es: "Oferta",
+            it: "Offerta",
+            nl: "Bod",
+            ro: "Ofertă",
+            sl: "Ponudba",
+            tr: "Teklif",
+            ko: "입찰",
+            bh: "Ponuda"
+        },
+        home_home: {
+            en: "Home",
+            br: "Início",
+            es: "Inicio",
+            it: "Home",
+            nl: "Thuis",
+            ro: "Acasă",
+            sl: "Domov",
+            tr: "Anasayfa",
+            ko: "홈",
+            bh: "Početna"
+        },
+        home_news: {
+            en: "News",
+            br: "Notícias",
+            es: "Noticias",
+            it: "Notizie",
+            nl: "Nieuws",
+            ro: "Știri",
+            sl: "Novice",
+            tr: "Haberler",
+            ko: "뉴스",
+            bh: "Vijesti"
+        },
+        home_rules: {
+            en: "Rules",
+            br: "Regras",
+            es: "Reglas",
+            it: "Regole",
+            nl: "Regels",
+            ro: "Reguli",
+            sl: "Pravila",
+            tr: "Kurallar",
+            ko: "규칙",
+            bh: "Pravila"
+        },
+        home_help: {
+            en: "Help",
+            br: "Ajuda",
+            es: "Ayuda",
+            it: "Aiuto",
+            nl: "Hulp",
+            ro: "Ajutor",
+            sl: "Pomoč",
+            tr: "Yardım",
+            ko: "도움말",
+            bh: "Pomoć"
+        },
+        club_info: {
+            en: "Info",
+            br: "Informações",
+            es: "Información",
+            it: "Informazioni",
+            nl: "Info",
+            ro: "Informații",
+            sl: "Informacije",
+            tr: "Bilgi",
+            ko: "정보",
+            bh: "Informacije"
+        },
+        club_bids: {
+            en: "Bids",
+            br: "Ofertas",
+            es: "Ofertas",
+            it: "Offerte",
+            nl: "Biedingen",
+            ro: "Oferte",
+            sl: "Ponudbe",
+            tr: "Teklifler",
+            ko: "입찰",
+            bh: "Ponude"
+        },
+        club_transfers: {
+            en: "Transfers",
+            br: "Transferências",
+            es: "Transferencias",
+            it: "Trasferimenti",
+            nl: "Transfers",
+            ro: "Transferuri",
+            sl: "Prenosi",
+            tr: "Transferler",
+            ko: "이적",
+            bh: "Transferi"
+        },
+        club_players: {
+            en: "Players",
+            br: "Jogadores",
+            es: "Jugadores",
+            it: "Giocatori",
+            nl: "Spelers",
+            ro: "Jucători",
+            sl: "Igralci",
+            tr: "Oyuncular",
+            ko: "선수들",
+            bh: "Igrači"
+        },
+        club_players_youth: {
+            en: "Players (Youth)",
+            br: "Jogadores (Juvenil)",
+            es: "Jugadores (Juvenil)",
+            it: "Giocatori (Giovani)",
+            nl: "Jeugdspelers",
+            ro: "Jucători (Tineret)",
+            sl: "Igralci (Mladina)",
+            tr: "Oyuncular (Genç)",
+            ko: "선수들 (청소년)",
+            bh: "Igrači (mladi)"
+        },
+        scout_report: {
+            en: "Scout Report",
+            br: "Relatório do Espião",
+            es: "Informe del Explorador",
+            it: "Rapporto dell'Esperto",
+            nl: "Scout Rapport",
+            ro: "Raport de Spionaj",
+            sl: "Poročilo Izvida",
+            tr: "Casus Raporu",
+            ko: "스카우트 보고서",
+            bh: "Izvještaj skauta"
+        },
+        club_staff: {
+            en: "Staff",
+            br: "Comissão Técnica",
+            es: "Personal",
+            it: "Personale",
+            nl: "Personeel",
+            ro: "Staff",
+            sl: "Osebje",
+            tr: "Personel",
+            ko: "스태프",
+            bh: "Osoblje"
+        },
+        club_settings: {
+            en: "Settings",
+            br: "Configurações",
+            es: "Ajustes",
+            it: "Impostazioni",
+            nl: "Instellingen",
+            ro: "Setări",
+            sl: "Nastavitve",
+            tr: "Ayarlar",
+            ko: "설정",
+            bh: "Postavke"
+        },
+        players_nt: {
+            en: "Players",
+            br: "Jogadores",
+            es: "Jugadores",
+            it: "Giocatori",
+            nl: "Spelers",
+            ro: "Jucători",
+            sl: "Igralci",
+            tr: "Oyuncular",
+            ko: "선수들",
+            bh: "Igrači"
+        },
+        tactics_nt: {
+            en: "Tactics",
+            br: "Táticas",
+            es: "Tácticas",
+            it: "Tattiche",
+            nl: "Tactieken",
+            ro: "Tactică",
+            sl: "Taktika",
+            tr: "Taktikler",
+            ko: "전술",
+            bh: "Taktike"
+        },
+        management_finances: {
+            en: "Finances",
+            br: "Finanças",
+            es: "Finanzas",
+            it: "Finanze",
+            nl: "Financiën",
+            ro: "Finanțe",
+            sl: "Finance",
+            tr: "Finans",
+            ko: "재무",
+            bh: "Finansije"
+        },
+        management_stadium: {
+            en: "Stadium",
+            br: "Estádio",
+            es: "Estadio",
+            it: "Stadio",
+            nl: "Stadion",
+            ro: "Stadion",
+            sl: "Stadion",
+            tr: "Stadyum",
+            ko: "경기장",
+            bh: "Stadion"
+        },
+        management_facilities: {
+            en: "Facilities",
+            br: "Instalações",
+            es: "Instalaciones",
+            it: "Strutture",
+            nl: "Faciliteiten",
+            ro: "Facilități",
+            sl: "Objekti",
+            tr: "Tesisler",
+            ko: "시설",
+            bh: "Objekti"
+        },
+        management_sponsors: {
+            en: "Sponsors",
+            br: "Patrocinadores",
+            es: "Patrocinadores",
+            it: "Sponsor",
+            nl: "Sponsors",
+            ro: "Sponsori",
+            sl: "Sponzorji",
+            tr: "Sponsorlar",
+            ko: "후원사",
+            bh: "Pokrovitelji"
+        },
+        management_calendar: {
+            en: "Calendar",
+            br: "Calendário",
+            es: "Calendario",
+            it: "Calendario",
+            nl: "Kalender",
+            ro: "Calendar",
+            sl: "Koledar",
+            tr: "Takvim",
+            ko: "일정",
+            bh: "Kalendar"
+        },
+        tactics_fiest: {
+            en: "Tactics",
+            br: "Táticas",
+            es: "Tácticas",
+            it: "Tattiche",
+            nl: "Tactiek",
+            ro: "Tactici",
+            sl: "Taktike",
+            tr: "Taktikler",
+            ko: "전술",
+            bh: "Taktike"
+        },
+        tactics_youth: {
+            en: "Tactics (youth)",
+            br: "Táticas (juvenil)",
+            es: "Tácticas (juveniles)",
+            it: "Tattiche (giovanili)",
+            nl: "Tactiek (jeugd)",
+            ro: "Tactici (tineret)",
+            sl: "Taktike (mladina)",
+            tr: "유소년 택틱",
+            ko: "유소년 택틱",
+            bh: "Taktike (mladi)"
+        },
+        training_training: {
+            en: "Training",
+            br: "Treinamento",
+            es: "Entrenamiento",
+            it: "Allenamento",
+            nl: "Training",
+            ro: "Antrenament",
+            sl: "Trening",
+            tr: "Eğitim",
+            ko: "훈련",
+            bh: "Treniranje"
+        },
+        training_physios: {
+            en: "Physios",
+            br: "Fisioterapeutas",
+            es: "Fisioterapeutas",
+            it: "Fisioterapisti",
+            nl: "Fysiotherapeuten",
+            ro: "Fizioterapeuți",
+            sl: "Fizioterapevti",
+            tr: "Fizyoterapistler",
+            ko: "물리 치료사",
+            bh: "Fizioterapeuti"
+        },
+        training_physio_report: {
+            en: "Physio Report",
+            br: "Relatório de lesões",
+            es: "Informe del fisioterapeuta",
+            it: "Rapporto fisioterapico",
+            nl: "Fysiotherapieverslag",
+            ro: "Raport fizioterapeutic",
+            sl: "Fizioterapevtsko poročilo",
+            tr: "물리치료사 보고서",
+            ko: "물리치료사 보고서",
+            bh: "Izvještaj fizioterapeuta"
+        },
+        search_players: {
+            en: "Players",
+            br: "Jogadores",
+            es: "Jugadores",
+            it: "Giocatori",
+            nl: "Spelers",
+            ro: "Jucători",
+            sl: "Igralci",
+            tr: "선수들",
+            ko: "선수들",
+            bh: "Igrači"
+        },
+        search_clubs: {
+            en: "Clubs",
+            br: "Clubes",
+            es: "Clubes",
+            it: "Club",
+            nl: "Clubs",
+            ro: "Cluburi",
+            sl: "Klubi",
+            tr: "Kulüpler",
+            ko: "클럽",
+            bh: "Klubovi"
+        },
+        search_national: {
+            en: "National",
+            br: "Seleções",
+            es: "Selección Nacional",
+            it: "Nazionale",
+            nl: "Nationale Teams",
+            ro: "Națională",
+            sl: "Nacionalna",
+            tr: "Milli",
+            ko: "대표팀",
+            bh: "Nacionalna"
+        },
+        search_coaches: {
+            en: "Coaches",
+            br: "Treinadores",
+            es: "Entrenadores",
+            it: "Allenatori",
+            nl: "Coaches",
+            ro: "Antrenori",
+            sl: "Trenerji",
+            tr: "Antrenörler",
+            ko: "코치",
+            bh: "Treneri"
+        },
+        search_physios: {
+            en: "Physios",
+            br: "Fisioterapeutas",
+            es: "Fisioterapeutas",
+            it: "Fisioterapisti",
+            nl: "Fysiotherapeuten",
+            ro: "Fizioterapeuți",
+            sl: "Fizioterapevti",
+            tr: "Fizyoterapistler",
+            ko: "물리치료사",
+            bh: "Fizioterapeuti"
+        },
+        search_transfers: {
+            en: "Transfers",
+            br: "Transferências",
+            es: "Transferencias",
+            it: "Trasferimenti",
+            nl: "Transfers",
+            ro: "Transferuri",
+            sl: "Prenosi",
+            tr: "Transferler",
+            ko: "이적",
+            bh: "Transferi"
+        },
+        community_forum: {
+            en: "Forum",
+            br: "Fórum",
+            es: "Foro",
+            it: "Forum",
+            nl: "Forum",
+            ro: "Forum",
+            sl: "Forum",
+            tr: "Forum",
+            ko: "포럼",
+            bh: "Forum"
+        },
+        community_rules: {
+            en: "Rules",
+            br: "Regras",
+            es: "Reglas",
+            it: "Regole",
+            nl: "Regels",
+            ro: "Reguli",
+            sl: "Pravila",
+            tr: "Kurallar",
+            ko: "규칙",
+            bh: "Pravila"
+        },
+        community_profile: {
+            en: "Profile",
+            br: "Perfil",
+            es: "Perfil",
+            it: "Profilo",
+            nl: "Profiel",
+            ro: "Profil",
+            sl: "Profil",
+            tr: "Profil",
+            ko: "프로필",
+            bh: "Profil"
+        },
+        community_links: {
+            en: "Links",
+            br: "Links",
+            es: "Enlaces",
+            it: "Link",
+            nl: "Links",
+            ro: "Link-uri",
+            sl: "Povezave",
+            tr: "Bağlantılar",
+            ko: "링크",
+            bh: "Linkovi"
+        },
+
+    };
+}
 
 function dropdownMenu() {
     var css = '.dropdown-content{text-align: left;top:0px;border-radius: 15px;margin-top:40px;display:none;position:absolute;background-color:#f1f1f1;min-width:160px;box-shadow:0 8px 16px 0 rgba(0,0,0,.2);z-index:1}.dropdown-content a{border-radius: 15px;color:#000;padding:12px 16px;text-decoration:none;display:block}.dropdown-content a:hover{background-color:#ddd}.menu_button:hover .dropdown-content{display:block}.menu_button:hover .dropbtn{background-color:#3e8e41}';
     applyStyle(css);
 
-    const translation = {
-        home_home: {
-            en: "Home",
-            br: "Início"
-        },
-        home_news: {
-            en: "News",
-            br: "Notícias"
-        },
-        home_rules: {
-            en: "Rules",
-            br: "Regras"
-        },
-        home_help: {
-            en: "Help",
-            br: "Ajuda"
-        },
-
-        club_info: {
-            en: "Info",
-            br: "Informações"
-        },
-        club_bids: {
-            en: "Bids",
-            br: "Ofertas"
-        },
-        club_transfers: {
-            en: "Transfers",
-            br: "Transferências"
-        },
-        club_players: {
-            en: "Players",
-            br: "Jogadores"
-        },
-        club_players_youth: {
-            en: "Players (youth)",
-            br: "Jogadores (juvenil)"
-        },
-        scout_report: {
-            en: "Scout Report",
-            br: "Relatório do Espião"
-        },
-        club_staff: {
-            en: "Staff",
-            br: "Comissão Técnica"
-        },
-        club_settings: {
-            en: "Settings",
-            br: "Configurações"
-        },
-
-        players_nt: {
-            en: "Players",
-            br: "Jogadores"
-        },
-        tactics_nt: {
-            en: "Tactics",
-            br: "Táticas"
-        },
-
-        management_finances: {
-            en: "Finances",
-            br: "Finanças"
-        },
-        management_stadium: {
-            en: "Stadium",
-            br: "Estádio"
-        },
-        management_facilities: {
-            en: "Facilities",
-            br: "Instalações"
-        },
-        management_sponsors: {
-            en: "Sponsors",
-            br: "Patrocinadores"
-        },
-        management_calendar: {
-            en: "Calendar",
-            br: "Calendário"
-        },
-
-        tactics_fiest: {
-            en: "Tactics",
-            br: "Táticas"
-        },
-        tactics_youth: {
-            en: "Tactics (youth)",
-            br: "Táticas (juvenil)"
-        },
-
-        training_training: {
-            en: "Training",
-            br: "Treinamento"
-        },
-        training_physios: {
-            en: "Physios",
-            br: "Fisioterapeutas"
-        },
-        training_physio_report: {
-            en: "Physio Report",
-            br: "Relatório de lesões"
-        },
-
-        search__players: {
-            en: "Players",
-            br: "Jogadores"
-        },
-        search_clubs: {
-            en: "Clubs",
-            br: "Clubes"
-        },
-        search_national: {
-            en: "National",
-            br: "Seleções"
-        },
-        search_coaches: {
-            en: "Coaches",
-            br: "Treinadores"
-        },
-        search_physios: {
-            en: "Physios",
-            br: "Fisioterapeutas"
-        },
-        search_transfers: {
-            en: "transfers",
-            br: "Transferências"
-        },
-
-        community_forum: {
-            en: "Forum",
-            br: "Fórum"
-        },
-        community_rules: {
-            en: "Rules",
-            br: "Regras"
-        },
-        community_profile: {
-            en: "Profile",
-            br: "Perfil"
-        },
-        community_links: {
-            en: "Links",
-            br: "Links"
-        },
-    };
+    const translation = getTranslation();
     let language = getLanguage();
-    if (language!="en" && language!="br") language = "en";
-    let i = 1;
-    $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/home/none/">${translation.home_home[language]}</a> <a href="https://www.dugout-online.com/news/none/">${translation.home_news[language]}</a> <a href="https://www.dugout-online.com/rules/none/">${translation.home_rules[language]}</a> <a href="https://www.dugout-online.com/helpmain/none/">${translation.home_help[language]}</a></div>`));
-    i++;
-    $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/clubinfo/none/">${translation.club_info[language]}</a><a href="https://www.dugout-online.com/clubinfo/bids/">${translation.club_bids[language]}</a><a href="https://www.dugout-online.com/clubinfo/transfers/">${translation.club_transfers[language]}</a><a href="https://www.dugout-online.com/players/none/">${translation.club_players[language]}</a><a href="https://www.dugout-online.com/players/none/view/youth/">${translation.club_players_youth[language]}</a><a href="https://www.dugout-online.com/staff/none/">${translation.club_staff[language]}</a><a href="https://www.dugout-online.com/settings/none/">${translation.club_settings[language]}</a></div>`));
-    i++;
-    if ($(".menu_button").length > 7) {
-        $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/players_nt/none/">${translation.players_nt[language]}</a><a href="https://www.dugout-online.com/tactics_nt/none/">${translation.tactics_nt[language]}</a></div>`));
-        i++;
+    if (translation.home_home[language] == undefined) {
+        language = 'en';
     }
-    $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/finances/none/">${translation.management_finances[language]}</a> <a href="https://www.dugout-online.com/stadium/none/">${translation.management_stadium[language]}</a> <a href="https://www.dugout-online.com/facilities/none/">${translation.management_facilities[language]}</a> <a href="https://www.dugout-online.com/sponsors/none/">${translation.management_sponsors[language]}</a> <a href="https://www.dugout-online.com/calendar/none/">${translation.management_calendar[language]}</a></div>`));
-    i++;
-    $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/tactics/none/">${translation.tactics_fiest[language]}</a> <a href="https://www.dugout-online.com/tactics_youth/none/">${translation.tactics_youth[language]}</a></div>`));
-    i++;
-    $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/training/none/">${translation.training_training[language]}</a> <a href="https://www.dugout-online.com/physios/none/">${translation.training_physios[language]}</a> <a href="https://www.dugout-online.com/physio_report/none">${translation.training_physio_report[language]}</a></div>`));
-    i++;
-    $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/search_players/none/">${translation.search__players[language]}</a> <a href="https://www.dugout-online.com/search_clubs/none/">${translation.search_clubs[language]}</a> <a href="https://www.dugout-online.com/national_teams/none/">${translation.search_national[language]}</a> <a href="https://www.dugout-online.com/search_coaches/none/">${translation.search_coaches[language]}</a> <a href="https://www.dugout-online.com/search_physios/none/">${translation.search_physios[language]}</a> <a href="https://www.dugout-online.com/search_transfers/none/">${translation.search_transfers[language]}</a></div>`));
-    i++;
-    $('.menu_button:nth-child(' + i + ')').append((`<div class="dropdown-content"><a href="https://www.dugout-online.com/forum/none/">${translation.community_forum[language]}</a> <a href="https://www.dugout-online.com/community_rules/none/">${translation.community_rules[language]}</a> <a href="https://www.dugout-online.com/community_profile/none/">${translation.community_profile[language]}</a> <a href="https://www.dugout-online.com/links/none/">${translation.community_links[language]}</a></div>`));
 
-    // substitui divs do canto superior esquerdo por anchors para facilitar navegação
-    [...document.querySelectorAll('div#top_container > div')]
-        .filter(d => d.classList.contains(`${d.id}_ico`))
-        .forEach(d => {
-        const anchor = document.createElement('a');
-        anchor.href = d.onclick.toString().split('document.location.href=')[1].split('\'')[1];
-        anchor.classList.add(...d.classList.values())
-        anchor.id = d.id;
-        anchor.style.cssText = d.style.cssText;
-        anchor.title = d.title;
-        d.parentElement.insertBefore(anchor, d);
-        d.remove();
+    const menu = {
+        home: [
+            { url: 'https://www.dugout-online.com/home/none/', text: translation.home_home[language] },
+            { url: 'https://www.dugout-online.com/news/none/', text: translation.home_news[language] },
+            { url: 'https://www.dugout-online.com/rules/none/', text: translation.home_rules[language] },
+            { url: 'https://www.dugout-online.com/helpmain/none/', text: translation.home_help[language] },
+        ],
+        club: [
+            { url: 'https://www.dugout-online.com/clubinfo/none/', text: translation.club_info[language] },
+            { url: 'https://www.dugout-online.com/clubinfo/bids/', text: translation.club_bids[language] },
+            { url: 'https://www.dugout-online.com/clubinfo/transfers/', text: translation.club_transfers[language] },
+            { url: 'https://www.dugout-online.com/players/none/', text: translation.club_players[language] },
+            { url: 'https://www.dugout-online.com/players/none/view/youth/', text: translation.club_players_youth[language] },
+            { url: 'https://www.dugout-online.com/staff/none/', text: translation.club_staff[language] },
+            { url: 'https://www.dugout-online.com/settings/none/', text: translation.club_settings[language] },
+        ],
+        nt: [
+            { url: 'https://www.dugout-online.com/players_nt/none/', text: translation.players_nt[language] },
+            { url: 'https://www.dugout-online.com/tactics_nt/none/', text: translation.tactics_nt[language] },
+        ],
+        management: [
+            { url: 'https://www.dugout-online.com/finances/none/', text: translation.management_finances[language] },
+            { url: 'https://www.dugout-online.com/stadium/none/', text: translation.management_stadium[language] },
+            { url: 'https://www.dugout-online.com/facilities/none/', text: translation.management_facilities[language] },
+            { url: 'https://www.dugout-online.com/sponsors/none/', text: translation.management_sponsors[language] },
+            { url: 'https://www.dugout-online.com/calendar/none/', text: translation.management_calendar[language] },
+        ],
+        tactics: [
+            { url: 'https://www.dugout-online.com/tactics/none/', text: translation.tactics_fiest[language] },
+            { url: 'https://www.dugout-online.com/tactics_youth/none/', text: translation.tactics_youth[language] },
+        ],
+        training: [
+            { url: 'https://www.dugout-online.com/training/none/', text: translation.training_training[language] },
+            { url: 'https://www.dugout-online.com/physios/none/', text: translation.training_physios[language] },
+            { url: 'https://www.dugout-online.com/physio_report/none', text: translation.training_physio_report[language] },
+        ],
+        search: [
+            { url: 'https://www.dugout-online.com/search_players/none/', text: translation.search_players[language] },
+            { url: 'https://www.dugout-online.com/search_clubs/none/', text: translation.search_clubs[language] },
+            { url: 'https://www.dugout-online.com/national_teams/none/', text: translation.search_national[language] },
+            { url: 'https://www.dugout-online.com/search_coaches/none/', text: translation.search_coaches[language] },
+            { url: 'https://www.dugout-online.com/search_physios/none/', text: translation.search_physios[language] },
+            { url: 'https://www.dugout-online.com/search_transfers/none/', text: translation.search_transfers[language] },
+        ],
+        community: [
+            { url: 'https://www.dugout-online.com/forum/none/', text: translation.community_forum[language] },
+            { url: 'https://www.dugout-online.com/community_rules/none/', text: translation.community_rules[language] },
+            { url: 'https://www.dugout-online.com/community_profile/none/', text: translation.community_profile[language] },
+            { url: 'https://www.dugout-online.com/links/none/', text: translation.community_links[language] },
+        ],
+    };
+
+    if ($(".menu_button").length <= 7) {
+        delete menu.nt;
+    }
+
+    let menuIndex = 1;
+    let dropdownContent = '';
+    $.each(menu, function(menuKey, items) {
+        const $menuButton = $('.menu_button:nth-child(' + menuIndex + ')');
+        dropdownContent = '';
+        $.each(items, function(index, item) {
+            dropdownContent += `<a href="${item.url}">${item.text}</a>`;
+        });
+
+        $menuButton.append(`<div class="dropdown-content">${dropdownContent}</div>`);
+        menuIndex++;
     });
 }
 
 function pageTitle() {
-    var title = $(location).attr('pathname').split("/")[1];
-    title = title.charAt(0).toUpperCase() + title.slice(1);
-    $(document).prop('title', title.replace("_", " "));
+    const title = location.pathname.split("/")[1].replace("_", " ");
+    $(document).prop('title', title.charAt(0).toUpperCase() + title.slice(1));
 }
 
 function coachesWage() {
-    var max = 0;
-    var wage = 0;
-    $(".search_tbl tbody tr").first().append('<td width="36" class="table_header" valign="middle" align="center" style="cursor: default;" title="Approximate Wage">Wage</td>');
+    $(".search_tbl tbody tr:first").append('<td width="36" class="table_header" valign="middle" align="center" style="cursor: default;" title="Approximate Wage">Wage</td>');
+
     $(".search_tbl tbody tr").each(function() {
-        var data = Array();
-        var count = 0;
-        $(this).children('td').each(function() {
-            if ($.isNumeric($(this).text())) {
-                data.push(parseInt($(this).text()));
-            } else {
-                count++;
-            }
-        });
+        const data = $(this).children('td').map(function() {
+            return $.isNumeric($(this).text()) ? parseInt($(this).text()) : null;
+        }).get().filter(Number);
+
         if (data.length > 0) {
-            data.shift();
-            data.pop();
-            data.pop();
-            data.pop();
-            data.pop();
-            data.pop();
+            const max = Math.max(...data.slice(1, -5));
+            let wage = (max <= 42) ? (24.44889 * max - 138.145) * max : (51.54712 * max - 1260) * max;
+            wage = parseFloat(wage).toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, "$1,");
 
-            max = Math.max.apply(Math, data);
-            if (max <= 42) {
-                wage = (24.44889 * max - 138.145) * max;
-            } else {
-                wage = (51.54712 * max - 1260) * max;
-            }
-            wage = parseFloat(wage, 10).toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, "$1,").toString();
-
-            $(this).last().append('<td align="center"><span class="tableText">' + wage + '</span></td>');
+            $(this).append('<td align="center"><span class="tableText">' + wage + '</span></td>');
         }
     });
 
     $('.search_tbl th:first').wrapInner('<div />').find('div').unwrap().wrap('<th/>');
-    var header = $(".search_tbl tr:first").clone();
+    const header = $(".search_tbl tr:first").clone();
     $(".search_tbl tr:first").remove();
     $(".search_tbl tbody:first").before('<thead></thead>');
     $(".search_tbl thead:first").append(header);
+
     $(".search_tbl").dataTable({
         "searching": false,
         "bPaginate": false,
@@ -723,79 +1017,62 @@ function coachesWage() {
 }
 
 function readResume() {
-    let url = $(".maninfo a").attr('href');
-    let pos = url.indexOf('toid');
-    let toid = url.substring(pos+5);
-    url = "https://www.dugout-online.com/readresume.php?id=" + toid;
-    $(".clubname").append( "<a href=" + url + "> [Read Resume]</a>" );
+    const toid = $(".maninfo a").attr('href').split('toid')[1].slice(1);
+    const url = `https://www.dugout-online.com/readresume.php?id=${toid}`;
+    $(".clubname").append(`<a href="${url}"> [Read Resume]</a>`);
 }
 
 function scoutButton() {
-    let clubid = 1000;
-    let sPageURL = $("a[href^='https://www.dugout-online.com/clubinfo/none/clubid/']")[1].href,
-        sURLVariables = sPageURL.split('/'),
-        sParameterName,
-        i;
+    const clubid = $("a[href^='https://www.dugout-online.com/clubinfo/none/clubid/']:eq(1)").attr('href').split('clubid/')[1];
 
-    for (i = 0; i < sURLVariables.length; i++) {
-        sParameterName = sURLVariables[i].split('=');
-
-        if (sParameterName[0] === 'clubid') {
-            clubid = sURLVariables[i+1];
-        }
-    }
-    i = $('table tbody tr').length - 18;
-
-    $('table > tbody  > tr').each(function(index, tr) {
-        if (index == i) {
-            $(this).append( '<td valign="middle" style="padding-left: 25px; padding-right: 1px;"><input type="button" value="Relatório do espião" style="" onclick="document.location.href=\'https://www.dugout-online.com/clubinfo/analysis/clubid/' + clubid + '\'"></td>' );
-        }
-    });
+    const rowIndex = $('table tbody tr').length - 18;
+    $('table > tbody > tr:eq(' + rowIndex + ')').append(`
+        <td valign="middle" style="padding-left: 25px; padding-right: 1px;">
+            <input type="button" value="Relatório do espião" onclick="document.location.href='https://www.dugout-online.com/clubinfo/analysis/clubid/${clubid}'">
+        </td>
+    `);
 }
 
 function loadTactics() {
     $('#field_cont table').append('<tr><td valign="middle" style="color: unset;" colspan="2"><textarea id="dataTtc" name="dataTtc" rows="2" cols="40"></textarea></td><td valign="middle" style="color: unset;"><input type="button" value="Apply" id="apply"><input type="button" value="getTtc" id="getTtc"></td></tr>');
 
     $("#getTtc").click(function() {
-        data="action=submit&players_ids="+players[0]+"&positions="+players[1]+"&players_x="+players[2]+"&players_y="+players[3]+"&substitutes="+substitutes[0]+"&actions="+actionsb;
-        data+="&options="+$("#agression_id").val()+"*"+$("#mentality_id option:selected").val()+"*"+$("#attack_wing_id option:selected").val();
-        data+="*"+$("#passing_id option:selected").val()+"*"+$("#capitan_sel option:selected").val()+"*"+$("#playmaker_sel option:selected").val();
-        data+="*"+$("#target_man_sel option:selected").val()+"*"+$("#penalty_sel option:selected").val();
-        if($("#counter_attacks_id").prop('checked'))
-            data+="*1";
-        else
-            data+="*0";
-        if($("#offside_trap_id").prop('checked'))
-            data+="*1";
-        else
-            data+="*0";
+        const data = {
+            action: 'submit',
+            players_ids: players[0].join(','),
+            positions: players[1].join(','),
+            players_x: players[2].join(','),
+            players_y: players[3].join(','),
+            substitutes: substitutes[0].join(','),
+            actions: actionsb,
+            options: `${$("#agression_id").val()}*${$("#mentality_id option:selected").val()}*${$("#attack_wing_id option:selected").val()}*${$("#passing_id option:selected").val()}*${$("#capitan_sel option:selected").val()}*${$("#playmaker_sel option:selected").val()}*${$("#target_man_sel option:selected").val()}*${$("#penalty_sel option:selected").val()}*${$("#counter_attacks_id").prop('checked') ? '1' : '0'}*${$("#offside_trap_id").prop('checked') ? '1' : '0'}`
+        };
 
-        $("#dataTtc").val(data);
+        const queryString = $.param(data).replace(/%5B/g, '').replace(/%5D/g, '');
+        const decodedQueryString = decodeURIComponent(queryString).replace(/ /g, '+');
+
+        $("#dataTtc").val(decodedQueryString);
     });
 
+
+
     $("#apply").click(function() {
-        var xmlhttp;
-        if (window.XMLHttpRequest)
-            xmlhttp=new XMLHttpRequest();
-        else
-            xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-        let url = '';
-        if (page.match('/tactics/none/')) {
-            url = SERVER_URL + "/ajaxphp/tactics_save.php";
-        } else if (page.match('/tactics_youth/none/')) {
-            url = SERVER_URL + "/ajaxphp/tactics_youth_save.php";
-        } else if (page.match('/tactics_nt/none/')) {
-            url = SERVER_URL + "/ajaxphp/tactics_nt_save.php";
-        }
-        xmlhttp.open("POST", url,true);
-        xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+        const xmlhttp = new XMLHttpRequest();
+        const url = page.match('/tactics/none/') ? SERVER_URL + "/ajaxphp/tactics_save.php" :
+                    page.match('/tactics_youth/none/') ? SERVER_URL + "/ajaxphp/tactics_youth_save.php" :
+                    page.match('/tactics_nt/none/') ? SERVER_URL + "/ajaxphp/tactics_nt_save.php" : '';
+
+        if (!url) return;
+
+        xmlhttp.open("POST", url, true);
+        xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
         xmlhttp.send($("#dataTtc").val());
         location.reload();
     });
 }
 
 function bidButton() {
-    if ($('input[name="riseoffer"]').length == 1) {
+    if ($('input[name="riseoffer"]').length === 1) {
         $('form[name="bidForm"]').addClass( "bidForm" );
         $( ".bidForm input:last" ).addClass( "bidButton" );
 
@@ -806,14 +1083,9 @@ function bidButton() {
             val2 = new Intl.NumberFormat('en-DE').format(parseInt(value + (value / 2)));
         }
 
-        const translation = {
-            bid: {
-                en: "Bid",
-                br: "Oferta"
-            },
-        }
         let language = getLanguage();
         if (language!="en" && language!="br") language = "en";
+        const translation = getTranslation();
         $(`<input id="bid1" type="button" value="${translation.bid[language]} ${val1}"><input id="bid2" type="button" value="${translation.bid[language]} ${val2}"> "`).insertAfter( ".bidButton" );
         $("#bid1").click(function() {
             $('.bidForm input').val(val1);
@@ -861,434 +1133,353 @@ function replacePlayerImg(url) {
     playerImg.attr("src", url).css({ width: "150px", height: "150px" });
 }
 
-function teamLink() {
-    let homeLink = $(`.generic_badge:first`).attr('onclick');
-    if (!homeLink) {
-        return;
+function extractLinkFromBadge(badge) {
+    const onclickValue = badge.attr('onclick');
+    if (onclickValue) {
+        const startIndex = 24;
+        const endIndex = onclickValue.length - 1;
+        return onclickValue.substring(startIndex, endIndex);
     }
-    homeLink = homeLink.substring(24);
-    homeLink = homeLink.substring(0,homeLink.length -1);
-    $(`.generic_badge:first`).before(`<a class="home_badge" style='cursor: pointer; float: left; position: relative; margin-left: 2px; margin-top: 5px; width: 120px; height: 120px;' href=${homeLink}>${ $(`.generic_badge:first`).html()}</a>`);
-    $(`.generic_badge:first`).remove();
-    $(`.home_badge`).addClass('generic_badge');
-
-    let awayLink = $(`.generic_badge:last`).attr('onclick');
-    awayLink = awayLink.substring(24);
-    awayLink = awayLink.substring(0,awayLink.length -1);
-    $(`.generic_badge:last`).before(`<a class="away_badge" style='cursor: pointer; float: left; position: relative; margin-left: 2px; margin-top: 5px; width: 120px; height: 120px;' href=${awayLink}>${ $(`.generic_badge:last`).html()}</a>`);
-    $(`.generic_badge:last`).remove();
-    $(`.away_badge`).addClass('generic_badge');
+    return '';
 }
 
-function getSponsors() {
-    let lastSponsor = localStorage.getItem('DOGenieAssistant.lastSponsor') != null ? localStorage.getItem('DOGenieAssistant.lastSponsor') : '01/01/2000';
-    let today = new Date(Date.now()).toLocaleString().split(',')[0];
-    $(`#getSponsors`).css('visibility', 'visible');
+function createTeamBadge(link, badge, className) {
+    return $(`<a class="${className}" style='cursor: pointer; float: left; position: relative; margin-left: 2px; margin-top: 5px; width: 120px; height: 120px;' href="${link}">${badge.html()}</a>`);
+}
 
-    if (today == lastSponsor) {
-        $(`#getSponsors`).css('font-style', 'italic');
+function teamLink() {
+    const homeBadge = $(`.generic_badge:first`);
+    const homeLink = extractLinkFromBadge(homeBadge);
+
+    if (homeLink) {
+        const homeBadgeLink = createTeamBadge(homeLink, homeBadge, 'home_badge');
+        homeBadge.before(homeBadgeLink);
+        homeBadge.remove();
+        $(`.home_badge`).addClass('generic_badge');
+    }
+
+    const awayBadge = $(`.generic_badge:last`);
+    const awayLink = extractLinkFromBadge(awayBadge);
+
+    if (awayLink) {
+        const awayBadgeLink = createTeamBadge(awayLink, awayBadge, 'away_badge');
+        awayBadge.before(awayBadgeLink);
+        awayBadge.remove();
+        $(`.away_badge`).addClass('generic_badge');
+    }
+}
+
+
+function getSponsors() {
+    const lastSponsor = localStorage.getItem('DOGenieAssistant.lastSponsor') || '01/01/2000';
+    const today = new Date(Date.now()).toLocaleString().split(',')[0];
+    $('#getSponsors').css('visibility', 'visible');
+
+    if (today === lastSponsor) {
+        $('#getSponsors').css('font-style', 'italic');
         return;
     }
+
     sendSponsorsRequest();
 }
 
 function sendSponsorsRequest() {
-    $.get( "https://www.dugout-online.com/sponsors/none/daily/1/slot/1/dailyID/1001", function( data ) {
-        $( ".result" ).html( data );
-    });
-    $.get( "https://www.dugout-online.com/sponsors/none/daily/1/slot/2/dailyID/1001", function( data ) {
-        $( ".result" ).html( data );
-    });
-    $.get( "https://www.dugout-online.com/sponsors/none/daily/1/slot/3/dailyID/1001", function( data ) {
-        $( ".result" ).html( data );
-    });
-    $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/1/dailyID/1002", function( data ) {
-        $( ".result" ).html( data );
-    });
-    $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/2/dailyID/1002", function( data ) {
-        $( ".result" ).html( data );
-    });
-    $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/3/dailyID/1002", function( data ) {
-        $( ".result" ).html( data );
-    });
-    $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/4/dailyID/1002", function( data ) {
-        $( ".result" ).html( data );
-    });
-    $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/5/dailyID/1002", function( data ) {
-        $( ".result" ).html( data );
-    });
-    $.get( "https://www.dugout-online.com/sponsors/adboards/daily/1/slot/6/dailyID/1001", function( data ) {
-        $( ".result" ).html( data );
+    const dailySlotUrls = Array.from({ length: 3 }, (_, index) =>
+        `https://www.dugout-online.com/sponsors/none/daily/1/slot/${index + 1}/dailyID/1001`
+    );
+
+    const adboardSlotUrls = Array.from({ length: 6 }, (_, index) =>
+        `https://www.dugout-online.com/sponsors/adboards/daily/1/slot/${index + 1}/dailyID/1002`
+    );
+
+    const allUrls = [...dailySlotUrls, ...adboardSlotUrls];
+
+    allUrls.forEach(url => {
+        $.get(url, function (data) {
+            $('.result').html(data);
+        });
     });
 
-    let today = new Date(Date.now()).toLocaleString().split(',')[0];
+    const today = new Date(Date.now()).toLocaleString().split(',')[0];
     localStorage.setItem('DOGenieAssistant.lastSponsor', today);
 }
 
-$("#getSponsors").click(function(e) {
+$("#getSponsors").click(function (e) {
     sendSponsorsRequest();
     e.preventDefault();
 });
 
-
 function matchSound() {
-    let gameId = getUrlParameter('gameid');
-    let match = localStorage.getItem("DOGenieAssistant.match." + gameId) === null ? {} : localStorage.getItem("DOGenieAssistant.match." + gameId);
+    const gameId = getUrlParameter('gameid');
+    const match = JSON.parse(localStorage.getItem(`DOGenieAssistant.match.${gameId}`) || '{}');
 
-    if (Object.keys(match).length == 0){
+    if (Object.keys(match).length === 0) {
         match['LAST_GOAL'] = null;
         match['LAST_OFFSIDE'] = null;
         match['GAME_ENDS'] = null;
-    } else {
-        match = JSON.parse(match);
     }
 
-    for (var i = 0; i < 5; i++) {
-        if (soundConfig["GOAL_SOUND"] !== "") {
-            if ($("#events_content td:nth-child(1)").eq(i).html().indexOf('icon-goal') > 1) {
-                let lastGoal = formatTime($("#events_content td:nth-child(2)").eq(i).html());
-                if (formatTime(match['LAST_GOAL']) < lastGoal) {
-                    match['LAST_GOAL'] = lastGoal;
-                    localStorage.setItem('DOGenieAssistant.match.'  + gameId, JSON.stringify(match));
-                    if ($("#events_content td:nth-child(3) a").eq(0).text() == $('.header_clubname').text()) {
-                        $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${soundConfig['HOME_GOAL_ID']}&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
-                    } else {
-                        $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${soundConfig['AWAY_GOAL_ID']}&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
-                    }
-                    $("#events_content").delay(2000);
-                    break;
-                }
-            }
+    for (let i = 0; i < 5; i++) {
+        const eventType = $("#events_content td:nth-child(1)").eq(i).html();
+        const eventTime = formatTime($("#events_content td:nth-child(2)").eq(i).html());
+
+        if (soundConfig["GOAL_SOUND"] !== "" && eventType.includes('icon-goal')) {
+            handleEvent(match, 'LAST_GOAL', eventTime, soundConfig['HOME_GOAL_ID'], soundConfig['AWAY_GOAL_ID'], gameId);
+            break;
         }
 
-        if (soundConfig["OFFSIDE_SOUND"] !== "") {
-            if ($("#events_content td:nth-child(1)").eq(i).html().indexOf('icon-offside') > 1) {
-                let lastOffside = formatTime($("#events_content td:nth-child(2)").eq(i).html());
-                if (formatTime(match['LAST_OFFSIDE']) < lastOffside) {
-                    match['LAST_OFFSIDE'] = lastOffside;
-                    localStorage.setItem('DOGenieAssistant.match.'  + gameId, JSON.stringify(match));
-                    $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${soundConfig['OFFSIDE_SOUND']}&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
-                    $("#events_content").delay(2000);
-                    break;
-                }
-            }
+        if (soundConfig["OFFSIDE_SOUND"] !== "" && eventType.includes('icon-offside')) {
+            handleEvent(match, 'LAST_OFFSIDE', eventTime, soundConfig['OFFSIDE_ID'], soundConfig['OFFSIDE_ID'], gameId);
+            break;
         }
     }
+
     if (soundConfig["GAME_END_SOUND"] !== "") {
-        if ($("#events_content td:nth-child(3)").eq(0).html().substring(0,9) == 'Game ends') {
-            let gameEnds = formatTime($("#events_content td:nth-child(2)").eq(0).html());
-            if (formatTime(match['GAME_ENDS']) != gameEnds) {
-                match['GAME_ENDS'] = gameEnds;
-                localStorage.setItem('DOGenieAssistant.match.'  + gameId, JSON.stringify(match));
-                $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${soundConfig['GAME_END_ID']}&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
-                $("#events_content").delay(2000);
-            }
+        const gameEndsEvent = $("#events_content td:nth-child(3)").eq(0).html();
+        const gameEndsTime = formatTime($("#events_content td:nth-child(2)").eq(0).html());
+
+        if (gameEndsEvent.substring(0, 9) === 'Game ends') {
+            handleEvent(match, 'GAME_ENDS', gameEndsTime, soundConfig['GAME_END_ID'], gameId);
         }
     }
 }
 
-function getUrlParameter(sParam) {
-    var sPageURL = window.location.href,
-        sURLVariables = sPageURL.split('/'),
-        sParameterName,
-        i;
+function handleEvent(match, eventName, eventTime, soundIdHome, soundIdAway, gameId) {
+    if (formatTime(match[eventName]) < eventTime) {
+        match[eventName] = eventTime;
+        localStorage.setItem(`DOGenieAssistant.match.${gameId}`, JSON.stringify(match));
 
-    for (i = 0; i < sURLVariables.length; i++) {
-        sParameterName = sURLVariables[i];
+        const isHomeTeam = ($("#events_content td:nth-child(3) a").eq(0).text() === $('.header_clubname').text());
+        const soundId = isHomeTeam ? soundIdHome : soundIdAway;
 
-        if (sParameterName === sParam) {
-            return sURLVariables[i+1] === undefined ? true : decodeURIComponent(sURLVariables[i+1]);
-        }
+        $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${soundId}&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
+        $("#events_content").delay(2000);
     }
-    return false;
-};
+}
 
 function formatTime(str) {
-    if (str === null) {
-        str = "00,00";
-    }
-    str = str.replace('[', '');
-    str = str.replace(']', '');
-    str = str.replace(':', ',');
-    str = str.replace(' ', '');
-    return str.replace( /(<([^>]+)>)/ig, '');
+    return (str || "00:00")
+        .replace(/[\[\]: ]/g, '')
+        .replace(',', ':')
+        .replace(/<[^>]+>/ig, '');
+}
+
+function getUrlParameter(paramName) {
+    const url = window.location.href;
+    const match = url.match(new RegExp(`${paramName}/(\\d+)`));
+
+    return match ? match[1] : false;
 }
 
 function configMenu() {
-    let secondaryClock = typeof configs["SECONDARY_CLOCK"] !== 'undefined' || configs["SECONDARY_CLOCK"] === null ? configs["SECONDARY_CLOCK"] : 'checked';
-    let dropdownMenu = typeof configs["DROPDDOWN_MENU"] !== 'undefined' || configs["DROPDDOWN_MENU"] === null ? configs["DROPDDOWN_MENU"] : 'checked';
-    let pageTitle = typeof configs["PAGE_TITLE"] !== 'undefined' || configs["PAGE_TITLE"] === null ? configs["PAGE_TITLE"] : 'checked';
-    let readResume = typeof configs["READ_RESUME"] !== 'undefined' || configs["READ_RESUME"] === null ? configs["READ_RESUME"] : 'checked';
-    let playerOPSName = typeof configs["PLAYER_OPS_NAME"] !== 'undefined' || configs["PLAYER_OPS_NAME"] === null ? configs["PLAYER_OPS_NAME"] : 'checked';
-    let playerOPSId = typeof configs["PLAYER_OPS_ID"] !== 'undefined' || configs["PLAYER_OPS_ID"] === null ? configs["PLAYER_OPS_ID"] : 'checked';
-    let playerExp = typeof configs["PLAYER_EXP"] !== 'undefined' || configs["PLAYER_EXP"] === null ? configs["PLAYER_EXP"] : 'checked';
-    let squadDetails = typeof configs["SQUAD_DETAILS"] !== 'undefined' || configs["SQUAD_DETAILS"] === null ? configs["SQUAD_DETAILS"] : 'checked';
-    let squadFilters = typeof configs["SQUAD_FILTERS"] !== 'undefined' || configs["SQUAD_FILTERS"] === null ? configs["SQUAD_FILTERS"] : 'checked';
-    let squadHigh = typeof configs["SQUAD_HIGH"] !== 'undefined' || configs["SQUAD_HIGH"] === null ? configs["SQUAD_HIGH"] : 'checked';
-    let loadTactics = typeof configs["LOAD_TACTICS"] !== 'undefined' || configs["LOAD_TACTICS"] === null ? configs["LOAD_TACTICS"] : 'checked';
-    let tacticsDetails = typeof configs["TACTICS_DETAILS"] !== 'undefined' || configs["TACTICS_DETAILS"] === null ? configs["TACTICS_DETAILS"] : 'checked';
-    let coachesWage = typeof configs["COACHES_WAGE"] !== 'undefined' || configs["COACHES_WAGE"] === null ? configs["COACHES_WAGE"] : 'checked';
-    let scoutButton = typeof configs["SCOUT_BUTTON"] !== 'undefined' || configs["SCOUT_BUTTON"] === null ? configs["SCOUT_BUTTON"] : 'checked';
-    let spreadsheetSquad = typeof configs["SPREADSHEET_SQUAD"] !== 'undefined' || configs["SPREADSHEET_SQUAD"] === null ? configs["SPREADSHEET_SQUAD"] : 'checked';
-    let bidButton = typeof configs["BID_BUTTON"] !== 'undefined' || configs["BID_BUTTON"] === null ? configs["BID_BUTTON"] : 'checked';
-    let teamLink = typeof configs["TEAM_LINK"] !== 'undefined' || configs["TEAM_LINK"] === null ? configs["TEAM_LINK"] : 'checked';
-    let getSponsors = typeof configs["GET_SPONSORS"] !== 'undefined' || configs["GET_SPONSORS"] === null ? configs["GET_SPONSORS"] : 'checked';
-    let playerImage = typeof configs["PLAYER_IMAGE"] !== 'undefined' || configs["PLAYER_IMAGE"] === null ? configs["PLAYER_IMAGE"] : 'checked';
+    function getConfigOrDefault(configName, defaultValue) {
+        return typeof configs[configName] !== 'undefined' && configs[configName] !== null ? configs[configName] : defaultValue;
+    }
 
-    $(`<div class="gui_object" style="width: 468px; margin-left: 8px;">
-    <div class="window1_wrapper" style="margin-top: 4px; width: 490px;">
-        <div class="window1_header_start"></div>
-        <div class="window1_header" style="width: 480px;">
-            <div class="window1_header_text">&nbsp;DO Genie Assistant Configs</div>
-            <a href="https://github.com/edunogueira/DOGenieAssistant/raw/main/DOGenieAssistant.user.js/" target="_blank" style="margin-left: 10px;">
-                <button>Update extension</button>
-            </a>
+    const configOptions = [
+        "SECONDARY_CLOCK", "DROPDDOWN_MENU", "PAGE_TITLE", "TEAM_LINK",
+        "GET_SPONSORS", "SCOUT_BUTTON", "READ_RESUME", "COACHES_WAGE",
+        "PLAYER_OPS_NAME", "PLAYER_OPS_ID", "PLAYER_EXP", "PLAYER_IMAGE",
+        "SQUAD_DETAILS", "SQUAD_FILTERS", "SQUAD_HIGH", "SPREADSHEET_SQUAD",
+        "BID_BUTTON", "LOAD_TACTICS", "TACTICS_DETAILS",
+    ];
+
+    const configForm = $(`
+        <div class="gui_object" style="width: 468px; margin-left: 8px;">
+            <div class="window1_wrapper" style="margin-top: 4px; width: 490px;">
+                <div class="window1_header_start"></div>
+                <div class="window1_header" style="width: 480px;">
+                    <div class="window1_header_text">&nbsp;DO Genie Assistant Configs</div>
+                    <a href="https://github.com/edunogueira/DOGenieAssistant/raw/main/DOGenieAssistant.user.js/" target="_blank" style="margin-left: 10px;">
+                        <button>Update extension</button>
+                    </a>
+                </div>
+                <div class="window1_header_end"></div>
+            </div>
+            <div class="window1_wrapper" style="margin-top: 0px; width: 468px;">
+                <div class="window1_content" style="width: 486px;">
+                    <form name="configForm" action="#" method="post" class="configForm">
+                       <table width="99%" border="0" cellspacing="1" cellpadding="1" class="matches_tbl" style="margin-bottom: 0px; margin-left: 3px; margin-top: 2px;">
+                           <tbody></tbody>
+                       </table>
+                </div>
+                <div class="window1_bottom" style="width: 488px;"></div>
+            </div>
         </div>
-        <div class="window1_header_end"></div>
-    </div>
-    <div class="window1_wrapper" style="margin-top: 0px; width: 468px;">
-        <div class="window1_content" style="width: 486px;">
-            <form name="configForm" action="#" method="post" class="configForm">
-               <table width="99%" border="0" cellspacing="1" cellpadding="1" class="matches_tbl" style="margin-bottom: 0px; margin-left: 3px; margin-top: 2px;">
-                   <tbody>
-                       <tr class="table_top_row">
-                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
-                               Secondary Clock: <input type="checkbox" name="SECONDARY_CLOCK" ${secondaryClock}>
-                               Dropdown Menu: <input type="checkbox" name="DROPDDOWN_MENU" ${dropdownMenu}>
-                               Page Title: <input type="checkbox" name="PAGE_TITLE" ${pageTitle}>
-                           </td>
-                       </tr>
-                       <tr class="table_top_row">
-                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
-                               Team Link: <input type="checkbox" name="TEAM_LINK" ${teamLink}>
-                               Get Sponsors: <input type="checkbox" name="GET_SPONSORS" ${getSponsors}>
-                           </td>
-                       </tr>
-                       <tr class="table_top_row">
-                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
-                               Coaches Wage: <input type="checkbox" name="COACHES_WAGE" ${coachesWage}>
-                               Read Resume: <input type="checkbox" name="READ_RESUME" ${readResume}>
-                               Scout Button: <input type="checkbox" name="SCOUT_BUTTON" ${scoutButton}>
-                           </td>
-                       </tr>
-                       <tr class="table_top_row">
-                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
-                               Squad Details: <input type="checkbox" name="SQUAD_DETAILS" ${squadDetails}>
-                               Squad Filters: <input type="checkbox" name="SQUAD_FILTERS" ${squadFilters}>
-                               Squad High: <input type="checkbox" name="SQUAD_HIGH" ${squadHigh}>
-                               Sreadsheet Squad: <input type="checkbox" name="SPREADSHEET_SQUAD" ${spreadsheetSquad}>
-                           </td>
-                       </tr>
-                       <tr class="table_top_row">
-                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
-                               Player OPS on Name: <input type="checkbox" name="PLAYER_OPS_NAME" ${playerOPSName}>
-                               Player OPS on Id: <input type="checkbox" name="PLAYER_OPS_ID" ${playerOPSId}>
-                               Player EXP: <input type="checkbox" name="PLAYER_EXP" ${playerExp}>
-                               Player Image: <input type="checkbox" name="PLAYER_IMAGE" ${playerImage}>
-                           </td>
-                       </tr>
-                       <tr class="table_top_row">
-                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
-                               Load Tactics: <input type="checkbox" name="LOAD_TACTICS" ${loadTactics}>
-                               Tatics Details: <input type="checkbox" name="TACTICS_DETAILS" ${tacticsDetails}>
-                               Bid Button: <input type="checkbox" name="BID_BUTTON" ${bidButton}>
-                           </td>
-                       </tr>
-                    </tbody>
-                </table>
-                <input id="saveConfig" type="submit" style="width: 140px;margin-top: 20px;" value="Save">
-                <input id="getSponsors" type="submit" style="width: 140px;margin-top: 20px;visibility: hidden;" value="Get Sponsors">
-                <input id="clearStorage" type="submit" style="width: 140px;margin-top: 20px;" value="Clear Config Storage">
-                <input id="clearPlayerImages" type="submit" style="width: 140px;margin-top: 20px;" value="Clear Player Images">
-        <div class="window1_bottom" style="width: 482px;"></div>
-        <div class="window1_bottom_end"></div>
-    </div>
-</div>`).insertAfter( "#footer" );
-    $("#saveConfig").click(function() {
-        configs['SECONDARY_CLOCK'] = $('input[name="SECONDARY_CLOCK"]').is(":checked") ? "checked" : "";
-        configs['DROPDDOWN_MENU'] = $('input[name="DROPDDOWN_MENU"]').is(":checked") ? "checked" : "";
-        configs['PAGE_TITLE'] = $('input[name="PAGE_TITLE"]').is(":checked") ? "checked" : "";
-        configs['READ_RESUME'] = $('input[name="READ_RESUME"]').is(":checked") ? "checked" : "";
-        configs['PLAYER_OPS_NAME'] = $('input[name="PLAYER_OPS_NAME"]').is(":checked") ? "checked" : "";
-        configs['PLAYER_OPS_ID'] = $('input[name="PLAYER_OPS_ID"]').is(":checked") ? "checked" : "";
-        configs['PLAYER_EXP'] = $('input[name="PLAYER_EXP"]').is(":checked") ? "checked" : "";
-        configs['SQUAD_DETAILS'] = $('input[name="SQUAD_DETAILS"]').is(":checked") ? "checked" : "";
-        configs['SQUAD_FILTERS'] = $('input[name="SQUAD_FILTERS"]').is(":checked") ? "checked" : "";
-        configs['SQUAD_HIGH'] = $('input[name="SQUAD_HIGH"]').is(":checked") ? "checked" : "";
-        configs['LOAD_TACTICS'] = $('input[name="LOAD_TACTICS"]').is(":checked") ? "checked" : "";
-        configs['TACTICS_DETAILS'] = $('input[name="TACTICS_DETAILS"]').is(":checked") ? "checked" : "";
-        configs['COACHES_WAGE'] = $('input[name="COACHES_WAGE"]').is(":checked") ? "checked" : "";
-        configs['SCOUT_BUTTON'] = $('input[name="SCOUT_BUTTON"]').is(":checked") ? "checked" : "";
-        configs['SPREADSHEET_SQUAD'] = $('input[name="SPREADSHEET_SQUAD"]').is(":checked") ? "checked" : "";
-        configs['BID_BUTTON'] = $('input[name="BID_BUTTON"]').is(":checked") ? "checked" : "";
-        configs['TEAM_LINK'] = $('input[name="TEAM_LINK"]').is(":checked") ? "checked" : "";
-        configs['GET_SPONSORS'] = $('input[name="GET_SPONSORS"]').is(":checked") ? "checked" : "";
-        configs['PLAYER_IMAGE'] = $('input[name="PLAYER_IMAGE"]').is(":checked") ? "checked" : "";
+    `).insertAfter("#footer");
+
+    const tableBody = configForm.find(".matches_tbl tbody");
+
+    let row = "<tr class='table_top_row'>";
+    configOptions.forEach((option, index) => {
+        const defaultValue = getConfigOrDefault(option, 'checked');
+        const optionCheckbox = `<input type="checkbox" name="${option}" ${defaultValue}>`;
+        const optionLabel = option
+            .split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+
+        row += `<td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
+                    ${optionLabel}: <br>${optionCheckbox}
+                </td>`;
+
+        if ((index + 1) % 4 === 0 && index !== configOptions.length - 1) {
+            row += "</tr><tr class='table_top_row'>";
+        }
+    });
+    row += "</tr>";
+
+    tableBody.append(row);
+
+    const saveButton = $('<input id="saveConfig" type="submit" style="width: 140px;margin-top: 20px;" value="Save">');
+    const defaultConfigStorageButton = $('<input id="defaultConfigStorage" type="submit" style="width: 160px;margin-top: 20px; margin-left: 10px;" value="Defalut Config Storage">');
+    const clearPlayerImagesButton = $('<input id="clearPlayerImages" type="submit" style="width: 140px;margin-top: 20px; margin-left: 10px;" value="Clear Player Images">');
+    const getSponsorsButton = getConfigOrDefault("GET_SPONSORS", 'checked') ? $('<input id="getSponsors" type="submit" style="width: 140px;margin-top: 20px;" value="Get Sponsors">') : undefined;
+
+    configForm.find(".window1_content").append(saveButton, defaultConfigStorageButton, clearPlayerImagesButton, getSponsorsButton);
+
+    saveButton.click(function() {
+        configOptions.forEach(option => {
+            const isChecked = $(`input[name="${option}"]`).is(":checked");
+            configs[option] = isChecked ? "checked" : "";
+        });
+
         localStorage.setItem('DOGenieAssistant.configs', JSON.stringify(configs));
     });
 }
 
-function clearStorage() {
-    $("#clearStorage").click(function(e) {
-        localStorage.removeItem("PAGE_TITLE");
-        localStorage.removeItem("TACTICS_DETAILS");
-        localStorage.removeItem("LAST_GOAL");
-        localStorage.removeItem("SECONDARY_CLOCK");
-        localStorage.removeItem("GET_SPONSORS");
-        localStorage.removeItem("TRACK_ID");
-        localStorage.removeItem("TEAM_LINK");
-        localStorage.removeItem("LOAD_TACTICS");
-        localStorage.removeItem("BID_BUTTON");
-        localStorage.removeItem("PLAYER_EXP");
-        localStorage.removeItem("COACHES_WAGE");
-        localStorage.removeItem("PLAYER_OPS");
-        localStorage.removeItem("PLAYER_OPS_ID");
-        localStorage.removeItem("SQUAD_DETAILS");
-        localStorage.removeItem("SQUAD_FILTERS");
-        localStorage.removeItem("PLAYER_OPS_NAME");
-        localStorage.removeItem("SQUAD_HIGH");
-        localStorage.removeItem("READ_RESUME");
-        localStorage.removeItem("GOAL_SOUND");
-        localStorage.removeItem("SPREADSHEET_SQUAD");
-        localStorage.removeItem("SCOUT_BUTTON");
-        localStorage.removeItem("DROPDDOWN_MENU");
-        localStorage.removeItem("PLAYER_IMAGE");
-        localStorage.removeItem("DOGenieAssistant.configs");
+function defaultConfigStorage() {
+    $("#defaultConfigStorage").click(function(e) {
+        localStorage.removeItem("DOGenieAssistant.configs")
         e.preventDefault();
     });
 }
 
 function getStorage(storageConfigs) {
-    var configs = {};
-    if ((storageConfigs == null) || (storageConfigs == '[]')){
-        configs['SECONDARY_CLOCK'] = 'checked';
-        configs['DROPDDOWN_MENU'] = 'checked';
-        configs['PAGE_TITLE'] = 'checked';
-        configs['READ_RESUME'] = 'checked';
-        configs['PLAYER_OPS_NAME'] = 'checked';
-        configs['PLAYER_OPS_ID'] = 'checked';
-        configs['PLAYER_EXP'] = 'checked';
-        configs['SQUAD_DETAILS'] = 'checked';
-        configs['SQUAD_FILTERS'] = 'checked';
-        configs['SQUAD_HIGH'] = 'checked';
-        configs['LOAD_TACTICS'] = 'checked';
-        configs['TACTICS_DETAILS'] = 'checked';
-        configs['COACHES_WAGE'] = 'checked';
-        configs['SCOUT_BUTTON'] = 'checked';
-        configs['SPREADSHEET_SQUAD'] = 'checked';
-        configs['BID_BUTTON'] = 'checked';
-        configs['TEAM_LINK'] = 'checked';
-        configs['GET_SPONSORS'] = 'checked';
-        configs['PLAYER_IMAGE'] = 'checked';
-        localStorage.setItem('DOGenieAssistant.configs', JSON.stringify(configs));
-    } else {
-        configs = JSON.parse(storageConfigs);
-    }
-    return configs;
+    const defaultConfigs = {
+        "SECONDARY_CLOCK": 'checked',
+        "DROPDDOWN_MENU": 'checked',
+        "PAGE_TITLE": 'checked',
+        "READ_RESUME": 'checked',
+        "PLAYER_OPS_NAME": 'checked',
+        "PLAYER_OPS_ID": 'checked',
+        "PLAYER_EXP": 'checked',
+        "SQUAD_DETAILS": 'checked',
+        "SQUAD_FILTERS": 'checked',
+        "SQUAD_HIGH": 'checked',
+        "LOAD_TACTICS": 'checked',
+        "TACTICS_DETAILS": 'checked',
+        "COACHES_WAGE": 'checked',
+        "SCOUT_BUTTON": 'checked',
+        "SPREADSHEET_SQUAD": 'checked',
+        "BID_BUTTON": 'checked',
+        "TEAM_LINK": 'checked',
+        "GET_SPONSORS": 'checked',
+        "PLAYER_IMAGE": 'checked',
+    };
+
+    return (storageConfigs == null || storageConfigs == '[]') ? defaultConfigs : JSON.parse(storageConfigs);
 }
 
 function configSound() {
-    let matchSound = soundConfig["MATCH_SOUND"] === null ? 'checked' : soundConfig["MATCH_SOUND"];
-    let goalSound = soundConfig["GOAL_SOUND"] === null ? 'checked' : soundConfig["GOAL_SOUND"];
-    let goalId = soundConfig["HOME_GOAL_ID"] === null ? '1579437467' : soundConfig["HOME_GOAL_ID"];
-    let awayGoalId = soundConfig["AWAY_GOAL_ID"] === null ? '1636248327' : soundConfig["AWAY_GOAL_ID"];
-    let offsideSound = soundConfig["OFFSIDE_SOUND"] === null ? 'checked' : soundConfig["OFFSIDE_SOUND"];
-    let offsideId = soundConfig["OFFSIDE_ID"] === null ? '1636263519' : soundConfig["OFFSIDE_ID"];
-    let gameEndSound = soundConfig["GAME_END_SOUND"] === null ? 'checked' : soundConfig["GAME_END_SOUND"];
-    let gameEndId = soundConfig["GAME_END_ID"] === null ? '1636248255' : soundConfig["GAME_END_ID"];
+    const soundConfigOptions = [
+        { name: "MATCH_SOUND", defaultValue: 'checked' },
+        { name: "GOAL_SOUND", defaultValue: 'checked' },
+        { name: "HOME_GOAL_ID", defaultValue: '1579437467' },
+        { name: "AWAY_GOAL_ID", defaultValue: '1636248327' },
+        { name: "OFFSIDE_SOUND", defaultValue: 'checked' },
+        { name: "OFFSIDE_ID", defaultValue: '1636263519' },
+        { name: "GAME_END_SOUND", defaultValue: 'checked' },
+        { name: "GAME_END_ID", defaultValue: '1636248255' },
+    ];
 
-    $(`<div class="gui_object" style="width: 468px; margin-left: 8px;">
-    <div class="window1_wrapper" style="margin-top: 4px; width: 468px;">
-        <div class="window1_header_start"></div>
-        <div class="window1_header" style="width: 460px;">
-            <div class="window1_header_text">&nbsp;DO Genie Assistant Sound Configs</div>
+    const soundConfig = getSoundStorage(localStorage.getItem('DOGenieAssistant.soundConfig'));
+
+    const soundForm = $(`
+        <div class="gui_object" style="width: 468px; margin-left: 8px;">
+            <div class="window1_wrapper" style="margin-top: 4px; width: 468px;">
+                <div class="window1_header_start"></div>
+                <div class="window1_header" style="width: 460px;">
+                    <div class="window1_header_text">&nbsp;DO Genie Assistant Sound Configs</div>
+                </div>
+                <div class="window1_header_end"></div>
+            </div>
+            <div class="window1_wrapper" style="margin-top: 0px; width: 468px;">
+                <div class="window1_content" style="width: 466px;">
+                    <form name="configForm" action="#" method="post" class="configForm">
+                       <table width="99%" border="0" cellspacing="1" cellpadding="1" class="matches_tbl" style="margin-bottom: 0px; margin-left: 3px; margin-top: 2px;">
+                           <tbody></tbody>
+                       </table>
+                </div>
+                <div class="window1_bottom_start"></div>
+                <div class="window1_bottom" style="width: 464px;"></div>
+            </div>
         </div>
-        <div class="window1_header_end"></div>
-    </div>
-    <div class="window1_wrapper" style="margin-top: 0px; width: 468px;">
-        <div class="window1_content" style="width: 466px;">
-            <form name="configForm" action="#" method="post" class="configForm">
-               <table width="99%" border="0" cellspacing="1" cellpadding="1" class="matches_tbl" style="margin-bottom: 0px; margin-left: 3px; margin-top: 2px;">
-                   <tbody>
-                       <tr class="table_top_row">
-                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
-                               Match Sounds: <input type="checkbox" name="MATCH_SOUND" ${matchSound}>
-                           </td>
-                       </tr>
-                       <tr class="table_top_row">
-                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
-                               Goal Sound: <input type="checkbox" name="GOAL_SOUND" ${goalSound}>
-                               <br>Home Goal Sound Id: <input type="text" name="HOME_GOAL_ID" value='${goalId}'>
-                               <br>Away Goal Sound Id: <input type="text" name="AWAY_GOAL_ID" value='${awayGoalId}'>
-                           </td>
-                       </tr>
-                       <tr class="table_top_row">
-                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
-                               Offside Sound: <input type="checkbox" name="OFFSIDE_SOUND" ${offsideSound}>
-                               Offside Sound Id: <input type="text" name="OFFSIDE_ID" value='${offsideId}'>
-                           </td>
-                       </tr>
-                       <tr class="table_top_row">
-                           <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
-                               Game End Sound: <input type="checkbox" name="GAME_END_SOUND" ${gameEndSound}>
-                               Game End Sound Id: <input type="text" name="GAME_END_ID" value='${gameEndId}'>
-                           </td>
-                       </tr>
-                    </tbody>
-                </table>
-                <input id="saveSoundConfig" type="submit" style="width: 140px;margin-top: 20px;" value="Save">
-                <input id="clearMatchStorage" type="submit" style="width: 140px;margin-top: 20px;" value="Clear Match Storage">
-        <div class="window1_bottom_start"></div>
-        <div class="window1_bottom" style="width: 460px;"></div>
-        <div class="window1_bottom_end"></div>
-    </div>
-</div>`).insertAfter( "#footer" );
-    $("#saveSoundConfig").click(function() {
-        soundConfig['MATCH_SOUND'] = $('input[name="MATCH_SOUND"]').is(":checked") ? "checked" : "";
-        soundConfig['GOAL_SOUND'] = $('input[name="GOAL_SOUND"]').is(":checked") ? "checked" : "";
-        soundConfig['HOME_GOAL_ID'] = $('input[name="HOME_GOAL_ID"]')[0].value ? $('input[name="HOME_GOAL_ID"]')[0].value : "1579437467";
-        soundConfig['AWAY_GOAL_ID'] = $('input[name="AWAY_GOAL_ID"]')[0].value ? $('input[name="AWAY_GOAL_ID"]')[0].value : "1636248327";
-        soundConfig['OFFSIDE_SOUND'] = $('input[name="OFFSIDE_SOUND"]').is(":checked") ? "checked" : "";
-        soundConfig['OFFSIDE_ID'] = $('input[name="OFFSIDE_ID"]')[0].value ? $('input[name="OFFSIDE_ID"]')[0].value : "1636263519";
-        soundConfig['GAME_END_SOUND'] = $('input[name="GAME_END_SOUND"]').is(":checked") ? "checked" : "";
-        soundConfig['GAME_END_ID'] = $('input[name="GAME_END_ID"]')[0].value ? $('input[name="GAME_END_ID"]')[0].value : "1636248255";
+    `).insertAfter("#footer");
+
+    const tableBody = soundForm.find(".matches_tbl tbody");
+
+    soundConfigOptions.forEach(option => {
+        const optionValue = soundConfig[option.name] === null ? option.defaultValue : soundConfig[option.name];
+        const inputType = option.name.includes("_ID") ? 'text' : 'checkbox';
+
+        const row = `<tr class="table_top_row">
+                        <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
+                            ${option.name.replace('_', ' ')}: <input type="${inputType}" name="${option.name}" value="${optionValue}" ${optionValue}>
+                        </td>
+                    </tr>`;
+
+        tableBody.append(row);
+    });
+
+    const saveButton = $('<input id="saveSoundConfig" type="submit" style="width: 140px;margin-top: 20px;" value="Save">');
+    const clearMatchStorageButton = $('<input id="clearMatchStorage" type="submit" style="width: 140px;margin-top: 20px;; margin-left: 10px" value="Clear Match Storage">');
+    const defaultSoundStorageButton = $('<input id="defaultSoundStorage" type="submit" style="width: 160px;margin-top: 20px; margin-left: 10px;" value="Default Sound Storage">');
+
+    soundForm.find(".window1_content").append(saveButton, clearMatchStorageButton, defaultSoundStorageButton);
+
+    saveButton.click(function() {
+        soundConfigOptions.forEach(option => {
+            const inputElement = $(`input[name="${option.name}"]`);
+            soundConfig[option.name] = inputElement.is(":checkbox") ? inputElement.is(":checked") ? "checked" : "" : inputElement.val();
+        });
 
         localStorage.setItem('DOGenieAssistant.soundConfig', JSON.stringify(soundConfig));
     });
 }
 
+
 function clearMatchStorage() {
-     $("#clearMatchStorage").click(function(e) {
-        let arr = [];
-        let i =0
-        for (i = 0; i < localStorage.length; i++){
-            if (localStorage.key(i).substring(0,22) == 'DOGenieAssistant.match') {
-                arr.push(localStorage.key(i));
-            }
+    $("#clearMatchStorage").click(function(e) {
+        const matchKeys = Object.keys(localStorage).filter(key => key.startsWith('DOGenieAssistant.match'));
+        for (const key of matchKeys) {
+            localStorage.removeItem(key);
         }
-        for (i = 0; i < arr.length; i++) {
-            localStorage.removeItem(arr[i]);
-        }
+
+        e.preventDefault();
+    });
+}
+
+function defaultSoundStorage() {
+    $("#defaultSoundStorage").click(function(e) {
+        localStorage.removeItem("DOGenieAssistant.soundConfig")
         e.preventDefault();
     });
 }
 
 function getSoundStorage(storageConfigs) {
-    var soundConfig = {};
-    if ((storageConfigs == null) || (storageConfigs == '[]')){
-        soundConfig['MATCH_SOUND'] = 'checked';
-        soundConfig['GOAL_SOUND'] = 'checked';
-        soundConfig['HOME_GOAL_ID'] = '1579437467';
-        soundConfig['AWAY_GOAL_ID'] = '1636248327';
-        soundConfig['OFFSIDE_SOUND'] = 'checked';
-        soundConfig['OFFSIDE_ID'] = '1636263519';
-        soundConfig['GAME_END_SOUND'] = 'checked';
-        soundConfig['GAME_END_ID'] = '1636248255';
-        localStorage.setItem('DOGenieAssistant.soundConfig', JSON.stringify(soundConfig));
-    } else {
-       soundConfig = JSON.parse(storageConfigs);
-    }
-    return soundConfig;
+    const defaultSoundConfig = {
+        'MATCH_SOUND': 'checked',
+        'GOAL_SOUND': 'checked',
+        'HOME_GOAL_ID': '1579437467',
+        'AWAY_GOAL_ID': '1636248327',
+        'OFFSIDE_SOUND': 'checked',
+        'OFFSIDE_ID': '1636263519',
+        'GAME_END_SOUND': 'checked',
+        'GAME_END_ID': '1636248255'
+    };
+
+    return storageConfigs ? JSON.parse(storageConfigs) : defaultSoundConfig;
 }
 
 function clearPlayerImages() {
