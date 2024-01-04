@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      30.0
+// @version      31.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -24,6 +24,7 @@ function checkAndExecute(config, func) {
 checkAndExecute(configs["PAGE_TITLE"], pageTitle);
 checkAndExecute(configs["DROPDDOWN_MENU"], dropdownMenu);
 checkAndExecute(configs["SECONDARY_CLOCK"], secondaryClock);
+checkAndExecute(configs["LINKS"], links);
 
 if (page.includes('/home/none/')) {
     configMenu();
@@ -223,6 +224,7 @@ function playerDetails() {
     }
 
     const exp = getExp();
+    const playerName = $('.player_name').text();
 
     if (configs["PLAYER_OPS_ID"] !== "") {
         $('.player_id_txt').text($('.player_id_txt').text() + attrText);
@@ -235,10 +237,8 @@ function playerDetails() {
             'right': '30px'
         });
     }
-
+    const expText = ' | ' + exp;
     if (configs["PLAYER_EXP"] !== "") {
-        const expText = ' | ' + exp;
-
         if (configs["PLAYER_OPS_NAME"] !== "") {
             $('.player_name').text($('.player_name').text() + expText);
         }
@@ -249,7 +249,7 @@ function playerDetails() {
     }
 
     if (configs["PAGE_TITLE"] !== "") {
-        $(document).prop('title', $('.player_name').text() + attrText);
+        $(document).prop('title', playerName + attrText + expText);
     }
 }
 
@@ -975,11 +975,43 @@ function dropdownMenu() {
         $menuButton.append(`<div class="dropdown-content">${dropdownContent}</div>`);
         menuIndex++;
     });
+
+    [...document.querySelectorAll('div#top_container > div')]
+        .filter(d => d.classList.contains(`${d.id}_ico`))
+        .forEach(d => {
+        const anchor = document.createElement('a');
+        anchor.href = d.onclick.toString().split('document.location.href=')[1].split('\'')[1];
+        anchor.classList.add(...d.classList.values())
+        anchor.id = d.id;
+        anchor.style.cssText = d.style.cssText;
+        anchor.title = d.title;
+        d.parentElement.insertBefore(anchor, d);
+        d.remove();
+    });
+    var scripts = document.getElementsByTagName('script');
+
+    for (var i = 0; i < scripts.length; i++) {
+        var script = scripts[i];
+        if (script.innerHTML && script.innerHTML.indexOf('createIconTip(') !== -1) {
+            var novoScript = document.createElement('script');
+            novoScript.type = 'text/javascript';
+            novoScript.text = script.innerHTML;
+            document.body.appendChild(novoScript);
+            break;
+        }
+    }
 }
 
 function pageTitle() {
-    const title = location.pathname.split("/")[1].replace("_", " ");
-    $(document).prop('title', title.charAt(0).toUpperCase() + title.slice(1));
+    let title = '';
+    if (page.includes('/clubinfo/none/')) {
+        title = $('.clubname').text();
+    } else {
+        title = location.pathname.split("/")[1].replace("_", " ");
+        title = title.charAt(0).toUpperCase() + title.slice(1);
+    }
+    $(document).prop('title', title);
+    return title;
 }
 
 function coachesWage() {
@@ -1281,7 +1313,7 @@ function configMenu() {
         "GET_SPONSORS", "SCOUT_BUTTON", "READ_RESUME", "COACHES_WAGE",
         "PLAYER_OPS_NAME", "PLAYER_OPS_ID", "PLAYER_EXP", "PLAYER_IMAGE",
         "SQUAD_DETAILS", "SQUAD_FILTERS", "SQUAD_HIGH", "SPREADSHEET_SQUAD",
-        "BID_BUTTON", "LOAD_TACTICS", "TACTICS_DETAILS",
+        "BID_BUTTON", "LOAD_TACTICS", "TACTICS_DETAILS", "LINKS"
     ];
 
     const configForm = $(`
@@ -1376,6 +1408,7 @@ function getStorage(storageConfigs) {
         "TEAM_LINK": 'checked',
         "GET_SPONSORS": 'checked',
         "PLAYER_IMAGE": 'checked',
+        "LINKS": 'checked',
     };
 
     return (storageConfigs == null || storageConfigs == '[]') ? defaultConfigs : JSON.parse(storageConfigs);
@@ -1448,7 +1481,6 @@ function configSound() {
     });
 }
 
-
 function clearMatchStorage() {
     $("#clearMatchStorage").click(function(e) {
         const matchKeys = Object.keys(localStorage).filter(key => key.startsWith('DOGenieAssistant.match'));
@@ -1495,5 +1527,90 @@ function clearPlayerImages() {
             localStorage.removeItem(arr[i]);
         }
         e.preventDefault();
+    });
+}
+
+function links() {
+    let linksJson = localStorage.getItem('DOGenieAssistant.links');
+    let links = linksJson ? JSON.parse(linksJson) : {};
+
+    if (links[window.location.href]) {
+        $('.user_bar').append('<button id="btnSaveLink" style="background: none;border: none;margin-left: -58px;margin-top: 11px;font-size: 23px;cursor:pointer;color: white;"><i class="fa fa-star"></i></button>');
+    } else {
+        $('.user_bar').append('<button id="btnSaveLink" style="background: none;border: none;margin-left: -58px;margin-top: 11px;font-size: 23px;cursor:pointer;color: white;"><i class="fa fa-star-o"></i></button>');
+    }
+
+    if (page.includes('/links/none/')) {
+        var table = $('<table  cellspacing="1" cellpadding="2" style="width: 940px;">').attr('id', 'urlsTable').addClass('display').addClass('forumline');
+        var thead = $('<thead>').append('<tr class="table_top_row" style="text-align: center;text-transform: uppercase;"><th>Url</th><th>Title</th><th>Action</th></tr>');
+        var tbody = $('<tbody></div>');
+
+        Object.keys(links).forEach(function(url, index) {
+            var trClass = index % 2 === 0 ? 'matches_row1' : 'matches_row2';
+            var tr = $('<tr>').addClass(trClass).append('<td class="urlCell" align="center" valign="middle"><a href="' + url + '" target="_blank" class="def_icon" style="margin: 2px;">' + url.replace('https://www.dugout-online.com/','').substring(0,60) + '</a></td><td class="keyCell" align="center" valign="middle"><span class="def_icon" style="margin: 2px;">' + links[url] + '</span></td><td align="center" valign="middle"><button class="btnEdit">Edit</button><button class="btnRemove">Remove</button></td>');
+            tbody.append(tr);
+        });
+
+        table.append(thead, tbody);
+        var staticDiv = $('<div>').addClass('group').text('Links');
+        $('#pane1').append(staticDiv);
+        $('#pane1').append(table);
+
+        var urlsDataTable = $('#urlsTable').DataTable({
+            "searching": true,
+            "bPaginate": false,
+            "bLengthChange": false,
+            "bFilter": false,
+            "bInfo": false,
+            "bAutoWidth": false,
+            "order": [
+                [0, "asc"]
+            ]
+        });
+
+        $('#urlsTable_filter').css({
+                    'position': 'absolute',
+                    'left': '270px',
+                    'top': '0px'
+                });
+        $('#urlsTable tbody').on('click', '.btnEdit', function() {
+            var cell = urlsDataTable.cell($(this).parents('tr').find('.keyCell'));
+            var originalValue = $(cell.data()).text();
+            var newValue = prompt('Edit Key:', originalValue);
+
+            if (newValue !== null && newValue !== originalValue) {
+                cell.data(newValue);
+                var urlCell = urlsDataTable.cell($(this).parents('tr').find('.urlCell'));
+                var url = urlCell.data().match(/href="([^"]*)/)[1];
+                links[url] = newValue;
+                localStorage.setItem('DOGenieAssistant.links', JSON.stringify(links));
+            }
+        });
+
+        $('#urlsTable tbody').on('click', '.btnRemove', function() {
+            var row = urlsDataTable.row($(this).parents('tr'));
+            var data = row.data();
+            var urlToRemove = $(data[0]).attr('href');
+
+            delete links[urlToRemove];
+
+            row.remove().draw();
+
+            localStorage.setItem('DOGenieAssistant.links', JSON.stringify(links));
+
+        });
+    }
+
+    $('#btnSaveLink').on('click', function() {
+        let linksJson = localStorage.getItem('DOGenieAssistant.links');
+        let links = linksJson ? JSON.parse(linksJson) : {};
+
+        if (links[window.location.href]) {
+            delete links[window.location.href];
+        } else {
+            links[window.location.href] = document.title;
+        }
+        localStorage.setItem('DOGenieAssistant.links', JSON.stringify(links));
+        location.reload();
     });
 }
