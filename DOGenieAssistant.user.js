@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      31.0
+// @version      31.1
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -317,7 +317,7 @@ function squadFilters () {
 
     const inputIds = ["minAge", "maxAge", "minRat", "maxRat", "minOPS", "maxOPS"];
     const inputs = inputIds.map(id => document.querySelector(`#${id}`));
-    const i = (document.querySelector('.compare_players_wrapper')) ? 1 : 0;
+    const i = ($('.top_positions').length) ? 1 : 0;
     DataTable.ext.search.push(function (settings, data, dataIndex) {
         const [minA, maxA, age, minR, maxR, rat, minO, maxO, ops] = [
             parseInt(inputs[0].value, 10), parseInt(inputs[1].value, 10),
