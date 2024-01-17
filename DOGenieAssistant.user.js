@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      31.1
+// @version      31.2
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -366,6 +366,28 @@ function getPositionIndex(position) {
 }
 
 function tacticsDetails() {
+    $(document).ready(function() {
+        $('#agression_id').css('width', '99px');
+    });
+    var newAgg = $('<input>').attr({
+        type: 'text',
+        id: 'newAgg',
+        placeholder: 'Agg',
+        onmousedown: "$('#agression_id').val($(this).val());showAgression()" ,
+        onchange: "$('#agression_id').val($(this).val());showAgression()" ,
+        oninput: "$('#agression_id').val($(this).val());showAgression()" ,
+        onkeypress: "$('#agression_id').val($(this).val());showAgression()",
+        onmouseup:"$('#agression_id').val($(this).val());showAgression()" ,
+        onclick:"$('#agression_id').val($(this).val());showAgression()"
+    }).css('width', '23px');
+
+    newAgg.val($('#agression_id').val());
+    $('#agression_id').on('input', function() {
+        $('#newAgg').val($(this).val());
+    });
+
+    $('#agression_id').before(newAgg);
+
     $('td').css('color', 'unset');
 
     var players = $("#capitan_sel > option").map(function() {
