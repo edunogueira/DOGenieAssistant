@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      31.2
+// @version      31.3
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -178,7 +178,7 @@ function doTable(selector) {
             "bInfo": false,
             "bAutoWidth": false,
             "order": [
-                [$(selector + ' .table_top_row th').size() - 2, "desc"]
+                [order, "desc"]
             ]
         });
     } else {
@@ -190,7 +190,7 @@ function doTable(selector) {
             "bInfo": false,
             "bAutoWidth": false,
             "order": [
-                [$(selector + ' .table_top_row th').size() - 2, "desc"]
+                [order, "desc"]
             ]
         });
     }
