@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      31.3
+// @version      32.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -983,6 +983,19 @@ function dropdownMenu() {
 
     if ($(".menu_button").length <= 7) {
         delete menu.nt;
+    } else {
+        let linksJson = localStorage.getItem('DOGenieAssistant.links');
+        let links = linksJson ? JSON.parse(linksJson) : {};
+        const ntLinks = [];
+
+        for (const url in links) {
+            const value = links[url];
+            if (value.startsWith('[NT]')) {
+                const text = value.replace(/^\[NT\]\s*/, '');
+                menu.nt.push({ url, text });
+            }
+        }
+
     }
 
     let menuIndex = 1;
@@ -1567,9 +1580,14 @@ function links() {
         var thead = $('<thead>').append('<tr class="table_top_row" style="text-align: center;text-transform: uppercase;"><th>Url</th><th>Title</th><th>Action</th></tr>');
         var tbody = $('<tbody></div>');
 
+        var tr = '';
         Object.keys(links).forEach(function(url, index) {
             var trClass = index % 2 === 0 ? 'matches_row1' : 'matches_row2';
-            var tr = $('<tr>').addClass(trClass).append('<td class="urlCell" align="center" valign="middle"><a href="' + url + '" target="_blank" class="def_icon" style="margin: 2px;">' + url.replace('https://www.dugout-online.com/','').substring(0,60) + '</a></td><td class="keyCell" align="center" valign="middle"><span class="def_icon" style="margin: 2px;">' + links[url] + '</span></td><td align="center" valign="middle"><button class="btnEdit">Edit</button><button class="btnRemove">Remove</button></td>');
+            tr = $('<tr>').addClass(trClass).append(
+                $('<td align="center">').addClass('urlCell').append('<a href="' + url + '" target="_blank" class="def_icon" style="margin: 2px;">' + url.replace('https://www.dugout-online.com/','').substring(0,60) + '</a>'),
+                $('<td align="center">').addClass('keyCell').append('<span align="center"class="def_icon" style="margin: 2px;">' + links[url] + '</span>'),
+                $('<td align="center">').append('<button class="btnEdit">Edit</button><button class="btnRemove">Remove</button>')
+            );
             tbody.append(tr);
         });
 
