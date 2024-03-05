@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      32.0
+// @version      33.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -38,6 +38,7 @@ if (page.includes('/home/none/')) {
     checkAndExecute(configs["GET_SPONSORS"], getSponsors);
 } else if (page.includes('/search_coaches/none/')) {
     checkAndExecute(configs["COACHES_WAGE"], coachesWage);
+    checkAndExecute(storedFilters["STORED_FILTERS"], storedFilters);
 } else if (page.includes('/clubinfo/none/clubid/')) {
     checkAndExecute(configs["READ_RESUME"], readResume);
 } else if (page.includes('/clubinfo/none/')) {
@@ -56,6 +57,8 @@ if (page.includes('/home/none/')) {
     checkAndExecute(configs["SPREADSHEET_SQUAD"], function() { doTable('.forumline'); });
 } else if (page.includes('/game/none/gameid/')) {
     checkAndExecute(soundConfig["MATCH_SOUND"], matchSound);
+} else if (page.match("/search_players|/search_transfers|/search_clubs|/search_coaches|/national_teams|/search_physios")) {
+    checkAndExecute(storedFilters["STORED_FILTERS"], storedFilters);
 }
 
 //helper //----------------------------------------------//
@@ -1306,7 +1309,11 @@ function matchSound() {
         const gameEndsTime = formatTime($("#events_content td:nth-child(2)").eq(0).html());
 
         if (gameEndsEvent.substring(0, 9) === 'Game ends') {
-            handleEvent(match, 'GAME_ENDS', gameEndsTime, soundConfig['GAME_END_ID'], gameId);
+            if (soundConfig['GAME_END_ID'] == 0) {
+                handleEvent(match, 'GAME_ENDS', gameEndsTime, gameId, gameId, gameId);
+            } else {
+                handleEvent(match, 'GAME_ENDS', gameEndsTime, soundConfig['GAME_END_ID'], soundConfig['GAME_END_ID'], gameId);
+            }
         }
     }
 }
@@ -1348,7 +1355,7 @@ function configMenu() {
         "GET_SPONSORS", "SCOUT_BUTTON", "READ_RESUME", "COACHES_WAGE",
         "PLAYER_OPS_NAME", "PLAYER_OPS_ID", "PLAYER_EXP", "PLAYER_IMAGE",
         "SQUAD_DETAILS", "SQUAD_FILTERS", "SQUAD_HIGH", "SPREADSHEET_SQUAD",
-        "BID_BUTTON", "LOAD_TACTICS", "TACTICS_DETAILS", "LINKS"
+        "BID_BUTTON", "LOAD_TACTICS", "TACTICS_DETAILS", "LINKS", "STORED_FILTERS"
     ];
 
     const configForm = $(`
@@ -1444,6 +1451,7 @@ function getStorage(storageConfigs) {
         "GET_SPONSORS": 'checked',
         "PLAYER_IMAGE": 'checked',
         "LINKS": 'checked',
+        "STORED_FILTERS": 'checked'
     };
 
     return (storageConfigs == null || storageConfigs == '[]') ? defaultConfigs : JSON.parse(storageConfigs);
@@ -1653,4 +1661,143 @@ function links() {
         localStorage.setItem('DOGenieAssistant.links', JSON.stringify(links));
         location.reload();
     });
+}
+function storedFilters() {
+    const storedFilters = JSON.parse(localStorage.getItem("DOGenieAssistant.storedFilters")) || {
+        search_players: {
+            default: ["", "", true, false, "13", "35", false, "", "", "", "0", "0", "", "DESC", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", ],
+        },
+        search_clubs: {
+            default: ["", "", "1", "1000", false, "", "", "", "DESC"],
+        },
+        national_teams: {
+            default: [true, false, false, false, "", "1", "1000", "", "", "", "DESC"],
+        },
+        search_coaches: {
+            default: ["", "", "", "", "DESC", "36", "80", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", false, ],
+        },
+        search_physios: {
+            default: ["", "", "", "36", "80", "1", "50", "", "DESC", false],
+        },
+        search_transfers: {
+            default: ["", "", "13", "35", false, "", "", "", "0", "0", "", "DESC", "", "", false, "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", ],
+        },
+    };
+
+    const currentPage = page.match("search_players|search_transfers|search_clubs|search_coaches|national_teams|search_physios")[0];
+    const currentFilters = storedFilters[currentPage];
+
+    const filterElems = document.querySelectorAll("#filter_div input:not([type=hidden]):not([type=button]), #filter_div select");
+
+    function saveCurrentFilter() {
+        const newFilterName = prompt("Please enter filter name", "filter " + Object.keys(currentFilters).length) || "";
+        if (newFilterName === "" || currentFilters[newFilterName] !== undefined || newFilterName === "default") {
+            alert("The name you entered is already in use or not valid!");
+            return;
+        }
+
+        const newFilter = Array.from(filterElems).map(element => {
+            if (element.type === "select-one" || element.type === "text") {
+                return element.value;
+            }
+            return element.checked;
+        });
+
+        currentFilters[newFilterName] = newFilter;
+        localStorage.setItem("DOGenieAssistant.storedFilters", JSON.stringify(storedFilters));
+        loadOption(newFilterName);
+        selectFilter.value = newFilterName;
+    }
+
+    function loadFilter(filterName) {
+        Array.from(filterElems).forEach((element, index) => {
+            if (element.type === "select-one" || element.type === "text") {
+                if (element.value !== currentFilters[filterName][index]) {
+                    element.value = currentFilters[filterName][index];
+                    flashElement(element);
+                }
+            } else {
+                if (element.checked !== currentFilters[filterName][index]) {
+                    element.checked = currentFilters[filterName][index];
+                    flashElement(element);
+                }
+            }
+        });
+    }
+
+    function removeFilter(filterName) {
+        if (filterName === "default" || !confirm(`Are you sure you want to remove "${filterName}"?`)) return;
+        delete currentFilters[filterName];
+        localStorage.setItem("DOGenieAssistant.storedFilters", JSON.stringify(storedFilters));
+        selectFilter.remove(selectFilter.selectedIndex);
+        loadFilter("default");
+    }
+
+    function loadOption(filterName) {
+        const optionFilter = new Option(filterName, filterName);
+        selectFilter.add(optionFilter);
+    }
+
+    function flashElement(element) {
+        element.classList.add("flash-elem");
+        setTimeout(() => {
+            element.classList.remove("flash-elem");
+        }, 1000);
+    }
+
+    const flashElementStyle = document.createElement("style");
+    flashElementStyle.innerHTML = `
+        .flash-elem {
+            animation: flash 1.5s;
+        }
+        @keyframes flash {
+            0% { box-shadow: 0 0 0 2px red; }
+            100% { box-shadow: 0 0 0 2px transparent; }
+        }
+    `;
+    document.body.append(flashElementStyle);
+
+    const windowHeader = document.querySelector(".window1_header");
+    const selectFilter = document.createElement("select");
+    selectFilter.style.width = "auto";
+    selectFilter.style.verticalAlign = "middle";
+    const defaultOption = new Option("Default", "default");
+    const div = document.createElement("div");
+    div.textContent = "Filters :";
+    div.style.textAlign = "right";
+
+    const delBtn = document.createElement("a");
+    const saveBtn = document.createElement("a");
+
+    const xmark = document.createElement("img");
+    const checkmark = document.createElement("img");
+
+    xmark.src = "https://www.dugout-online.com/images/basic_elements/gui/delete.png";
+    checkmark.src = "https://www.dugout-online.com/images/basic_elements/gui/check.png";
+
+    checkmark.style = xmark.style = "vertical-align: middle;";
+
+    saveBtn.href = delBtn.href = "javascript:void(0)";
+
+    xmark.title = "Delete selected filter";
+    checkmark.title = "Save the current filter";
+
+    const btnSep = document.createElement("b");
+    btnSep.textContent = " | ";
+
+    loadOption("default");
+
+    for (const filterName in currentFilters) {
+        if (filterName === "default") continue;
+        loadOption(filterName);
+    }
+
+    delBtn.append(xmark);
+    saveBtn.append(checkmark);
+    div.append(selectFilter, delBtn, btnSep, saveBtn);
+    windowHeader.append(div);
+
+    selectFilter.addEventListener("change", () => loadFilter(selectFilter.value));
+    delBtn.addEventListener("click", () => removeFilter(selectFilter.value));
+    saveBtn.addEventListener("click", saveCurrentFilter);
 }
