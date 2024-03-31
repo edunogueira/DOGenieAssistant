@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      33.0
+// @version      34.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -59,6 +59,8 @@ if (page.includes('/home/none/')) {
     checkAndExecute(soundConfig["MATCH_SOUND"], matchSound);
 } else if (page.match("/search_players|/search_transfers|/search_clubs|/search_coaches|/national_teams|/search_physios")) {
     checkAndExecute(storedFilters["STORED_FILTERS"], storedFilters);
+} else if (page.match("/competitions/none")) {
+    checkAndExecute(configs["GOALS_DIFFERENCE"], goalsDifference);
 }
 
 //helper //----------------------------------------------//
@@ -480,7 +482,10 @@ function secondaryClock() {
 }
 
 function getLanguage() {
-    const settingsTitle = document.querySelector(".settings_button").title;
+    let settingsTitle = 'en';
+    if (document.querySelector(".settings_button")) {
+       settingsTitle = document.querySelector(".settings_button").title;
+    }
     const languages = {
         Postavke: "bh",
         Settings: "en",
@@ -1355,7 +1360,7 @@ function configMenu() {
         "GET_SPONSORS", "SCOUT_BUTTON", "READ_RESUME", "COACHES_WAGE",
         "PLAYER_OPS_NAME", "PLAYER_OPS_ID", "PLAYER_EXP", "PLAYER_IMAGE",
         "SQUAD_DETAILS", "SQUAD_FILTERS", "SQUAD_HIGH", "SPREADSHEET_SQUAD",
-        "BID_BUTTON", "LOAD_TACTICS", "TACTICS_DETAILS", "LINKS", "STORED_FILTERS"
+        "BID_BUTTON", "LOAD_TACTICS", "TACTICS_DETAILS", "LINKS", "STORED_FILTERS", "GOALS_DIFFERENCE"
     ];
 
     const configForm = $(`
@@ -1451,7 +1456,8 @@ function getStorage(storageConfigs) {
         "GET_SPONSORS": 'checked',
         "PLAYER_IMAGE": 'checked',
         "LINKS": 'checked',
-        "STORED_FILTERS": 'checked'
+        "STORED_FILTERS": 'checked',
+        "GOALS_DIFFERENCE": 'checked'
     };
 
     return (storageConfigs == null || storageConfigs == '[]') ? defaultConfigs : JSON.parse(storageConfigs);
@@ -1800,4 +1806,45 @@ function storedFilters() {
     selectFilter.addEventListener("change", () => loadFilter(selectFilter.value));
     delBtn.addEventListener("click", () => removeFilter(selectFilter.value));
     saveBtn.addEventListener("click", saveCurrentFilter);
+}
+function goalsDifference() {
+    if ($('#myTable').length === 0) {
+        return;
+    }
+    let isColspan = $('#myTable thead th[colspan]').length > 0;
+    let ref = isColspan ? 9 : 8;
+
+    if (isColspan) {
+        $('#myTable th[colspan]').removeAttr('colspan');
+        $('#myTable thead th:eq(1)').after($('<th>').text(''));
+    }
+
+    let $tbody = $('#myTable tbody');
+    $tbody.find('tr td:nth-child(' + ref + ')').each(function() {
+        $(this).after($(this).clone());
+    });
+
+    $('<th>', {
+        class: 'header',
+        align: 'center',
+        width: '70',
+        style: 'border-left: solid 1px #999999;',
+        text: 'PTS'
+    }).appendTo('#myTable thead tr');
+
+    let table = $('#myTable').DataTable({
+        searching: false,
+        paging: false,
+        lengthChange: false,
+        info: false,
+        autoWidth: false
+    });
+
+    table.column(ref).data().each(function(value, index) {
+        let gpColValue = table.cell(index, ref - 2).data();
+        let gcColValue = table.cell(index, ref - 1).data();
+        let difference = parseFloat(gpColValue) - parseFloat(gcColValue);
+        table.cell(index, ref).data(parseFloat(difference.toFixed(2)));
+    });
+    $('#myTable thead tr th:nth-child(' + (ref + 1) + ')').text('GD');
 }
