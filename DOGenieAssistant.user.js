@@ -179,7 +179,6 @@ function getOPS(data) {
 
     for (let i = 0; i < positions.length; ++i) {
         ops[i] = positions[i].reduce((sum, index) => sum + data[index], 0);
-
         if (isNaN(ops[i]))
             ops[i] = 0;
 
@@ -245,11 +244,10 @@ function playerDetails() {
     let attrText = '';
     const data = [];
 
-    $('#main-1 table tr').each(() => {
-        $(this).children('td').each(() => {
+    $('#main-1 table tr').each(function() {
+        $(this).children('td').each(function() {
             if ($.isNumeric($(this).text()))
                 data.push(parseInt($(this).text(), 10));
-
         });
     });
     const ops = getOPS(data);
@@ -259,13 +257,10 @@ function playerDetails() {
     for (let i = 0; i < position.length; ++i) {
         if (position[i] == 1)
             natPos = i;
-
     }
-    if (ops.pos !== natPos)
-        attrText = ` @ OPS ${ops[natPos]}/${ops[ops.pos]}*`;
 
-    else
-        attrText = ` @ OPS ${ops[natPos]}`;
+    if (ops.pos !== natPos) attrText = ` @ OPS ${ops[natPos]}/${ops[ops.pos]}*`;
+    else attrText = ` @ OPS ${ops[natPos]}`;
 
 
     const exp = getExp();
@@ -293,9 +288,7 @@ function playerDetails() {
 
     }
 
-    if (configs.PAGE_TITLE !== '')
-        $(document).prop('title', playerName + attrText + expText);
-
+    $(document).prop('title', playerName + attrText + expText);
 }
 
 /**
@@ -339,7 +332,6 @@ function squadDetails() {
             $(this).children('td').each(function() {
                 if ($.isNumeric($(this).text()))
                     data.push(parseInt($(this).text(), 10));
-
                 else
                     count++;
 
@@ -1112,7 +1104,13 @@ function dropdownMenu() {
  *
  */
 function pageTitle() {
-    $(document).prop('title', $('.clubname').text());
+    let title = '';
+    if (page.includes('/clubinfo/none/')) title = $('.clubname').text();
+    else {
+        title = location.pathname.split('/')[1].replace('_', ' ');
+        title = title.charAt(0).toUpperCase() + title.slice(1);
+    }
+    $(document).prop('title', `Dugout-Online | ${title}`);
 }
 
 /**
@@ -1301,32 +1299,31 @@ function configMenu() {
 
     const configOptions = [
         'SECONDARY_CLOCK', 'DROPDDOWN_MENU', 'PAGE_TITLE', 'TEAM_LINK',
-        'GET_SPONSORS', 'SCOUT_BUTTON', 'READ_RESUME', 'COACHES_WAGE',
-        'PLAYER_OPS_NAME', 'PLAYER_OPS_ID', 'PLAYER_EXP', 'PLAYER_IMAGE',
+        'SCOUT_BUTTON', 'COACHES_WAGE', 'PLAYER_OPS_NAME', 'PLAYER_EXP',
         'SQUAD_DETAILS', 'SQUAD_FILTERS', 'SQUAD_HIGH', 'SPREADSHEET_SQUAD',
-        'BID_BUTTON', 'LOAD_TACTICS', 'TACTICS_DETAILS', 'LINKS', 'STORED_FILTERS', 'GOALS_DIFFERENCE'
+        'LOAD_TACTICS', 'TACTICS_DETAILS', 'GOALS_DIFFERENCE'
     ];
 
     const configForm = $(`
-        <div class="gui_object" style="width: 468px; margin-left: 8px;">
-            <div class="window1_wrapper" style="margin-top: 4px; width: 490px;">
+        <div class="gui_object" style="width: 438px; margin-left: 8px; position: absolute; top: 0;">
+            <div class="window1_wrapper" style="margin-top: 4px; width: 440px;">
                 <div class="window1_header_start"></div>
-                <div class="window1_header" style="width: 480px;">
+                <div class="window1_header" style="width: 430px;">
                     <div class="window1_header_text">&nbsp;DO Genie Assistant Configs</div>
-                    <a href="https://github.com/edunogueira/DOGenieAssistant/raw/main/DOGenieAssistant.user.js/" target="_blank" style="margin-left: 10px;">
-                        <button>Update extension</button>
+                    <a href="https://github.com/gabrielbitencourt/DOGenieAssistant/raw/main/DOGenieAssistant.user.js/" style="margin-left:8px; text-decoration: none; text-align: center; background-position: right; padding-right: 4px; padding-left: 4px; color: #393A39; font-weight: bold; border: 1px solid #A4B0A3; background-color: #D5E3D5; border-radius: 4px 4px 4px 4px; cursor: pointer;" target="_blank" style="margin-left: 10px;">
+                    Update extension
                     </a>
                 </div>
                 <div class="window1_header_end"></div>
             </div>
-            <div class="window1_wrapper" style="margin-top: 0px; width: 468px;">
-                <div class="window1_content" style="width: 486px;">
+            <div class="window1_wrapper" style="margin-top: 0px; width: 436px;">
+                <div class="window1_content" style="width: 436px;">
                     <form name="configForm" action="#" method="post" class="configForm">
                        <table width="99%" border="0" cellspacing="1" cellpadding="1" class="matches_tbl" style="margin-bottom: 0px; margin-left: 3px; margin-top: 2px;">
                            <tbody></tbody>
                        </table>
                 </div>
-                <div class="window1_bottom" style="width: 488px;"></div>
+                <div class="window1_bottom" style="width: 438px;"></div>
             </div>
         </div>
     `).insertAfter('#footer');
@@ -1334,16 +1331,22 @@ function configMenu() {
     const tableBody = configForm.find('.matches_tbl tbody');
 
     let row = '<tr class=\'table_top_row\'>';
+    const label = {
+        DROPDDOWN: 'Dropdown',
+        SECONDARY: 'Sec.',
+        NAME: '',
+        SPREADSHEET: 'Sheet'
+    };
     configOptions.forEach((option, index) => {
         const defaultValue = getConfigOrDefault(option, 'checked');
         const optionCheckbox = `<input type="checkbox" name="${option}" ${defaultValue}>`;
         const optionLabel = option
             .split('_')
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .map((word) => (label[word] ?? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()))
             .join(' ');
 
         row += `<td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
-                    ${optionLabel}: <br>${optionCheckbox}
+                    ${optionCheckbox} ${optionLabel}
                 </td>`;
 
         if ((index + 1) % 4 === 0 && index !== configOptions.length - 1)
@@ -1354,12 +1357,11 @@ function configMenu() {
 
     tableBody.append(row);
 
-    const saveButton = $('<input id="saveConfig" type="submit" style="width: 140px;margin-top: 20px;" value="Save">');
-    const defaultConfigStorageButton = $('<input id="defaultConfigStorage" type="submit" style="width: 160px;margin-top: 20px; margin-left: 10px;" value="Defalut Config Storage">');
-    const clearPlayerImagesButton = $('<input id="clearPlayerImages" type="submit" style="width: 140px;margin-top: 20px; margin-left: 10px;" value="Clear Player Images">');
-    const getSponsorsButton = getConfigOrDefault('GET_SPONSORS', 'checked') ? $('<input id="getSponsors" type="submit" style="width: 140px;margin-top: 20px;" value="Get Sponsors">') : undefined;
+    const saveButton = $('<input id="saveConfig" type="submit" style="width: 136px;margin-top: 20px;" value="Save">');
+    const defaultConfigStorageButton = $('<input id="defaultConfigStorage" type="submit" style="width: 160px;margin-top: 20px;" value="Defalut Config Storage">');
+    const clearPlayerImagesButton = $('<input id="clearPlayerImages" type="submit" style="width: 140px;margin-top: 20px;" value="Clear Player Images">');
 
-    configForm.find('.window1_content').append(saveButton, defaultConfigStorageButton, clearPlayerImagesButton, getSponsorsButton);
+    configForm.find('.window1_content').append(saveButton, defaultConfigStorageButton, clearPlayerImagesButton);
 
     saveButton.click(() => {
         configOptions.forEach((option) => {
