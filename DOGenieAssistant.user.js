@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         DO Genie Assistant
-// @version      34.0
+// @version      35.0
 // @namespace    https://github.com/edunogueira/DOGenieAssistant/
 // @description  dugout-online genie assistant
 // @author       Eduardo Nogueira de Oliveira
@@ -61,6 +61,8 @@ if (page.includes('/home/none/')) {
     checkAndExecute(storedFilters["STORED_FILTERS"], storedFilters);
 } else if (page.match("/competitions/none")) {
     checkAndExecute(configs["GOALS_DIFFERENCE"], goalsDifference);
+} else if (page.match("/training/none")) {
+    checkAndExecute(configs["HIDE_TRAINING_REPORT"], hideTrainingReport);
 }
 
 //helper //----------------------------------------------//
@@ -1360,7 +1362,8 @@ function configMenu() {
         "GET_SPONSORS", "SCOUT_BUTTON", "READ_RESUME", "COACHES_WAGE",
         "PLAYER_OPS_NAME", "PLAYER_OPS_ID", "PLAYER_EXP", "PLAYER_IMAGE",
         "SQUAD_DETAILS", "SQUAD_FILTERS", "SQUAD_HIGH", "SPREADSHEET_SQUAD",
-        "BID_BUTTON", "LOAD_TACTICS", "TACTICS_DETAILS", "LINKS", "STORED_FILTERS", "GOALS_DIFFERENCE"
+        "BID_BUTTON", "LOAD_TACTICS", "TACTICS_DETAILS", "LINKS",
+        "STORED_FILTERS", "GOALS_DIFFERENCE", "HIDE_TRAINING_REPORT"
     ];
 
     const configForm = $(`
@@ -1457,7 +1460,8 @@ function getStorage(storageConfigs) {
         "PLAYER_IMAGE": 'checked',
         "LINKS": 'checked',
         "STORED_FILTERS": 'checked',
-        "GOALS_DIFFERENCE": 'checked'
+        "GOALS_DIFFERENCE": 'checked',
+        "HIDE_TRAINING_REPORT": 'checked'
     };
 
     return (storageConfigs == null || storageConfigs == '[]') ? defaultConfigs : JSON.parse(storageConfigs);
@@ -1848,3 +1852,27 @@ function goalsDifference() {
     });
     $('#myTable thead tr th:nth-child(' + (ref + 1) + ')').text('GD');
 }
+function hideTrainingReport() {
+    $('<input type="checkbox" id="toggleRows" checked>').insertAfter('.window1_header_text');
+    $('<label for="toggleRows">Hide player in training report</label>').insertAfter('#toggleRows');
+
+    $('#toggleRows').change(function() {
+        if ($(this).is(':checked')) {
+            $('tbody tr').each(function() {
+                if ($(this).find('input[type="hidden"]').val() === '1') {
+                    $(this).hide();
+                }
+            });
+        } else {
+            $('tbody tr').show();
+        }
+    });
+
+     $('tbody tr').each(function() {
+        if ($(this).find('input[type="hidden"]').val() === '1') {
+            $(this).hide();
+        }
+    });
+}
+
+
