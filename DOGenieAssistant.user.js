@@ -1,14 +1,17 @@
 // ==UserScript==
-// @name         DO Genie Assistant
-// @version      35.0
-// @namespace    https://github.com/edunogueira/DOGenieAssistant/
-// @description  dugout-online genie assistant
-// @author       Eduardo Nogueira de Oliveira
-// @icon         https://www.google.com/s2/favicons?domain=dugout-online.com
-// @require	 http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js
-// @require      https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js
-// @include      http*dugout-online.com/*
-// @include      https://www.dugout-online.com/*
+// @name DO Genie Assistant
+// @version 36.0
+// @namespace https://github.com/edunogueira/DOGenieAssistant/
+// @description dugout-online genie assistant
+// @author Eduardo Nogueira de Oliveira
+// @icon https://www.google.com/s2/favicons?domain=dugout-online.com
+// @require http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js
+// @require https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js
+// @require https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js
+// @require https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.34/moment-timezone-with-data.min.js
+// @include http*dugout-online.com/*
+// @include https://www.dugout-online.com/*
+
 // ==/UserScript==
 //page select ----------------------------------------------//
 var page = document.URL;
@@ -46,6 +49,7 @@ if (page.includes('/home/none/')) {
 } else if (page.includes('/players/details/')) {
     playerDetails();
     checkAndExecute(configs["BID_BUTTON"], bidButton);
+    checkAndExecute(configs["BID_LOCAL_TIME"], bidLocalTime);
     checkAndExecute(configs["PLAYER_IMAGE"], playerImage);
 } else if (page.includes('/players/none/') || page.includes('/players_nt/none/')) {
     checkAndExecute(configs["SQUAD_DETAILS"], squadDetails);
@@ -1175,6 +1179,26 @@ function bidButton() {
     }
 }
 
+function bidLocalTime() {
+    let riseOfferInput = $('input[name="riseoffer"]');
+    if (riseOfferInput.length === 1) {
+        let text = $('.info').text();
+        let match = text.match(/(\d{2}-\d{2}\(\d{2}:\d{2}\))/);
+        if (match) {
+            let [_, dateString] = match;
+            let [day, month, time] = dateString.split(/[-()]/).map(part =>part);
+            let [hourCET, minute] = time.toString().match(/\d{2}/g).map(part => part);
+
+            let dateCET = moment.tz([moment().year(), month - 1, day, hourCET, minute], "CET");
+            let userTimezone = moment.tz.guess();
+            let dateUserTimezone = dateCET.clone().tz(userTimezone);
+
+            $('.info').parent().find('b:nth-child(3)').attr('title', dateUserTimezone.format("DD-MM (HH:mm)"));
+        }
+    }
+}
+
+
 function playerImage() {
     const playerId = getUrlParameter('playerID');
     let playerInfo = JSON.parse(localStorage.getItem(`DOGenieAssistant.player.${playerId}`)) || { img: "" };
@@ -1362,7 +1386,7 @@ function configMenu() {
         "GET_SPONSORS", "SCOUT_BUTTON", "READ_RESUME", "COACHES_WAGE",
         "PLAYER_OPS_NAME", "PLAYER_OPS_ID", "PLAYER_EXP", "PLAYER_IMAGE",
         "SQUAD_DETAILS", "SQUAD_FILTERS", "SQUAD_HIGH", "SPREADSHEET_SQUAD",
-        "BID_BUTTON", "LOAD_TACTICS", "TACTICS_DETAILS", "LINKS",
+        "BID_BUTTON", "BID_LOCAL_TIME", "LOAD_TACTICS", "TACTICS_DETAILS", "LINKS",
         "STORED_FILTERS", "GOALS_DIFFERENCE", "HIDE_TRAINING_REPORT"
     ];
 
@@ -1455,6 +1479,7 @@ function getStorage(storageConfigs) {
         "SCOUT_BUTTON": 'checked',
         "SPREADSHEET_SQUAD": 'checked',
         "BID_BUTTON": 'checked',
+        "BID_LOCAL_TIME": 'checked',
         "TEAM_LINK": 'checked',
         "GET_SPONSORS": 'checked',
         "PLAYER_IMAGE": 'checked',
@@ -1672,6 +1697,7 @@ function links() {
         location.reload();
     });
 }
+
 function storedFilters() {
     const storedFilters = JSON.parse(localStorage.getItem("DOGenieAssistant.storedFilters")) || {
         search_players: {
@@ -1811,6 +1837,7 @@ function storedFilters() {
     delBtn.addEventListener("click", () => removeFilter(selectFilter.value));
     saveBtn.addEventListener("click", saveCurrentFilter);
 }
+
 function goalsDifference() {
     if ($('#myTable').length === 0) {
         return;
@@ -1852,6 +1879,7 @@ function goalsDifference() {
     });
     $('#myTable thead tr th:nth-child(' + (ref + 1) + ')').text('GD');
 }
+
 function hideTrainingReport() {
     $('<input type="checkbox" id="toggleRows" checked>').insertAfter('.window1_header_text');
     $('<label for="toggleRows">Hide player in training report</label>').insertAfter('#toggleRows');
@@ -1874,5 +1902,3 @@ function hideTrainingReport() {
         }
     });
 }
-
-
