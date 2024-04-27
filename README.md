@@ -51,7 +51,14 @@
   <img src="config_menu.png">
 
 ### To-Do list
-- [ ]
+- [ ] Exportar configurações salvas
+- [ ] Horário do leilão no fuso local
+- [ ] Manter rota anterior depois do login
+
+### Analisar a viabilidade
+Mensagem de lembrete de escalação
+Criação de um banco de dados compartilhado com as faces dos jogadores
+
 
 ### Como instalar 
 1. Instalar o [Tampermonkey](https://www.tampermonkey.net/)
