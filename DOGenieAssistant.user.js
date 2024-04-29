@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name DO Genie Assistant
-// @version 36.0
+// @version 37.0
 // @namespace https://github.com/edunogueira/DOGenieAssistant/
 // @description dugout-online genie assistant
 // @author Eduardo Nogueira de Oliveira
@@ -61,6 +61,7 @@ if (page.includes('/home/none/')) {
     checkAndExecute(configs["SPREADSHEET_SQUAD"], function() { doTable('.forumline'); });
 } else if (page.includes('/game/none/gameid/')) {
     checkAndExecute(soundConfig["MATCH_SOUND"], matchSound);
+    checkAndExecute(configs["MATCH_NAMES"], matchNames);
 } else if (page.match("/search_players|/search_transfers|/search_clubs|/search_coaches|/national_teams|/search_physios")) {
     checkAndExecute(storedFilters["STORED_FILTERS"], storedFilters);
 } else if (page.match("/competitions/none")) {
@@ -1349,6 +1350,53 @@ function matchSound() {
     }
 }
 
+function matchNames() {
+    let playersHome = extractPlayers($("#events_content td:nth-child(3)").eq(-3).html());
+    let playersAway = extractPlayers($("#events_content td:nth-child(3)").eq(-4).html());
+
+    replacePlayerNames(".player_ratings:eq(0)", playersHome);
+    replacePlayerNames(".player_ratings:eq(1)", playersAway);
+    let players = playersHome.concat(playersAway);
+    addButton(players)
+}
+
+function addButton(players) {
+    let button = $("<button>").text("Replace events").click(function() {
+        $("#events_content").each(function(i) {
+            replacePlayerNames(this, players);
+        });
+    });
+    button.css("margin-left", "20px");
+    $(".window1_header_text").append(button);
+}
+
+function extractPlayers(html) {
+    let players = [];
+    let regex = /playerID\/(\d+)">([^<\/]+)/g;
+    let matches;
+    while ((matches = regex.exec(html)) !== null) {
+        let playerId = matches[1];
+        let nome = matches[2].trim();
+        players.push({ playerId, nome });
+    }
+    return players;
+}
+
+function replacePlayerNames(divSelector, playerNames) {
+    $(divSelector).each(function() {
+        $(this).find("tbody a").each(function() {
+            let playerIdMatch = $(this).attr("href").match(/playerID\/(\d+)/);
+            if (playerIdMatch) {
+                let playerId = playerIdMatch[1];
+                let playerNameObj = playerNames.find(player => player.playerId === playerId);
+                if (playerNameObj) {
+                    $(this).text(playerNameObj.nome);
+                }
+            }
+        });
+    });
+}
+
 function handleEvent(match, eventName, eventTime, soundIdHome, soundIdAway, gameId) {
     if (formatTime(match[eventName]) < eventTime) {
         match[eventName] = eventTime;
@@ -1387,7 +1435,7 @@ function configMenu() {
         "PLAYER_OPS_NAME", "PLAYER_OPS_ID", "PLAYER_EXP", "PLAYER_IMAGE",
         "SQUAD_DETAILS", "SQUAD_FILTERS", "SQUAD_HIGH", "SPREADSHEET_SQUAD",
         "BID_BUTTON", "BID_LOCAL_TIME", "LOAD_TACTICS", "TACTICS_DETAILS", "LINKS",
-        "STORED_FILTERS", "GOALS_DIFFERENCE", "HIDE_TRAINING_REPORT"
+        "STORED_FILTERS", "GOALS_DIFFERENCE", "HIDE_TRAINING_REPORT", "MATCH_NAMES"
     ];
 
     const configForm = $(`
@@ -1486,7 +1534,8 @@ function getStorage(storageConfigs) {
         "LINKS": 'checked',
         "STORED_FILTERS": 'checked',
         "GOALS_DIFFERENCE": 'checked',
-        "HIDE_TRAINING_REPORT": 'checked'
+        "HIDE_TRAINING_REPORT": 'checked',
+        "MATCH_NAMES": 'checked'
     };
 
     return (storageConfigs == null || storageConfigs == '[]') ? defaultConfigs : JSON.parse(storageConfigs);
@@ -1902,3 +1951,5 @@ function hideTrainingReport() {
         }
     });
 }
+
+
