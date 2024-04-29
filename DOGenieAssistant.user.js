@@ -1355,7 +1355,9 @@ function matchNames() {
     let playersAway = extractPlayers($("#events_content td:nth-child(3)").eq(-4).html());
 
     replacePlayerNames(".player_ratings:eq(0)", playersHome);
+    replacePlayerNames(".key_events:eq(0)", playersHome);
     replacePlayerNames(".player_ratings:eq(1)", playersAway);
+    replacePlayerNames(".key_events:eq(1)", playersAway);
     let players = playersHome.concat(playersAway);
     addButton(players)
 }
