@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name DO Genie Assistant
-// @version 37.0
+// @version 37.1
 // @namespace https://github.com/edunogueira/DOGenieAssistant/
 // @description dugout-online genie assistant
 // @author Eduardo Nogueira de Oliveira
@@ -1353,6 +1353,8 @@ function matchSound() {
 function matchNames() {
     let playersHome = extractPlayers($("#events_content td:nth-child(3)").eq(-3).html());
     let playersAway = extractPlayers($("#events_content td:nth-child(3)").eq(-4).html());
+    playersHome = setCaptain(".player_ratings:eq(0)", playersHome);
+    playersAway = setCaptain(".player_ratings:eq(1)", playersAway);
 
     replacePlayerNames(".player_ratings:eq(0)", playersHome);
     replacePlayerNames(".key_events:eq(0)", playersHome);
@@ -1397,6 +1399,26 @@ function replacePlayerNames(divSelector, playerNames) {
             }
         });
     });
+}
+
+function setCaptain (divSelector, playerNames) {
+    $(divSelector).each(function() {
+        $(this).find("tbody a").each(function() {
+            let playerIdMatch = $(this).attr("href").match(/playerID\/(\d+)/);
+            if (playerIdMatch) {
+                let playerId = playerIdMatch[1];
+                let playerNameObj = playerNames.find(player => player.playerId === playerId);
+                if (playerNameObj) {
+                    let playerName = playerNameObj.nome;
+                    if ($(this).text().includes("(c)")) {
+                        playerName += " (c)";
+                        playerNameObj['nome'] = playerName;
+                    }
+                }
+            }
+        });
+    });
+    return playerNames;
 }
 
 function handleEvent(match, eventName, eventTime, soundIdHome, soundIdAway, gameId) {
@@ -1953,5 +1975,3 @@ function hideTrainingReport() {
         }
     });
 }
-
-
