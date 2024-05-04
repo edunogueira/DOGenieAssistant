@@ -51,8 +51,6 @@
   <img src="config_menu.png">
 
 ### To-Do list
-- [ ] Exportar configurações salvas
-- [ ] Horário do leilão no fuso local
 - [ ] Manter rota anterior depois do login
 
 ### Analisar a viabilidade
