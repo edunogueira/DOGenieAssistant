@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name DO Genie Assistant
-// @version 37.1
+// @version 38.0
 // @namespace https://github.com/edunogueira/DOGenieAssistant/
 // @description dugout-online genie assistant
 // @author Eduardo Nogueira de Oliveira
@@ -68,6 +68,8 @@ if (page.includes('/home/none/')) {
     checkAndExecute(configs["GOALS_DIFFERENCE"], goalsDifference);
 } else if (page.match("/training/none")) {
     checkAndExecute(configs["HIDE_TRAINING_REPORT"], hideTrainingReport);
+} else if (page.match("/settings/none")) {
+    importExport();
 }
 
 //helper //----------------------------------------------//
@@ -1972,6 +1974,46 @@ function hideTrainingReport() {
      $('tbody tr').each(function() {
         if ($(this).find('input[type="hidden"]').val() === '1') {
             $(this).hide();
+        }
+    });
+}
+
+function importExport() {
+    const importButton = $('<input id="importButton" type="submit" style="width: 140px;margin-top: 20px;" value="Import">');
+    const exportButton = $('<input id="exportButton" type="submit" style="width: 140px;margin-top: 20px;" value="Export">');
+
+    var buttonsRow = $('<tr></tr>').append(
+        $('<td width="400" height="30" align="right" valign="middle"></td>').append($('<span>DO Genie Assistant Configs </span>')).append(importButton),
+        $('<td></td>').append(exportButton)
+    );
+
+    var textAreaRow = $('<tr></tr>').append(
+        $('<td colspan="2" align="left" valign="middle" style="padding-top: 7px;padding-left: 200px;"></td>').append($('<textarea id="dataTextArea" rows="10" cols="50"></textarea>'))
+    );
+
+    $(".tabbed_pane").find("table").find("tr").last().after(buttonsRow, textAreaRow);
+
+    exportButton.click(function(event) {
+        event.preventDefault();
+        let exportedData = {};
+        for (let i = 0; i < localStorage.length; i++) {
+            let key = localStorage.key(i);
+            if (key.startsWith("DOGenieAssistant.")) {
+                exportedData[key] = localStorage.getItem(key);
+            }
+        }
+        let jsonString = JSON.stringify(exportedData);
+        let textarea = $("#dataTextArea");
+        textarea.val(jsonString);
+    });
+
+    importButton.click(function() {
+        let jsonString = $("#dataTextArea").val();
+        let importedData = JSON.parse(jsonString);
+        for (let key in importedData) {
+            if (importedData.hasOwnProperty(key)) {
+                localStorage.setItem(key, importedData[key]);
+            }
         }
     });
 }
