@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name DO Genie Assistant
-// @version 38.0
+// @version 39.0
 // @namespace https://github.com/edunogueira/DOGenieAssistant/
 // @description dugout-online genie assistant
 // @author Eduardo Nogueira de Oliveira
@@ -28,7 +28,9 @@ checkAndExecute(configs["PAGE_TITLE"], pageTitle);
 checkAndExecute(configs["DROPDDOWN_MENU"], dropdownMenu);
 checkAndExecute(configs["SECONDARY_CLOCK"], secondaryClock);
 checkAndExecute(configs["LINKS"], links);
-
+if (document.forms['messageEditor']) {
+    checkAndExecute(configs["WRAP_TEXT"], wrapText);
+}
 if (page.includes('/home/none/')) {
     configMenu();
     configSound();
@@ -1461,7 +1463,8 @@ function configMenu() {
         "PLAYER_OPS_NAME", "PLAYER_OPS_ID", "PLAYER_EXP", "PLAYER_IMAGE",
         "SQUAD_DETAILS", "SQUAD_FILTERS", "SQUAD_HIGH", "SPREADSHEET_SQUAD",
         "BID_BUTTON", "BID_LOCAL_TIME", "LOAD_TACTICS", "TACTICS_DETAILS", "LINKS",
-        "STORED_FILTERS", "GOALS_DIFFERENCE", "HIDE_TRAINING_REPORT", "MATCH_NAMES"
+        "STORED_FILTERS", "GOALS_DIFFERENCE", "HIDE_TRAINING_REPORT",
+        "MATCH_NAMES", "WRAP_TEXT"
     ];
 
     const configForm = $(`
@@ -1561,7 +1564,8 @@ function getStorage(storageConfigs) {
         "STORED_FILTERS": 'checked',
         "GOALS_DIFFERENCE": 'checked',
         "HIDE_TRAINING_REPORT": 'checked',
-        "MATCH_NAMES": 'checked'
+        "MATCH_NAMES": 'checked',
+        "WRAP_TEXT": 'checked'
     };
 
     return (storageConfigs == null || storageConfigs == '[]') ? defaultConfigs : JSON.parse(storageConfigs);
@@ -2015,5 +2019,35 @@ function importExport() {
                 localStorage.setItem(key, importedData[key]);
             }
         }
+    });
+}
+
+function wrapText() {
+    const wrapTextWithTag = (tag) => {
+        const textarea = messageEditor.editAreaText;
+        const startPos = textarea.selectionStart;
+        const endPos = textarea.selectionEnd;
+        const selectedText = textarea.value.substring(startPos, endPos);
+        const newText = `[${tag}]${selectedText}[/${tag}]`;
+
+        textarea.value = textarea.value.substring(0, startPos) + newText + textarea.value.substring(endPos);
+
+        const newCursorPosition = startPos + newText.length;
+        textarea.setSelectionRange(newCursorPosition, newCursorPosition);
+        textarea.focus();
+    }
+
+    document.querySelector("div.font_bold").removeAttribute("onclick");
+    document.querySelector("div.font_italic").removeAttribute("onclick");
+    document.querySelector("div.font_underline").removeAttribute("onclick");
+
+    document.querySelector("div.font_bold").addEventListener("click", function() {
+        wrapTextWithTag("b");
+    });
+    document.querySelector("div.font_italic").addEventListener("click", function() {
+        wrapTextWithTag("i");
+    });
+    document.querySelector("div.font_underline").addEventListener("click", function() {
+        wrapTextWithTag("u");
     });
 }
