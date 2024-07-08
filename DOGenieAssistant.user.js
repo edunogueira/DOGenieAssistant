@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name DO Genie Assistant
-// @version 39.0
+// @version 39.1
 // @namespace https://github.com/edunogueira/DOGenieAssistant/
 // @description dugout-online genie assistant
 // @author Eduardo Nogueira de Oliveira
@@ -48,7 +48,7 @@ if (page.includes('/home/none/')) {
     checkAndExecute(configs["READ_RESUME"], readResume);
 } else if (page.includes('/clubinfo/none/')) {
     checkAndExecute(configs["SCOUT_BUTTON"], scoutButton);
-} else if (page.includes('/players/details/')) {
+} else if (page.includes('/players/details/')|| page.includes('/players_nt/details/')) {
     playerDetails();
     checkAndExecute(configs["BID_BUTTON"], bidButton);
     checkAndExecute(configs["BID_LOCAL_TIME"], bidLocalTime);
@@ -67,7 +67,9 @@ if (page.includes('/home/none/')) {
 } else if (page.match("/search_players|/search_transfers|/search_clubs|/search_coaches|/national_teams|/search_physios")) {
     checkAndExecute(storedFilters["STORED_FILTERS"], storedFilters);
 } else if (page.match("/competitions/none")) {
-    checkAndExecute(configs["GOALS_DIFFERENCE"], goalsDifference);
+    if (!page.match("/subpage/")) {
+        checkAndExecute(configs["GOALS_DIFFERENCE"], goalsDifference);
+    }
 } else if (page.match("/training/none")) {
     checkAndExecute(configs["HIDE_TRAINING_REPORT"], hideTrainingReport);
 } else if (page.match("/settings/none")) {
@@ -959,8 +961,8 @@ function dropdownMenu() {
             { url: 'https://www.dugout-online.com/clubinfo/none/', text: translation.club_info[language] },
             { url: 'https://www.dugout-online.com/clubinfo/bids/', text: translation.club_bids[language] },
             { url: 'https://www.dugout-online.com/clubinfo/transfers/', text: translation.club_transfers[language] },
-            { url: 'https://www.dugout-online.com/players/none/', text: translation.club_players[language] },
-            { url: 'https://www.dugout-online.com/players/none/view/youth/', text: translation.club_players_youth[language] },
+            { url: 'https://www.dugout-online.com/players/none/clubid/0/Free-online-football-manager-game', text: translation.club_players[language] },
+            { url: 'https://www.dugout-online.com/players/none/view/youth/clubid/0/', text: translation.club_players_youth[language] },
             { url: 'https://www.dugout-online.com/staff/none/', text: translation.club_staff[language] },
             { url: 'https://www.dugout-online.com/settings/none/', text: translation.club_settings[language] },
         ],
@@ -1123,21 +1125,32 @@ function loadTactics() {
     $('#field_cont table').append('<tr><td valign="middle" style="color: unset;" colspan="2"><textarea id="dataTtc" name="dataTtc" rows="2" cols="40"></textarea></td><td valign="middle" style="color: unset;"><input type="button" value="Apply" id="apply"><input type="button" value="getTtc" id="getTtc"></td></tr>');
 
     $("#getTtc").click(function() {
-        const data = {
-            action: 'submit',
-            players_ids: players[0].join(','),
-            positions: players[1].join(','),
-            players_x: players[2].join(','),
-            players_y: players[3].join(','),
-            substitutes: substitutes[0].join(','),
-            actions: actionsb,
-            options: `${$("#agression_id").val()}*${$("#mentality_id option:selected").val()}*${$("#attack_wing_id option:selected").val()}*${$("#passing_id option:selected").val()}*${$("#capitan_sel option:selected").val()}*${$("#playmaker_sel option:selected").val()}*${$("#target_man_sel option:selected").val()}*${$("#penalty_sel option:selected").val()}*${$("#counter_attacks_id").prop('checked') ? '1' : '0'}*${$("#offside_trap_id").prop('checked') ? '1' : '0'}`
-        };
+        var data = '';
+        var action = 'submit';
+        data="action="+action+"&players_ids="+players[0]+"&positions="+players[1]+"&players_x="+players[2]+"&players_y="+players[3]+"&substitutes="+substitutes[0]+"&actions="+actionsb;
+        data+="&options="+$("#agression_id").val()+"*"+$("#mentality_id option:selected").val()+"*"+$("#attack_wing_id option:selected").val();
+        data+="*"+$("#passing_id option:selected").val()+"*"+$("#capitan_sel option:selected").val()+"*"+$("#playmaker_sel option:selected").val();
+        data+="*"+$("#target_man_sel option:selected").val()+"*"+$("#penalty_sel option:selected").val();
 
-        const queryString = $.param(data).replace(/%5B/g, '').replace(/%5D/g, '');
-        const decodedQueryString = decodeURIComponent(queryString).replace(/ /g, '+');
+        if($("#counter_attacks_id").prop('checked'))
+            data+="*1";
+        else
+            data+="*0";
+        if($("#offside_trap_id").prop('checked'))
+            data+="*1";
+        else
+            data+="*0";
 
-        $("#dataTtc").val(decodedQueryString);
+        if(action=="save")
+        {
+            if($("#save_name").val()=="Save name")
+                data+="&name=slot"+$("#save_tacts option:selected").val();
+            else
+                data+="&name="+$("#save_name").val();
+            data+="&slot="+$("#save_tacts option:selected").val()
+        }
+
+        $("#dataTtc").val(data);
     });
 
 
@@ -1146,7 +1159,7 @@ function loadTactics() {
         const xmlhttp = new XMLHttpRequest();
         const url = page.match('/tactics/none/') ? SERVER_URL + "/ajaxphp/tactics_save.php" :
                     page.match('/tactics_youth/none/') ? SERVER_URL + "/ajaxphp/tactics_youth_save.php" :
-                    page.match('/tactics_nt/none/') ? SERVER_URL + "/ajaxphp/tactics_nt_save.php" : '';
+                    page.match('/tactics_nt/none/') ? SERVER_URL + "/ajaxphp/tactics_save_nt.php" : '';
 
         if (!url) return;
 
