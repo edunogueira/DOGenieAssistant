@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name DO Genie Assistant
-// @version 39.1
+// @version 40.0
 // @namespace https://github.com/edunogueira/DOGenieAssistant/
 // @description dugout-online genie assistant
 // @author Eduardo Nogueira de Oliveira
@@ -17,7 +17,7 @@
 var page = document.URL;
 var configs = getStorage(localStorage.getItem("DOGenieAssistant.configs")) || {};
 var soundConfig = getSoundStorage(localStorage.getItem("DOGenieAssistant.soundConfig")) || {};
-
+var scores = "";
 function checkAndExecute(config, func) {
     if ((config) || (typeof config === 'undefined')) {
         func();
@@ -66,14 +66,17 @@ if (page.includes('/home/none/')) {
     checkAndExecute(configs["MATCH_NAMES"], matchNames);
 } else if (page.match("/search_players|/search_transfers|/search_clubs|/search_coaches|/national_teams|/search_physios")) {
     checkAndExecute(storedFilters["STORED_FILTERS"], storedFilters);
-} else if (page.match("/competitions/none")) {
-    if (!page.match("/subpage/")) {
-        checkAndExecute(configs["GOALS_DIFFERENCE"], goalsDifference);
-    }
 } else if (page.match("/training/none")) {
     checkAndExecute(configs["HIDE_TRAINING_REPORT"], hideTrainingReport);
 } else if (page.match("/settings/none")) {
     importExport();
+} else if (page.match("/competitions/")) {
+    checkAndExecute(configs["AUTO_SCORE"], autoScore);
+    if (page.match("/competitions/none")) {
+        if (!page.match("/subpage/")) {
+            checkAndExecute(configs["GOALS_DIFFERENCE"], goalsDifference);
+        }
+    }
 }
 
 //helper //----------------------------------------------//
@@ -939,7 +942,7 @@ function getTranslation() {
 
     };
 }
-
+//dropdownMenu languages by mini18
 function dropdownMenu() {
     var css = '.dropdown-content{text-align: left;top:0px;border-radius: 15px;margin-top:40px;display:none;position:absolute;background-color:#f1f1f1;min-width:160px;box-shadow:0 8px 16px 0 rgba(0,0,0,.2);z-index:1}.dropdown-content a{border-radius: 15px;color:#000;padding:12px 16px;text-decoration:none;display:block}.dropdown-content a:hover{background-color:#ddd}.menu_button:hover .dropdown-content{display:block}.menu_button:hover .dropbtn{background-color:#3e8e41}';
     applyStyle(css);
@@ -1343,12 +1346,15 @@ function matchSound() {
         const eventTime = formatTime($("#events_content td:nth-child(2)").eq(i).html());
 
         if (soundConfig["GOAL_SOUND"] !== "" && eventType.includes('icon-goal')) {
-            handleEvent(match, 'LAST_GOAL', eventTime, soundConfig['HOME_GOAL_ID'], soundConfig['AWAY_GOAL_ID'], gameId);
+            const isHomeTeam = ($("#events_content td:nth-child(3)").eq(i).find('a').first().text() === $('.header_clubname').text());
+            const soundId = isHomeTeam ? soundConfig['HOME_GOAL_ID'] : soundConfig['AWAY_GOAL_ID'];
+
+            handleEvent(match, 'LAST_GOAL', eventTime, soundId, gameId);
             break;
         }
 
         if (soundConfig["OFFSIDE_SOUND"] !== "" && eventType.includes('icon-offside')) {
-            handleEvent(match, 'LAST_OFFSIDE', eventTime, soundConfig['OFFSIDE_ID'], soundConfig['OFFSIDE_ID'], gameId);
+            handleEvent(match, 'LAST_OFFSIDE', eventTime, soundConfig['OFFSIDE_ID'], gameId);
             break;
         }
     }
@@ -1361,7 +1367,7 @@ function matchSound() {
             if (soundConfig['GAME_END_ID'] == 0) {
                 handleEvent(match, 'GAME_ENDS', gameEndsTime, gameId, gameId, gameId);
             } else {
-                handleEvent(match, 'GAME_ENDS', gameEndsTime, soundConfig['GAME_END_ID'], soundConfig['GAME_END_ID'], gameId);
+                handleEvent(match, 'GAME_ENDS', gameEndsTime, soundConfig['GAME_END_ID'], gameId);
             }
         }
     }
@@ -1438,13 +1444,10 @@ function setCaptain (divSelector, playerNames) {
     return playerNames;
 }
 
-function handleEvent(match, eventName, eventTime, soundIdHome, soundIdAway, gameId) {
+function handleEvent(match, eventName, eventTime, soundId, gameId) {
     if (formatTime(match[eventName]) < eventTime) {
         match[eventName] = eventTime;
         localStorage.setItem(`DOGenieAssistant.match.${gameId}`, JSON.stringify(match));
-
-        const isHomeTeam = ($("#events_content td:nth-child(3) a").eq(0).text() === $('.header_clubname').text());
-        const soundId = isHomeTeam ? soundIdHome : soundIdAway;
 
         $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${soundId}&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertAfter("#events_content");
         $("#events_content").delay(2000);
@@ -1477,7 +1480,7 @@ function configMenu() {
         "SQUAD_DETAILS", "SQUAD_FILTERS", "SQUAD_HIGH", "SPREADSHEET_SQUAD",
         "BID_BUTTON", "BID_LOCAL_TIME", "LOAD_TACTICS", "TACTICS_DETAILS", "LINKS",
         "STORED_FILTERS", "GOALS_DIFFERENCE", "HIDE_TRAINING_REPORT",
-        "MATCH_NAMES", "WRAP_TEXT"
+        "MATCH_NAMES", "WRAP_TEXT", "AUTO_SCORE"
     ];
 
     const configForm = $(`
@@ -1488,6 +1491,9 @@ function configMenu() {
                     <div class="window1_header_text">&nbsp;DO Genie Assistant Configs</div>
                     <a href="https://github.com/edunogueira/DOGenieAssistant/raw/main/DOGenieAssistant.user.js/" target="_blank" style="margin-left: 10px;">
                         <button>Update extension</button>
+                    </a>
+                    <a href="https://www.dugout-online.com/stadium/setticket/" target="_blank" style="margin-left: 10px;">
+                        <button>Set Ticket Price</button>
                     </a>
                 </div>
                 <div class="window1_header_end"></div>
@@ -1578,7 +1584,8 @@ function getStorage(storageConfigs) {
         "GOALS_DIFFERENCE": 'checked',
         "HIDE_TRAINING_REPORT": 'checked',
         "MATCH_NAMES": 'checked',
-        "WRAP_TEXT": 'checked'
+        "WRAP_TEXT": 'checked',
+        "AUTO_SCORE": 'checked',
     };
 
     return (storageConfigs == null || storageConfigs == '[]') ? defaultConfigs : JSON.parse(storageConfigs);
@@ -1790,6 +1797,7 @@ function links() {
     });
 }
 
+//storedFilters by mini18
 function storedFilters() {
     const storedFilters = JSON.parse(localStorage.getItem("DOGenieAssistant.storedFilters")) || {
         search_players: {
@@ -2035,6 +2043,7 @@ function importExport() {
     });
 }
 
+//wrapText by mini18
 function wrapText() {
     const wrapTextWithTag = (tag) => {
         const textarea = messageEditor.editAreaText;
@@ -2064,3 +2073,76 @@ function wrapText() {
         wrapTextWithTag("u");
     });
 }
+
+//autoScore by lumfurt
+function autoScore() {
+    const button = $("<button>").text("Update scores").click(function() {
+        updateScores();
+        button.prop('disabled', true).removeClass('enabled').addClass('disabled');
+    });
+
+    const styles = `
+            .enabled {
+                background-color: #4CAF50;color: white;border: none;cursor: pointer;margin-left: 20px;padding: 5px 10px;
+            }
+            .disabled {
+                background-color: grey;color: white;border: none;cursor: not-allowed;margin-left: 20px;padding: 5px 10px;
+            }
+        `;
+    $("<style>").text(styles).appendTo("head");
+
+    button.addClass('enabled');
+    $(".doformslong").before(button);
+}
+
+async function fetchScore(url) {
+    try {
+        const response = await fetch(url);
+        const data = await response.text();
+        const parser = new DOMParser();
+        const html = parser.parseFromString(data, "text/html");
+
+        const goalsHome = html.getElementById("goals_home")?.textContent;
+        const goalsAway = html.getElementById("goals_away")?.textContent;
+
+        if (goalsHome && goalsAway) {
+            return `[${goalsHome.trim()} : ${goalsAway.trim()}]`;
+        } else {
+            console.error(`Could not retrieve scores for game with URL ${url}`);
+            return "";
+        }
+    } catch (error) {
+        console.error(`Error fetching score for URL ${url}:`, error);
+        return "";
+    }
+}
+
+async function updateScores() {
+    const gameLinks = Array.from(document.querySelectorAll("td a[href*='gameid']"))
+    .filter(link => !/\d/.test(link.innerText) || link.innerText.includes('['));
+    const scorePromises = gameLinks.map(link => fetchScore(link.href));
+    const gameScores = await Promise.all(scorePromises);
+
+    if (scores == "") {
+        scores = gameScores;
+    } else {
+        for (let i = 0; i < scores.length; i++) {
+            if (scores[i] !== gameScores[i]) {
+                const soundId = soundConfig['AWAY_GOAL_ID'];
+                scores[i] = gameScores[i];
+                $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${soundId}&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertBefore("#myTable");
+            }
+        }
+    }
+    gameLinks.forEach((link, index) => {
+        const score = gameScores[index];
+        if (score) {
+            link.innerText = score;
+        }
+    });
+    let minTime = 1 * 60 * 1000;
+    let maxTime = 2 * 60 * 1000;
+    let randomTime = Math.floor(Math.random() * (maxTime - minTime + 1)) + minTime;
+    setTimeout(updateScores, randomTime);
+}
+
