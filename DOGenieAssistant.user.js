@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name DO Genie Assistant
-// @version 40.0
+// @version 41.0
 // @namespace https://github.com/edunogueira/DOGenieAssistant/
 // @description dugout-online genie assistant
 // @author Eduardo Nogueira de Oliveira
@@ -68,6 +68,7 @@ if (page.includes('/home/none/')) {
     checkAndExecute(storedFilters["STORED_FILTERS"], storedFilters);
 } else if (page.match("/training/none")) {
     checkAndExecute(configs["HIDE_TRAINING_REPORT"], hideTrainingReport);
+    checkAndExecute(configs["COACH_EFFECTIVENESS"], coachEffectiveness);
 } else if (page.match("/settings/none")) {
     importExport();
 } else if (page.match("/competitions/")) {
@@ -1479,7 +1480,7 @@ function configMenu() {
         "PLAYER_OPS_NAME", "PLAYER_OPS_ID", "PLAYER_EXP", "PLAYER_IMAGE",
         "SQUAD_DETAILS", "SQUAD_FILTERS", "SQUAD_HIGH", "SPREADSHEET_SQUAD",
         "BID_BUTTON", "BID_LOCAL_TIME", "LOAD_TACTICS", "TACTICS_DETAILS", "LINKS",
-        "STORED_FILTERS", "GOALS_DIFFERENCE", "HIDE_TRAINING_REPORT",
+        "STORED_FILTERS", "GOALS_DIFFERENCE", "HIDE_TRAINING_REPORT", "COACH_EFFECTIVENESS",
         "MATCH_NAMES", "WRAP_TEXT", "AUTO_SCORE"
     ];
 
@@ -1583,6 +1584,7 @@ function getStorage(storageConfigs) {
         "STORED_FILTERS": 'checked',
         "GOALS_DIFFERENCE": 'checked',
         "HIDE_TRAINING_REPORT": 'checked',
+        "COACH_EFFECTIVENESS": 'checked',
         "MATCH_NAMES": 'checked',
         "WRAP_TEXT": 'checked',
         "AUTO_SCORE": 'checked',
@@ -2003,6 +2005,167 @@ function hideTrainingReport() {
     });
 }
 
+//coachEffectiveness by mini18
+function coachEffectiveness() {
+    const parsePlayer = (doc = document) => {
+        const [headerEl, , bioEl, basicEl, mainEl] = doc
+          .querySelector("#main-1")
+          .parentNode.querySelectorAll(":scope > div");
+    
+        const [skillsEl, personalityEl, positionsEl, formEl, econEl] =
+          mainEl.querySelectorAll(":scope > div");
+    
+        const [, contractEl, , wageEl, , estValueEl] = econEl
+          .querySelector("table")
+          .querySelectorAll(":scope>tbody>tr[class*=row]>td");
+    
+        const hasContract = contractEl.textContent.trim() !== "/";
+        const contract = hasContract
+          ? Number(contractEl.textContent.trim()) || 1
+          : null;
+    
+        return { contract };
+      }; // Placeholder function compatible with DO parser module
+    
+      // Initialize UI Elements
+      const initCoachEffectivenessUI = () => {
+        const trainingEl = document.querySelector("div.training_quality_wrapper");
+        const coachUIEl = document.createElement("div");
+    
+        coachUIEl.classList.add("training_quality_wrapper");
+        coachUIEl.style =
+          "line-height: 25px; font-weight: bold; margin-top: 1px; gap: 10px; display: flex; justify-content: center; height: 18px;";
+    
+        const coachTextEl = createTextEl("Coaching effectiveness:");
+        const playersTextEl = createTextEl("Number of contracted players:");
+        const playersCountEl = createTextEl("-");
+        const effectivenessEl = createTextEl("-");
+        const recalcBtnEl = createRecalcButton();
+    
+        // Append elements to the coachUIEl container
+        coachUIEl.append(
+          playersTextEl,
+          playersCountEl,
+          coachTextEl,
+          effectivenessEl,
+          recalcBtnEl
+        );
+    
+        // Insert the new container after the existing training quality element
+        trainingEl.after(coachUIEl);
+    
+        // Event listener for recalculation
+        recalcBtnEl.addEventListener("click", () =>
+          recalculateEffectiveness(playersCountEl, effectivenessEl)
+        );
+      };
+    
+      // Helper function to create text elements
+      const createTextEl = (textContent) => {
+        const textEl = document.createElement("p");
+        textEl.textContent = textContent;
+        return textEl;
+      };
+    
+      // Helper function to create the recalculate button
+      const createRecalcButton = () => {
+        const recalcBtnEl = document.createElement("img");
+        recalcBtnEl.src = "https://i.imgur.com/ypTANOM.png";
+        recalcBtnEl.style = "cursor: pointer;";
+        recalcBtnEl.title = "Recalculate coaching effectiveness";
+        return recalcBtnEl;
+      };
+    
+      // Function to recalculate coaching effectiveness
+      const recalculateEffectiveness = (playersCountEl, effectivenessEl) => {
+        const activeTab =
+          document.querySelector("div#first2").className === "tab_on_content"
+            ? document.querySelector("div#firstteam")
+            : document.querySelector("div#youth2").className === "tab_on_content"
+            ? document.querySelector("div#youthteam")
+            : null;
+    
+        if (!activeTab) return;
+    
+        const urls = Array.from(activeTab.querySelectorAll("a[href*=players]")).map(
+          (player) => player.href
+        );
+    
+        const fetches = [];
+        const playerContracts = [];
+        urls.forEach((url) => {
+          const playerFetch = fetch(url).then((response) =>
+            response.text().then((text) => {
+              const doc = new DOMParser().parseFromString(text, "text/html");
+              const player = parsePlayer(doc);
+              playerContracts.push(player.contract);
+            })
+          );
+          fetches.push(playerFetch);
+        });
+    
+        const percentages = {
+          0: 100,
+          1: 99,
+          2: 98,
+          3: 96,
+          4: 92,
+          5: 88,
+          6: 82,
+          7: 76,
+          8: 68,
+          9: 60,
+          10: 50,
+          11: 40,
+          12: 28,
+          13: 16,
+        };
+    
+        Promise.all(fetches).then(() => {
+          const numPlayers = playerContracts.filter((e) => e).length;
+          const extraPlayers = numPlayers <= 35 ? 0 : numPlayers - 35;
+          const effectiveness =
+            extraPlayers <= 0
+              ? 100
+              : extraPlayers > 13
+              ? 10
+              : percentages[extraPlayers];
+          const color =
+            effectiveness === 100
+              ? "#007700"
+              : effectiveness > 13
+              ? "#ba7f00"
+              : "#ff0000";
+    
+          // Update UI with calculated values
+          updateUI(
+            playersCountEl,
+            effectivenessEl,
+            numPlayers,
+            effectiveness,
+            color
+          );
+        });
+      };
+    
+      // Helper function to update UI
+      const updateUI = (
+        playersCountEl,
+        effectivenessEl,
+        numPlayers,
+        effectiveness,
+        color
+      ) => {
+        playersCountEl.style.color = color;
+        effectivenessEl.style.color = color;
+        playersCountEl.textContent = `${numPlayers}`;
+        effectivenessEl.textContent = `${effectiveness}%`;
+      };
+    
+      // Initialize the UI
+      initCoachEffectivenessUI();
+}
+
 function importExport() {
     const importButton = $('<input id="importButton" type="submit" style="width: 140px;margin-top: 20px;" value="Import">');
     const exportButton = $('<input id="exportButton" type="submit" style="width: 140px;margin-top: 20px;" value="Export">');
@@ -2145,4 +2308,3 @@ async function updateScores() {
     let randomTime = Math.floor(Math.random() * (maxTime - minTime + 1)) + minTime;
     setTimeout(updateScores, randomTime);
 }
-
