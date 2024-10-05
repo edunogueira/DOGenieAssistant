@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name DO Genie Assistant
-// @version 42.0
+// @version 42.1
 // @namespace https://github.com/edunogueira/DOGenieAssistant/
 // @description dugout-online genie assistant
-// @author n_edu, mini18, lumfurt, Gleybe
+// @author Eduardo Nogueira de Oliveira
 // @icon https://www.google.com/s2/favicons?domain=dugout-online.com
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js
 // @require https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js
@@ -2417,11 +2417,15 @@ function matchScore() {
             const gameTime = parseFloat(event.querySelector('td:nth-child(2) b').innerText.replace(/[^\d:]/g, '').split(':')[0]);
 
             if (gameTime >= startMin && gameTime <= endMin) {
-                const isShot = shotKeywords.some(keyword => eventText.includes(keyword));
-                const isSaved = onTargetKeywords.some(keyword => eventText.includes(keyword));
-                const isOffTarget = offTargetKeywords.some(keyword => eventText.includes(keyword));
-                const isOffside = offsideKeywords.some(keyword => eventText.includes(keyword));
+                let isShot = shotKeywords.some(keyword => eventText.includes(keyword));
+                let isSaved = onTargetKeywords.some(keyword => eventText.includes(keyword));
+                let isOffTarget = offTargetKeywords.some(keyword => eventText.includes(keyword));
+                let isOffside = offsideKeywords.some(keyword => eventText.includes(keyword));
 
+                if ((eventText.includes('blocks the shot')) && (eventText.includes('free kick'))) {
+                    isOffTarget = false;
+                    isSaved = true;
+                }
                 if (isShot) {
                     const isHomeTeam = eventText.includes(homeTeam);
                     const isAwayTeam = eventText.includes(awayTeam);
@@ -2520,4 +2524,3 @@ function matchScore() {
 
     document.body.appendChild(toggleButton);
 }
-
