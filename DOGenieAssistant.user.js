@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name DO Genie Assistant
-// @version 41.1
+// @version 42.0
 // @namespace https://github.com/edunogueira/DOGenieAssistant/
 // @description dugout-online genie assistant
-// @author Eduardo Nogueira de Oliveira
+// @author n_edu, mini18, lumfurt, gleitonpb
 // @icon https://www.google.com/s2/favicons?domain=dugout-online.com
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js
 // @require https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js
@@ -64,6 +64,7 @@ if (page.includes('/home/none/')) {
 } else if (page.includes('/game/none/gameid/')) {
     checkAndExecute(soundConfig["MATCH_SOUND"], matchSound);
     checkAndExecute(configs["MATCH_NAMES"], matchNames);
+    checkAndExecute(configs["MATCH_SCORE"], matchScore);
 } else if (page.match("/search_players|/search_transfers|/search_clubs|/search_coaches|/national_teams|/search_physios")) {
     checkAndExecute(storedFilters["STORED_FILTERS"], storedFilters);
 } else if (page.match("/training/none")) {
@@ -940,6 +941,78 @@ function getTranslation() {
             ko: "링크",
             bh: "Linkovi"
         },
+        start: {
+            en: "Start",
+            br: "Inicio",
+            es: "Inicio",
+            it: "Inizio",
+            nl: "Start",
+            ro: "Începe",
+            sl: "Začetek",
+            tr: "Başla",
+            ko: "시작",
+            bh: "Početak"
+        },
+        end: {
+            en: "End",
+            br: "Fim",
+            es: "Fin",
+            it: "Fine",
+            nl: "Einde",
+            ro: "Sfârșit",
+            sl: "Konec",
+            tr: "Son",
+            ko: "끝",
+            bh: "Kraj"
+        },
+        shoots: {
+            en: "Shoots",
+            br: "Chutes",
+            es: "Tiros",
+            it: "Tiri",
+            nl: "Schoten",
+            ro: "Șuturi",
+            sl: "Streli",
+            tr: "Şutlar",
+            ko: "슛",
+            bh: "Šutevi"
+        },
+        onTarget: {
+            en: "On Target",
+            br: "No alvo",
+            es: "En el objetivo",
+            it: "In porta",
+            nl: "Op doel",
+            ro: "Pe țintă",
+            sl: "Na cilju",
+            tr: "Hedefte",
+            ko: "타겟 안",
+            bh: "Na Cilju"
+        },
+        offTarget: {
+            en: "Off Target",
+            br: "Fora do alvo",
+            es: "Fuera del objetivo",
+            it: "Fuori target",
+            nl: "Buiten doel",
+            ro: "Pe lângă țintă",
+            sl: "Izven cilja",
+            tr: "Hedef dışı",
+            ko: "타겟 아웃",
+            bh: "Izvan Cilja"
+        },
+        hideShow: {
+            en: "Hide/Show",
+            br: "Ocultar/Mostrar",
+            es: "Ocultar/Mostrar",
+            it: "Nascondi/Mostra",
+            nl: "Verbergen/Toon",
+            ro: "Ascunde/Afișează",
+            sl: "Skrij/Pokaži",
+            tr: "Gizle/Göster",
+            ko: "숨기기/보이기",
+            bh: "Sakrij/Pokaži"
+        },
 
     };
 }
@@ -1481,7 +1554,7 @@ function configMenu() {
         "SQUAD_DETAILS", "SQUAD_FILTERS", "SQUAD_HIGH", "SPREADSHEET_SQUAD",
         "BID_BUTTON", "BID_LOCAL_TIME", "LOAD_TACTICS", "TACTICS_DETAILS", "LINKS",
         "STORED_FILTERS", "GOALS_DIFFERENCE", "HIDE_TRAINING_REPORT", "COACH_EFFECTIVENESS",
-        "MATCH_NAMES", "WRAP_TEXT", "AUTO_SCORE"
+        "MATCH_NAMES", "MATCH_SCORE","WRAP_TEXT", "AUTO_SCORE"
     ];
 
     const configForm = $(`
@@ -1586,6 +1659,7 @@ function getStorage(storageConfigs) {
         "HIDE_TRAINING_REPORT": 'checked',
         "COACH_EFFECTIVENESS": 'checked',
         "MATCH_NAMES": 'checked',
+        "MATCH_SCORE": 'checked',
         "WRAP_TEXT": 'checked',
         "AUTO_SCORE": 'checked',
     };
@@ -2317,5 +2391,133 @@ async function updateScores() {
     let maxTime = 2 * 60 * 1000;
     let randomTime = Math.floor(Math.random() * (maxTime - minTime + 1)) + minTime;
     setTimeout(updateScores, randomTime);
+}
+
+//match score by gleitonpb
+function matchScore() {
+    const shotKeywords = ['curls it towards the top corner', 'drives it', 'goal!', 'tries the long shot', 'from the distance', 'aims', 'shoots', 'sends it flying', 'tries his luck', 'climbs above', 'shot goes through the wall', 'goes for glory', 'from outside the area', 'powerful shot', 'he outjumps', 'wins the aerial challenge', 'curls it over the wall', 'with a shot', 'great shot', 'through the wall', 'gets to the ball before', 'with the header', 'he jumps higher', 'with a nice header', 'jumps higher than', 'beats', 'powerful header', 'uses the inside of his foot to curl a shot', 'goes for it', 'taps it towards the goal', 'over the wall', 'wins the challenge', 'curling shot', 'climbs above', 'gets to the ball in front', 'rises above', 'he rises above', 'saved by the goalkeeper', 'attempts a lob', 'hits the wall and bounces wide', 'jumps and climbs above', 'neat header'];
+    const onTargetKeywords = ['goal!', 'saves it', 'by the keeper', 'safe hands', 'no problem', 'fantastic save', 'tips it wide', 'had it covered', 'spectacular effort', 'what a save', 'tips it away', 'off the bar', 'saved by', 'quick reaction', 'goalkeeper saves', 'the post', 'saves!', 'saves and holds the ball', 'keeper dives on the ball', 'keeper beaten', 'with the save', 'great save', 'it\'s in'];
+    const offTargetKeywords = ['over the bar', 'blocks the shot', 'inches wide', 'off target', 'just wide', 'bounces', 'goes wide', 'good block', 'but hits', 'high and wide'];
+    const offsideKeywords = ['offside', 'rises his flag', 'penalty', 'diver', 'behind the goal', 'own goal', 'breaks up the play'];
+
+    const homeTeam = document.querySelectorAll('.game_general')[1].innerText.trim().toLowerCase();
+    const awayTeam = document.querySelectorAll('.game_general')[4].innerText.trim().toLowerCase();
+    const events = document.querySelectorAll('#events_content table tbody tr');
+
+    let language = getLanguage();
+    if (language!="en" && language!="br") language = "en";
+    const translation = getTranslation();
+    // Function to count shots based on minute range
+    function countShots(startMin, endMin) {
+        let homeTeamShots = { onTarget: 0, offTarget: 0 };
+        let awayTeamShots = { onTarget: 0, offTarget: 0 };
+
+        for (const event of events) {
+            const eventText = event.innerText.toLowerCase().trim();
+            const gameTime = parseFloat(event.querySelector('td:nth-child(2) b').innerText.replace(/[^\d:]/g, '').split(':')[0]);
+
+            if (gameTime >= startMin && gameTime <= endMin) {
+                const isShot = shotKeywords.some(keyword => eventText.includes(keyword));
+                const isSaved = onTargetKeywords.some(keyword => eventText.includes(keyword));
+                const isOffTarget = offTargetKeywords.some(keyword => eventText.includes(keyword));
+                const isOffside = offsideKeywords.some(keyword => eventText.includes(keyword));
+
+                if (isShot) {
+                    const isHomeTeam = eventText.includes(homeTeam);
+                    const isAwayTeam = eventText.includes(awayTeam);
+                    let teamShots = isHomeTeam ? homeTeamShots : isAwayTeam ? awayTeamShots : null;
+
+                    if (teamShots) {
+                        if (isOffTarget) {
+                            teamShots.offTarget++;
+                        } else if (isSaved) {
+                            teamShots.onTarget++;
+                        }
+
+                        if (isOffside) {
+                            if (isOffTarget) {
+                                teamShots.offTarget--;
+                            } else if (isSaved) {
+                                teamShots.onTarget--;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Calculate total shots
+        homeTeamShots.total = homeTeamShots.onTarget + homeTeamShots.offTarget;
+        awayTeamShots.total = awayTeamShots.onTarget + awayTeamShots.offTarget;
+
+        // Update the table with stats
+        document.querySelector('#shotsTable').innerHTML = `
+            <table class="border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th class="player_ratings_header">${homeTeam.toUpperCase()}</th>
+                        <th class="player_ratings_header">vs</th>
+                        <th class="player_ratings_header">${awayTeam.toUpperCase()}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="table_row_static1">
+                        <td>${homeTeamShots.total}</td>
+                        <th>${translation.shoots[language]}</th>
+                        <td>${awayTeamShots.total}</td>
+                    </tr>
+                    <tr class="table_row_static2">
+                        <td>${homeTeamShots.onTarget}</td>
+                        <th>${translation.onTarget[language]}</th>
+                        <td>${awayTeamShots.onTarget}</td>
+                    </tr>
+                    <tr class="table_row_static1">
+                        <td>${homeTeamShots.offTarget}</td>
+                        <th>${translation.offTarget[language]}</th>
+                        <td>${awayTeamShots.offTarget}</td>
+                    </tr>
+                </tbody>
+            </table>`;
+    }
+
+    // Create the control UI
+    const slider = document.createElement('div');
+    slider.innerHTML = `
+    <div id="tblScore" style="position: fixed; bottom: 0; left: 0px; z-index: 9999; width: 400px; text-align: center; background-color:#fff; padding: 10px;">
+        <label for="startMin">${translation.start[language]} (min):<span id="startMinValue">0</span></label>
+        <input type="range" id="startMin" min="0" max="120" value="0" style="width: 100%;">
+        <br>
+        <label for="endMin">${translation.end[language]} (min): <span id="endMinValue">120</span></label>
+        <input type="range" id="endMin" min="0" max="120" value="120" style="width: 100%;">
+        <table id="shotsTable"></table>
+    </div>`;
+
+    document.body.appendChild(slider);
+    countShots(0, 120);  // Initial count for the full range
+
+    // Update shot count when slider values change
+    document.getElementById('startMin').addEventListener('input', function() {
+        document.getElementById('startMinValue').textContent = this.value;
+        countShots(parseInt(this.value), parseInt(document.getElementById('endMin').value));
+    });
+
+    document.getElementById('endMin').addEventListener('input', function() {
+        document.getElementById('endMinValue').textContent = this.value;
+        countShots(parseInt(document.getElementById('startMin').value), parseInt(this.value));
+    });
+
+    // Add a toggle button to show/hide the stats
+    const toggleButton = document.createElement('button');
+    toggleButton.innerHTML = `${translation.hideShow[language]}`;
+    toggleButton.style.position = 'fixed';
+    toggleButton.style.bottom = '190px';
+    toggleButton.style.zIndex = '9999';
+
+    toggleButton.addEventListener('click', function() {
+        const scoreTable = document.getElementById('tblScore');
+        scoreTable.style.display = scoreTable.style.display === 'none' ? 'block' : 'none';
+    });
+
+    document.body.appendChild(toggleButton);
 }
 
