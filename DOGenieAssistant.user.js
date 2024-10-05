@@ -3,7 +3,7 @@
 // @version 42.0
 // @namespace https://github.com/edunogueira/DOGenieAssistant/
 // @description dugout-online genie assistant
-// @author n_edu, mini18, lumfurt, gleitonpb
+// @author n_edu, mini18, lumfurt, Gleybe
 // @icon https://www.google.com/s2/favicons?domain=dugout-online.com
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js
 // @require https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js
