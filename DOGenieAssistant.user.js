@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name DO Genie Assistant
-// @version 42.1
+// @version 43.0
 // @namespace https://github.com/edunogueira/DOGenieAssistant/
 // @description dugout-online genie assistant
-// @author Eduardo Nogueira de Oliveira
+// @author n_edu (clubid/112411), mini18 (clubid/99440), lumfurt (clubid/106059), Gleybe (clubid/113526), ernestofv01 (clubid/112729)
 // @icon https://www.google.com/s2/favicons?domain=dugout-online.com
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js
 // @require https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js
@@ -56,6 +56,7 @@ if (page.includes('/home/none/')) {
 } else if (page.includes('/players/none/') || page.includes('/players_nt/none/')) {
     checkAndExecute(configs["SQUAD_DETAILS"], squadDetails);
     checkAndExecute(configs["SQUAD_FILTERS"], squadFilters);
+    checkAndExecute(configs["NATIONAL_LINK"], nationalLink);
 } else if (page.includes('/tactics/none/') || page.includes('/tactics_youth/none/') || page.includes('/tactics_nt/none/')) {
     checkAndExecute(configs["TACTICS_DETAILS"], tacticsDetails);
     checkAndExecute(configs["LOAD_TACTICS"], loadTactics);
@@ -106,9 +107,9 @@ function applyStyle(css) {
 function getExp() {
     return $('div[title]')
         .map(function() {
-            var titleString = $(this).attr('title');
-            return /^\d+ XP$/.test(titleString) ? titleString : null;
-        })
+        var titleString = $(this).attr('title');
+        return /^\d+ XP$/.test(titleString) ? titleString : null;
+    })
         .get();
 }
 
@@ -502,7 +503,7 @@ function secondaryClock() {
 function getLanguage() {
     let settingsTitle = 'en';
     if (document.querySelector(".settings_button")) {
-       settingsTitle = document.querySelector(".settings_button").title;
+        settingsTitle = document.querySelector(".settings_button").title;
     }
     const languages = {
         Postavke: "bh",
@@ -1235,8 +1236,8 @@ function loadTactics() {
     $("#apply").click(function() {
         const xmlhttp = new XMLHttpRequest();
         const url = page.match('/tactics/none/') ? SERVER_URL + "/ajaxphp/tactics_save.php" :
-                    page.match('/tactics_youth/none/') ? SERVER_URL + "/ajaxphp/tactics_youth_save.php" :
-                    page.match('/tactics_nt/none/') ? SERVER_URL + "/ajaxphp/tactics_save_nt.php" : '';
+        page.match('/tactics_youth/none/') ? SERVER_URL + "/ajaxphp/tactics_youth_save.php" :
+        page.match('/tactics_nt/none/') ? SERVER_URL + "/ajaxphp/tactics_save_nt.php" : '';
 
         if (!url) return;
 
@@ -1381,12 +1382,12 @@ function getSponsors() {
 
 function sendSponsorsRequest() {
     const dailySlotUrls = Array.from({ length: 3 }, (_, index) =>
-        `https://www.dugout-online.com/sponsors/none/daily/1/slot/${index + 1}/dailyID/1001`
-    );
+                                     `https://www.dugout-online.com/sponsors/none/daily/1/slot/${index + 1}/dailyID/1001`
+                                    );
 
     const adboardSlotUrls = Array.from({ length: 6 }, (_, index) =>
-        `https://www.dugout-online.com/sponsors/adboards/daily/1/slot/${index + 1}/dailyID/1002`
-    );
+                                       `https://www.dugout-online.com/sponsors/adboards/daily/1/slot/${index + 1}/dailyID/1002`
+                                      );
 
     const allUrls = [...dailySlotUrls, ...adboardSlotUrls];
 
@@ -1551,7 +1552,7 @@ function configMenu() {
         "SECONDARY_CLOCK", "DROPDDOWN_MENU", "PAGE_TITLE", "TEAM_LINK",
         "GET_SPONSORS", "SCOUT_BUTTON", "READ_RESUME", "COACHES_WAGE",
         "PLAYER_OPS_NAME", "PLAYER_OPS_ID", "PLAYER_EXP", "PLAYER_IMAGE",
-        "SQUAD_DETAILS", "SQUAD_FILTERS", "SQUAD_HIGH", "SPREADSHEET_SQUAD",
+        "SQUAD_DETAILS", "SQUAD_FILTERS", "SQUAD_HIGH", "NATIONAL_LINK","SPREADSHEET_SQUAD",
         "BID_BUTTON", "BID_LOCAL_TIME", "LOAD_TACTICS", "TACTICS_DETAILS", "LINKS",
         "STORED_FILTERS", "GOALS_DIFFERENCE", "HIDE_TRAINING_REPORT", "COACH_EFFECTIVENESS",
         "MATCH_NAMES", "MATCH_SCORE","WRAP_TEXT", "AUTO_SCORE"
@@ -1591,9 +1592,9 @@ function configMenu() {
         const defaultValue = getConfigOrDefault(option, 'checked');
         const optionCheckbox = `<input type="checkbox" name="${option}" ${defaultValue}>`;
         const optionLabel = option
-            .split('_')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-            .join(' ');
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
 
         row += `<td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
                     ${optionLabel}: <br>${optionCheckbox}
@@ -1642,6 +1643,7 @@ function getStorage(storageConfigs) {
         "PLAYER_EXP": 'checked',
         "SQUAD_DETAILS": 'checked',
         "SQUAD_FILTERS": 'checked',
+        "NATIONAL_LINK": 'checked',
         "SQUAD_HIGH": 'checked',
         "LOAD_TACTICS": 'checked',
         "TACTICS_DETAILS": 'checked',
@@ -1768,7 +1770,7 @@ function getSoundStorage(storageConfigs) {
 }
 
 function clearPlayerImages() {
-     $("#clearPlayerImages").click(function(e) {
+    $("#clearPlayerImages").click(function(e) {
         let arr = [];
         let i =0
         for (i = 0; i < localStorage.length; i++){
@@ -1827,10 +1829,10 @@ function links() {
         });
 
         $('#urlsTable_filter').css({
-                    'position': 'absolute',
-                    'left': '270px',
-                    'top': '0px'
-                });
+            'position': 'absolute',
+            'left': '270px',
+            'top': '0px'
+        });
         $('#urlsTable tbody').on('click', '.btnEdit', function() {
             var cell = urlsDataTable.cell($(this).parents('tr').find('.keyCell'));
             var originalValue = $(cell.data()).text();
@@ -2072,7 +2074,7 @@ function hideTrainingReport() {
         }
     });
 
-     $('tbody tr').each(function() {
+    $('tbody tr').each(function() {
         if ($(this).find('input[type="hidden"]').val() === '1') {
             $(this).hide();
         }
@@ -2081,173 +2083,173 @@ function hideTrainingReport() {
 
 function coachEffectiveness() {
     const parsePlayer = (doc = document) => {
-    const [headerEl, , bioEl, basicEl, mainEl] = doc
-      .querySelector("#main-1")
-      .parentNode.querySelectorAll(":scope > div");
+        const [headerEl, , bioEl, basicEl, mainEl] = doc
+        .querySelector("#main-1")
+        .parentNode.querySelectorAll(":scope > div");
 
-    const [skillsEl, personalityEl, positionsEl, formEl, econEl] =
-      mainEl.querySelectorAll(":scope > div");
+        const [skillsEl, personalityEl, positionsEl, formEl, econEl] =
+              mainEl.querySelectorAll(":scope > div");
 
-    const [, contractEl, , wageEl, , estValueEl] = econEl
-      .querySelector("table")
-      .querySelectorAll(":scope>tbody>tr[class*=row]>td");
+        const [, contractEl, , wageEl, , estValueEl] = econEl
+        .querySelector("table")
+        .querySelectorAll(":scope>tbody>tr[class*=row]>td");
 
-    const hasContract = contractEl.textContent.trim() !== "/";
-    const contract = hasContract
-      ? Number(contractEl.textContent.trim()) || 1
-      : null;
+        const hasContract = contractEl.textContent.trim() !== "/";
+        const contract = hasContract
+        ? Number(contractEl.textContent.trim()) || 1
+        : null;
 
-    return { contract };
-  }; // Placeholder function compatible with DO parser module
+        return { contract };
+    }; // Placeholder function compatible with DO parser module
 
-  // Initialize UI Elements
-  const initCoachEffectivenessUI = () => {
-    const trainingEl = document.querySelector("div.training_quality_wrapper");
-    const coachUIEl = document.createElement("div");
+    // Initialize UI Elements
+    const initCoachEffectivenessUI = () => {
+        const trainingEl = document.querySelector("div.training_quality_wrapper");
+        const coachUIEl = document.createElement("div");
 
-    coachUIEl.classList.add("training_quality_wrapper");
-    coachUIEl.style =
-      "line-height: 25px; font-weight: bold; margin-top: 1px; gap: 10px; display: flex; justify-content: center; height: 18px;";
+        coachUIEl.classList.add("training_quality_wrapper");
+        coachUIEl.style =
+            "line-height: 25px; font-weight: bold; margin-top: 1px; gap: 10px; display: flex; justify-content: center; height: 18px;";
 
-    const coachTextEl = createTextEl("Coaching effectiveness:");
-    const playersTextEl = createTextEl("Number of contracted players:");
-    const playersCountEl = createTextEl("-");
-    const effectivenessEl = createTextEl("-");
-    const recalcBtnEl = createRecalcButton();
+        const coachTextEl = createTextEl("Coaching effectiveness:");
+        const playersTextEl = createTextEl("Number of contracted players:");
+        const playersCountEl = createTextEl("-");
+        const effectivenessEl = createTextEl("-");
+        const recalcBtnEl = createRecalcButton();
 
-    // Append elements to the coachUIEl container
-    coachUIEl.append(
-      playersTextEl,
-      playersCountEl,
-      coachTextEl,
-      effectivenessEl,
-      recalcBtnEl
-    );
+        // Append elements to the coachUIEl container
+        coachUIEl.append(
+            playersTextEl,
+            playersCountEl,
+            coachTextEl,
+            effectivenessEl,
+            recalcBtnEl
+        );
 
-    // Insert the new container after the existing training quality element
-    trainingEl.after(coachUIEl);
+        // Insert the new container after the existing training quality element
+        trainingEl.after(coachUIEl);
 
-    // Event listener for recalculation
-    recalcBtnEl.addEventListener("click", () =>
-      recalculateEffectiveness(playersCountEl, effectivenessEl)
-    );
-  };
-
-  // Helper function to create text elements
-  const createTextEl = (textContent) => {
-    const textEl = document.createElement("p");
-    textEl.textContent = textContent;
-    return textEl;
-  };
-
-  // Helper function to create the recalculate button
-  const createRecalcButton = () => {
-    const recalcBtnEl = document.createElement("img");
-    recalcBtnEl.src = "https://i.imgur.com/ypTANOM.png";
-    recalcBtnEl.style = "cursor: pointer;";
-    recalcBtnEl.title = "Recalculate coaching effectiveness";
-    return recalcBtnEl;
-  };
-
-  // Function to recalculate coaching effectiveness
-  const recalculateEffectiveness = (playersCountEl, effectivenessEl) => {
-    const urls = Array.from(
-      document.querySelectorAll(
-        "div#firstteam a[href*=players],div#youthteam a[href*=players]"
-      )
-    ).map((player) => player.href);
-
-    const fetches = [];
-    const playerContracts = [];
-    urls.forEach((url) => {
-      const playerFetch = fetch(url).then((response) =>
-        response.text().then((text) => {
-          const doc = new DOMParser().parseFromString(text, "text/html");
-          const player = parsePlayer(doc);
-          playerContracts.push(player.contract);
-        })
-      );
-      fetches.push(playerFetch);
-    });
-
-    const percentages = {
-      0: 100,
-      1: 99,
-      2: 98,
-      3: 96,
-      4: 92,
-      5: 88,
-      6: 82,
-      7: 76,
-      8: 68,
-      9: 60,
-      10: 50,
-      11: 40,
-      12: 28,
-      13: 16,
+        // Event listener for recalculation
+        recalcBtnEl.addEventListener("click", () =>
+                                     recalculateEffectiveness(playersCountEl, effectivenessEl)
+                                    );
     };
 
-    // Fetch the number of coaches (or staff) asynchronously
-    const numberOfPlayersPromise = fetch("https://www.dugout-online.com/staff/")
-      .then((response) => response.text())
-      .then((text) => {
-        const doc = new DOMParser().parseFromString(text, "text/html");
-        const numberOfCoaches = doc
-          .querySelector("table.forumline")
-          .querySelectorAll("tr[class*=matches_row]").length;
-        return numberOfCoaches;
-      });
+    // Helper function to create text elements
+    const createTextEl = (textContent) => {
+        const textEl = document.createElement("p");
+        textEl.textContent = textContent;
+        return textEl;
+    };
 
-    // Wait for all fetches to complete, including the numberOfPlayersPromise
-    Promise.all([...fetches, numberOfPlayersPromise]).then((results) => {
-      const numberOfPlayers = results[results.length - 1]; // The last item in results is numberOfPlayers
-      const numPlayers = playerContracts.filter((e) => e).length;
-      const extraPlayers =
-        numPlayers <= numberOfPlayers * 7
-          ? 0
-          : numPlayers - numberOfPlayers * 7;
+    // Helper function to create the recalculate button
+    const createRecalcButton = () => {
+        const recalcBtnEl = document.createElement("img");
+        recalcBtnEl.src = "https://i.imgur.com/ypTANOM.png";
+        recalcBtnEl.style = "cursor: pointer;";
+        recalcBtnEl.title = "Recalculate coaching effectiveness";
+        return recalcBtnEl;
+    };
 
-      const effectiveness =
-        extraPlayers <= 0
-          ? 100
-          : extraPlayers > 13
-          ? 10
-          : percentages[extraPlayers];
+    // Function to recalculate coaching effectiveness
+    const recalculateEffectiveness = (playersCountEl, effectivenessEl) => {
+        const urls = Array.from(
+            document.querySelectorAll(
+                "div#firstteam a[href*=players],div#youthteam a[href*=players]"
+            )
+        ).map((player) => player.href);
 
-      const color =
-        effectiveness === 100
-          ? "#007700"
-          : effectiveness > 16
-          ? "#ba7f00"
-          : "#ff0000";
+        const fetches = [];
+        const playerContracts = [];
+        urls.forEach((url) => {
+            const playerFetch = fetch(url).then((response) =>
+                                                response.text().then((text) => {
+                const doc = new DOMParser().parseFromString(text, "text/html");
+                const player = parsePlayer(doc);
+                playerContracts.push(player.contract);
+            })
+                                               );
+            fetches.push(playerFetch);
+        });
 
-      // Update UI with calculated values
-      updateUI(
+        const percentages = {
+            0: 100,
+            1: 99,
+            2: 98,
+            3: 96,
+            4: 92,
+            5: 88,
+            6: 82,
+            7: 76,
+            8: 68,
+            9: 60,
+            10: 50,
+            11: 40,
+            12: 28,
+            13: 16,
+        };
+
+        // Fetch the number of coaches (or staff) asynchronously
+        const numberOfPlayersPromise = fetch("https://www.dugout-online.com/staff/")
+        .then((response) => response.text())
+        .then((text) => {
+            const doc = new DOMParser().parseFromString(text, "text/html");
+            const numberOfCoaches = doc
+            .querySelector("table.forumline")
+            .querySelectorAll("tr[class*=matches_row]").length;
+            return numberOfCoaches;
+        });
+
+        // Wait for all fetches to complete, including the numberOfPlayersPromise
+        Promise.all([...fetches, numberOfPlayersPromise]).then((results) => {
+            const numberOfPlayers = results[results.length - 1]; // The last item in results is numberOfPlayers
+            const numPlayers = playerContracts.filter((e) => e).length;
+            const extraPlayers =
+                  numPlayers <= numberOfPlayers * 7
+            ? 0
+            : numPlayers - numberOfPlayers * 7;
+
+            const effectiveness =
+                  extraPlayers <= 0
+            ? 100
+            : extraPlayers > 13
+            ? 10
+            : percentages[extraPlayers];
+
+            const color =
+                  effectiveness === 100
+            ? "#007700"
+            : effectiveness > 16
+            ? "#ba7f00"
+            : "#ff0000";
+
+            // Update UI with calculated values
+            updateUI(
+                playersCountEl,
+                effectivenessEl,
+                numPlayers,
+                effectiveness,
+                color
+            );
+        });
+    };
+
+    // Helper function to update UI
+    const updateUI = (
         playersCountEl,
         effectivenessEl,
         numPlayers,
         effectiveness,
         color
-      );
-    });
-  };
+    ) => {
+        playersCountEl.style.color = color;
+        effectivenessEl.style.color = color;
+        playersCountEl.textContent = `${numPlayers}`;
+        effectivenessEl.textContent = `${effectiveness}%`;
+    };
 
-  // Helper function to update UI
-  const updateUI = (
-    playersCountEl,
-    effectivenessEl,
-    numPlayers,
-    effectiveness,
-    color
-  ) => {
-    playersCountEl.style.color = color;
-    effectivenessEl.style.color = color;
-    playersCountEl.textContent = `${numPlayers}`;
-    effectivenessEl.textContent = `${effectiveness}%`;
-  };
-
-  // Initialize the UI
-  initCoachEffectivenessUI();
+    // Initialize the UI
+    initCoachEffectivenessUI();
 }
 
 function importExport() {
@@ -2393,12 +2395,17 @@ async function updateScores() {
     setTimeout(updateScores, randomTime);
 }
 
-//match score by gleitonpb
+//match score by Gleybe
 function matchScore() {
-    const shotKeywords = ['curls it towards the top corner', 'drives it', 'goal!', 'tries the long shot', 'from the distance', 'aims', 'shoots', 'sends it flying', 'tries his luck', 'climbs above', 'shot goes through the wall', 'goes for glory', 'from outside the area', 'powerful shot', 'he outjumps', 'wins the aerial challenge', 'curls it over the wall', 'with a shot', 'great shot', 'through the wall', 'gets to the ball before', 'with the header', 'he jumps higher', 'with a nice header', 'jumps higher than', 'beats', 'powerful header', 'uses the inside of his foot to curl a shot', 'goes for it', 'taps it towards the goal', 'over the wall', 'wins the challenge', 'curling shot', 'climbs above', 'gets to the ball in front', 'rises above', 'he rises above', 'saved by the goalkeeper', 'attempts a lob', 'hits the wall and bounces wide', 'jumps and climbs above', 'neat header'];
-    const onTargetKeywords = ['goal!', 'saves it', 'by the keeper', 'safe hands', 'no problem', 'fantastic save', 'tips it wide', 'had it covered', 'spectacular effort', 'what a save', 'tips it away', 'off the bar', 'saved by', 'quick reaction', 'goalkeeper saves', 'the post', 'saves!', 'saves and holds the ball', 'keeper dives on the ball', 'keeper beaten', 'with the save', 'great save', 'it\'s in'];
-    const offTargetKeywords = ['over the bar', 'blocks the shot', 'inches wide', 'off target', 'just wide', 'bounces', 'goes wide', 'good block', 'but hits', 'high and wide'];
-    const offsideKeywords = ['offside', 'rises his flag', 'penalty', 'diver', 'behind the goal', 'own goal', 'breaks up the play'];
+    const shotKeywords = ['curls it towards the top corner', 'drives it', 'goal!', 'tries the long shot','shoots', 'from the distance', 'aims', 'sends it flying', 'tries his luck', 'climbs above', 'shot goes through the wall', 'goes for glory', 'from outside the area', 'powerful shot', 'he outjumps', 'wins the aerial challenge', 'curls it over the wall', 'with a shot', 'great shot', 'through the wall', 'gets to the ball before', 'with the header', 'he jumps higher', 'with a nice header', 'jumps higher than', 'beats', 'powerful header', 'uses the inside of his foot to curl a shot', 'goes for it', 'taps it towards the goal', 'over the wall', 'wins the challenge', 'curling shot', 'climbs above', 'gets to the ball in front', 'rises above', 'he rises above', 'saved by the goalkeeper', 'attempts a lob', 'hits the wall and bounces wide', 'jumps and climbs above', 'neat header', 'off the bar', 'nods it wide','curls it towards the top left corner','... header','heads the ball with confidence'];
+    const onTargetKeywords = ['goal!', 'saves it', 'by the keeper', 'safe hands', 'no problem', 'fantastic save', 'tips it wide', 'had it covered', 'spectacular effort', 'what a save', 'tips it away', 'off the bar', 'saved by', 'quick reaction', 'goalkeeper saves', 'the post', 'saves!', 'saves and holds the ball', 'keeper dives on the ball', 'keeper beaten', 'with the save', 'great save', 'it\'s in','off the bar','beautiful save','keeper with a save','keeper equals to it'];
+    const offTargetKeywords = ['over the bar', 'blocks the shot', 'inches wide', 'off target', 'just wide', 'bounces', 'goes wide', 'good block', 'but hits', 'high and wide','but the ball hits', 'nods it wide'];
+    const illegalKeywords = ['offside', 'rises his flag', 'penalty', 'diver', 'behind the goal', 'own goal', 'breaks up the play'];
+    const offsideKeywords = ['offside', 'rises his flag'];
+    const legalKeywords = ['evades the offside trap', 'flag stays down', 'offside trap beaten', 'badly executed offside trap'];
+    const yellowKeywords = ['yellow'];
+    const redKeywords = ['red card','his second yellow',"it's his second","it's red"]
+    const cornersKeywords = ['corner awarded','will take this corner','will take the corner','... corner!']
 
     const homeTeam = document.querySelectorAll('.game_general')[1].innerText.trim().toLowerCase();
     const awayTeam = document.querySelectorAll('.game_general')[4].innerText.trim().toLowerCase();
@@ -2409,8 +2416,8 @@ function matchScore() {
     const translation = getTranslation();
     // Function to count shots based on minute range
     function countShots(startMin, endMin) {
-        let homeTeamShots = { onTarget: 0, offTarget: 0 };
-        let awayTeamShots = { onTarget: 0, offTarget: 0 };
+        let homeTeamShots = { onTarget: 0, offTarget: 0, offsides: 0, corners: 0, yellow: 0, red: 0 };
+        let awayTeamShots = { onTarget: 0, offTarget: 0, offsides: 0, corners: 0, yellow: 0, red: 0 };
 
         for (const event of events) {
             const eventText = event.innerText.toLowerCase().trim();
@@ -2420,25 +2427,35 @@ function matchScore() {
                 let isShot = shotKeywords.some(keyword => eventText.includes(keyword));
                 let isSaved = onTargetKeywords.some(keyword => eventText.includes(keyword));
                 let isOffTarget = offTargetKeywords.some(keyword => eventText.includes(keyword));
+                let isIllegal = illegalKeywords.some(keyword => eventText.includes(keyword));
                 let isOffside = offsideKeywords.some(keyword => eventText.includes(keyword));
-
+                let isLegal = legalKeywords.some(keyword => eventText.includes(keyword));
+                let isYellow = yellowKeywords.some(keyword => eventText.includes(keyword));
+                let isRed = redKeywords.some(keyword => eventText.includes(keyword));
+                let isCorner = cornersKeywords.some(keyword => eventText.includes(keyword));
                 if ((eventText.includes('blocks the shot')) && (eventText.includes('free kick'))) {
                     isOffTarget = false;
                     isSaved = true;
                 }
-                if (isShot) {
-                    const isHomeTeam = eventText.includes(homeTeam);
-                    const isAwayTeam = eventText.includes(awayTeam);
-                    let teamShots = isHomeTeam ? homeTeamShots : isAwayTeam ? awayTeamShots : null;
 
-                    if (teamShots) {
+                const isHomeTeam = eventText.includes(homeTeam);
+                const isAwayTeam = eventText.includes(awayTeam);
+                let teamShots = isHomeTeam ? homeTeamShots : isAwayTeam ? awayTeamShots : null;
+
+                if (isLegal) {
+                    isOffside = false;
+                }
+
+                if (teamShots) {
+                    // Contagem de eventos relacionados a finalizações
+                    if (isShot) {
                         if (isOffTarget) {
                             teamShots.offTarget++;
                         } else if (isSaved) {
                             teamShots.onTarget++;
                         }
 
-                        if (isOffside) {
+                        if (isIllegal) {
                             if (isOffTarget) {
                                 teamShots.offTarget--;
                             } else if (isSaved) {
@@ -2446,14 +2463,33 @@ function matchScore() {
                             }
                         }
                     }
+
+                    // Contagem de impedimentos
+                    if (isOffside) {
+                        teamShots.offsides++;
+                    }
+
+                    // Contagem de cartões amarelos
+                    if (isYellow) {
+                        teamShots.yellow++;
+                    }
+
+                    // Contagem de cartões vermelhos
+                    if (isRed) {
+                        teamShots.red++;
+                    }
+
+                    // Contagem de escanteios
+                    if (isCorner) {
+                        teamShots.corners++;
+                    }
                 }
             }
         }
 
-        // Calculate total shots
+        // Calcular total de finalizações
         homeTeamShots.total = homeTeamShots.onTarget + homeTeamShots.offTarget;
         awayTeamShots.total = awayTeamShots.onTarget + awayTeamShots.offTarget;
-
         // Update the table with stats
         document.querySelector('#shotsTable').innerHTML = `
             <table class="border-collapse: collapse;">
@@ -2479,6 +2515,26 @@ function matchScore() {
                         <td>${homeTeamShots.offTarget}</td>
                         <th>${translation.offTarget[language]}</th>
                         <td>${awayTeamShots.offTarget}</td>
+                    </tr>
+                    <tr class="table_row_static1">
+                        <td>${homeTeamShots.corners}</td>
+                        <th>${'Escanteios'}</th>
+                        <td>${awayTeamShots.corners}</td>
+                    </tr>
+                    <tr class="table_row_static2">
+                        <td>${homeTeamShots.offsides}</td>
+                        <th>${'Impedimentos'}</th>
+                        <td>${awayTeamShots.offsides}</td>
+                    </tr>
+                    <tr class="table_row_static2">
+                        <td>${homeTeamShots.yellow}</td>
+                        <th>${'Cartões Amarelos'}</th>
+                        <td>${awayTeamShots.yellow}</td>
+                    </tr>
+                    <tr class="table_row_static1">
+                        <td>${homeTeamShots.red}</td>
+                        <th>${'Cartões Vermelhos'}</th>
+                        <td>${awayTeamShots.red}</td>
                     </tr>
                 </tbody>
             </table>`;
@@ -2514,7 +2570,7 @@ function matchScore() {
     const toggleButton = document.createElement('button');
     toggleButton.innerHTML = `${translation.hideShow[language]}`;
     toggleButton.style.position = 'fixed';
-    toggleButton.style.bottom = '190px';
+    toggleButton.style.bottom = '300px';
     toggleButton.style.zIndex = '9999';
 
     toggleButton.addEventListener('click', function() {
@@ -2523,4 +2579,126 @@ function matchScore() {
     });
 
     document.body.appendChild(toggleButton);
+}
+
+//National Link by ernestofv01
+function nationalLink() {
+    const teamLinks = {
+        "alb": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/23236", U17: "https://www.dugout-online.com/clubinfo/none/clubid/23252", U19: "https://www.dugout-online.com/clubinfo/none/clubid/23251", U21: "https://www.dugout-online.com/clubinfo/none/clubid/23249" },
+        "alg": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/43713", U17: "https://www.dugout-online.com/clubinfo/none/clubid/43716", U19: "https://www.dugout-online.com/clubinfo/none/clubid/43715", U21: "https://www.dugout-online.com/clubinfo/none/clubid/43714" },
+        "arg": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13326", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13330", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13329", U21: "https://www.dugout-online.com/clubinfo/none/clubid/15670" },
+        "aus": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13331", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13333", U19: "https://www.dugout-online.com/clubinfo/none/clubid/15861", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13332" },
+        "aut": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/15672", U17: "https://www.dugout-online.com/clubinfo/none/clubid/15674", U19: "https://www.dugout-online.com/clubinfo/none/clubid/15734", U21: "https://www.dugout-online.com/clubinfo/none/clubid/15673" },
+        "ban": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/23253", U17: "https://www.dugout-online.com/clubinfo/none/clubid/23256", U19: "https://www.dugout-online.com/clubinfo/none/clubid/23255", U21: "https://www.dugout-online.com/clubinfo/none/clubid/23254" },
+        "bel": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13334", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13337", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13336", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13335" },
+        "bol": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/19438", U17: "https://www.dugout-online.com/clubinfo/none/clubid/20767", U19: "https://www.dugout-online.com/clubinfo/none/clubid/20766", U21: "https://www.dugout-online.com/clubinfo/none/clubid/19439" },
+        "bih": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13339", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13342", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13341", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13340" },
+        "brz": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13343", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13346", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13345", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13344" },
+        "bul": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/15675", U17: "https://www.dugout-online.com/clubinfo/none/clubid/15678", U19: "https://www.dugout-online.com/clubinfo/none/clubid/15677", U21: "https://www.dugout-online.com/clubinfo/none/clubid/15676" },
+        "can": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/23257", U17: "https://www.dugout-online.com/clubinfo/none/clubid/23260", U19: "https://www.dugout-online.com/clubinfo/none/clubid/23259", U21: "https://www.dugout-online.com/clubinfo/none/clubid/23258" },
+        "chi": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13347", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13350", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13349", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13348" },
+        "chn": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13351", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13352", U19: "https://www.dugout-online.com/clubinfo/none/clubid/15862", U21: "https://www.dugout-online.com/clubinfo/none/clubid/15469" },
+        "col": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13560", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13563", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13562", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13561" },
+        "cro": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13353", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13356", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13355", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13354" },
+        "cze": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13564", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13567", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13566", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13565" },
+        "den": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13357", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13360", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13359", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13358" },
+        "eng": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13361", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13364", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13363", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13362" },
+        "est": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13365", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13368", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13367", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13366" },
+        "fin": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13369", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13372", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13371", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13370" },
+        "fra": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13373", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13376", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13375", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13374" },
+        "ger": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13377", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13379", U19: "https://www.dugout-online.com/clubinfo/none/clubid/15863", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13378" },
+        "gre": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/43717", U17: "https://www.dugout-online.com/clubinfo/none/clubid/43719", U19: "https://www.dugout-online.com/clubinfo/none/clubid/43725", U21: "https://www.dugout-online.com/clubinfo/none/clubid/43718" },
+        "hun": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/15680", U17: "https://www.dugout-online.com/clubinfo/none/clubid/15683", U19: "https://www.dugout-online.com/clubinfo/none/clubid/15682", U21: "https://www.dugout-online.com/clubinfo/none/clubid/15681" },
+        "ice": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/46293", U17: "https://www.dugout-online.com/clubinfo/none/clubid/46297", U19: "https://www.dugout-online.com/clubinfo/none/clubid/46296", U21: "https://www.dugout-online.com/clubinfo/none/clubid/46294" },
+        "ind": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/43730", U17: "https://www.dugout-online.com/clubinfo/none/clubid/43720", U19: "https://www.dugout-online.com/clubinfo/none/clubid/43732", U21: "https://www.dugout-online.com/clubinfo/none/clubid/43731" },
+        "ire": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/23261", U17: "https://www.dugout-online.com/clubinfo/none/clubid/23264", U19: "https://www.dugout-online.com/clubinfo/none/clubid/23263", U21: "https://www.dugout-online.com/clubinfo/none/clubid/23262" },
+        "isr": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/46289", U17: "https://www.dugout-online.com/clubinfo/none/clubid/46292", U19: "https://www.dugout-online.com/clubinfo/none/clubid/46291", U21: "https://www.dugout-online.com/clubinfo/none/clubid/46290" },
+        "ita": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13380", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13383", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13382", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13381" },
+        "jpn": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/15470", U17: "https://www.dugout-online.com/clubinfo/none/clubid/15571", U19: "https://www.dugout-online.com/clubinfo/none/clubid/15472", U21: "https://www.dugout-online.com/clubinfo/none/clubid/15471" },
+        "lat": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13384", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13387", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13386", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13385" },
+        "lit": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/23265", U17: "https://www.dugout-online.com/clubinfo/none/clubid/23268", U19: "https://www.dugout-online.com/clubinfo/none/clubid/23267", U21: "https://www.dugout-online.com/clubinfo/none/clubid/23266" },
+        "mal": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/46284", U17: "https://www.dugout-online.com/clubinfo/none/clubid/46288", U19: "https://www.dugout-online.com/clubinfo/none/clubid/46287", U21: "https://www.dugout-online.com/clubinfo/none/clubid/46286" },
+        "mex": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13568", U17: "https://www.dugout-online.com/clubinfo/none/clubid/15276", U19: "https://www.dugout-online.com/clubinfo/none/clubid/15275", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13569" },
+        "mol": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/43726", U17: "https://www.dugout-online.com/clubinfo/none/clubid/43729", U19: "https://www.dugout-online.com/clubinfo/none/clubid/43728", U21: "https://www.dugout-online.com/clubinfo/none/clubid/43727" },
+        "net": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13388", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13391", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13390", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13389" },
+        "nze": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13393", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13396", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13395", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13394" },
+        "nor": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13392", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13496", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13495", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13494" },
+        "per": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13497", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13500", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13499", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13498" },
+        "pol": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13397", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13400", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13399", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13398" },
+        "por": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13401", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13404", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13403", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13402" },
+        "mtn": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/43721", U17: "https://www.dugout-online.com/clubinfo/none/clubid/43724", U19: "https://www.dugout-online.com/clubinfo/none/clubid/43723", U21: "https://www.dugout-online.com/clubinfo/none/clubid/43722" },
+        "rom": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13405", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13407", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13406", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13327" },
+        "rus": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/23269", U17: "https://www.dugout-online.com/clubinfo/none/clubid/23272", U19: "https://www.dugout-online.com/clubinfo/none/clubid/23271", U21: "https://www.dugout-online.com/clubinfo/none/clubid/23270" },
+        "sco": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13467", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13470", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13469", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13468" },
+        "sam": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13408", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13411", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13410", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13409" },
+        "svk": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13653", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13656", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13655", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13654" },
+        "slo": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13412", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13415", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13414", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13413" },
+        "saf": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/43733", U17: "https://www.dugout-online.com/clubinfo/none/clubid/43736", U19: "https://www.dugout-online.com/clubinfo/none/clubid/43735", U21: "https://www.dugout-online.com/clubinfo/none/clubid/43734" },
+        "sko": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13648", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13652", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13651", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13649" },
+        "spa": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13416", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13419", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13418", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13417" },
+        "swe": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13420", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13422", U19: "https://www.dugout-online.com/clubinfo/none/clubid/17362", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13421" },
+        "sui": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/23273", U17: "https://www.dugout-online.com/clubinfo/none/clubid/23276", U19: "https://www.dugout-online.com/clubinfo/none/clubid/23275", U21: "https://www.dugout-online.com/clubinfo/none/clubid/23274" },
+        "tha": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/23277", U17: "https://www.dugout-online.com/clubinfo/none/clubid/23280", U19: "https://www.dugout-online.com/clubinfo/none/clubid/23279", U21: "https://www.dugout-online.com/clubinfo/none/clubid/23278" },
+        "tur": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13423", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13426", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13425", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13424" },
+        "usa": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13428", U17: "https://www.dugout-online.com/clubinfo/none/clubid/15686", U19: "https://www.dugout-online.com/clubinfo/none/clubid/15685", U21: "https://www.dugout-online.com/clubinfo/none/clubid/15684" },
+        "uru": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/13490", U17: "https://www.dugout-online.com/clubinfo/none/clubid/13493", U19: "https://www.dugout-online.com/clubinfo/none/clubid/13492", U21: "https://www.dugout-online.com/clubinfo/none/clubid/13491" },
+        "ven": { NT: "https://www.dugout-online.com/clubinfo/none/clubid/19434", U17: "https://www.dugout-online.com/clubinfo/none/clubid/19437", U19: "https://www.dugout-online.com/clubinfo/none/clubid/19436", U21: "https://www.dugout-online.com/clubinfo/none/clubid/19435" },
+    };
+
+    function getTeamLink(idade, pais) {
+        if (!teamLinks[pais]) {
+            console.warn(`País não encontrado: ${pais}`);
+            return null;
+        }
+
+        if (idade <= 17) {
+            return teamLinks[pais].U17 || null;
+        } else if (idade >= 18 && idade <= 19) {
+            return teamLinks[pais].U19 || null;
+        } else if (idade >= 20 && idade <= 21) {
+            return teamLinks[pais].U21 || null;
+        } else {
+            return teamLinks[pais].NT || null;
+        }
+
+        console.warn(`Idade fora do range de seleção: ${idade}`);
+        return null;
+    }
+
+    // Função para inserir os links nas posições
+    function insertTeamLinks() {
+        const rows = document.querySelectorAll("table.forumline tr");
+        const i = ($('.top_positions').length) ? 1 : 0;
+
+        rows.forEach(row => {
+            if (!row.cells[4 + i]) {
+                return;
+            }
+
+            if (!row.cells[4 + i].querySelector("img")) {
+                return;
+            }
+            const countryElement = row.cells[4 + i].querySelector("img");
+
+            const age = parseInt(row.cells[3 + i].textContent);
+            const country = countryElement.src.match(/\/([^\/]+)\.png$/);
+
+            const teamLink = getTeamLink(age, country[1]);
+
+            if (teamLink) {
+                const linkElement = document.createElement('a');
+                linkElement.href = teamLink;
+                linkElement.target = '_blank';
+                linkElement.style.textDecoration = 'none';
+                linkElement.style.fontWeight = 'normal';
+
+                countryElement.parentNode.insertBefore(linkElement, countryElement);
+                linkElement.appendChild(countryElement);
+            }
+        });
+    }
+
+    window.addEventListener('load', function() {
+        insertTeamLinks();
+    });
 }
