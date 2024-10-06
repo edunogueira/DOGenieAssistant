@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name DO Genie Assistant
-// @version 43.0
+// @version 43.1
 // @namespace https://github.com/edunogueira/DOGenieAssistant/
 // @description dugout-online genie assistant
 // @author n_edu (clubid/112411), mini18 (clubid/99440), lumfurt (clubid/106059), Gleybe (clubid/113526), ernestofv01 (clubid/112729)
@@ -53,6 +53,7 @@ if (page.includes('/home/none/')) {
     checkAndExecute(configs["BID_BUTTON"], bidButton);
     checkAndExecute(configs["BID_LOCAL_TIME"], bidLocalTime);
     checkAndExecute(configs["PLAYER_IMAGE"], playerImage);
+    checkAndExecute(configs["SEND_PRO_SCOUT"], sendProScout);
 } else if (page.includes('/players/none/') || page.includes('/players_nt/none/')) {
     checkAndExecute(configs["SQUAD_DETAILS"], squadDetails);
     checkAndExecute(configs["SQUAD_FILTERS"], squadFilters);
@@ -969,38 +970,86 @@ function getTranslation() {
         shoots: {
             en: "Shoots",
             br: "Chutes",
-            es: "Tiros",
+            es: "Disparos",
             it: "Tiri",
             nl: "Schoten",
             ro: "Șuturi",
             sl: "Streli",
-            tr: "Şutlar",
-            ko: "슛",
+            tr: "Şut",
+            ko: "슈팅",
             bh: "Šutevi"
         },
         onTarget: {
             en: "On Target",
-            br: "No alvo",
-            es: "En el objetivo",
-            it: "In porta",
-            nl: "Op doel",
-            ro: "Pe țintă",
-            sl: "Na cilju",
-            tr: "Hedefte",
-            ko: "타겟 안",
-            bh: "Na Cilju"
+            br: "Chutes no gol",
+            es: "Disparos al arco",
+            it: "Tiri in porta",
+            nl: "Schoten op het doel",
+            ro: "Pe poartă",
+            sl: "Streli v okvir vrat",
+            tr: "Kaleyi Bulan Şut",
+            ko: "유효 슈팅",
+            bh: "Šutevi u okvir gola"
         },
         offTarget: {
             en: "Off Target",
-            br: "Fora do alvo",
-            es: "Fuera del objetivo",
-            it: "Fuori target",
-            nl: "Buiten doel",
-            ro: "Pe lângă țintă",
-            sl: "Izven cilja",
-            tr: "Hedef dışı",
-            ko: "타겟 아웃",
-            bh: "Izvan Cilja"
+            br: "Chutes para fora",
+            es: "Disparos desviados",
+            it: "Tiri fuori",
+            nl: "Schoten naast het doel",
+            ro: "Spre poartă",
+            sl: "Streli mimo vrat",
+            tr: "İsabetsiz Şut",
+            ko: "기타 슈팅",
+            bh: "Šutevi van okvira gola"
+        },
+        corners: {
+            en: "Corners",
+            br: "Escanteios",
+            es: "Tiros de esquina",
+            it: "Calci d'angolo",
+            nl: "Hoekschoppen",
+            ro: "Cornere",
+            sl: "Koti",
+            tr: "Korner",
+            ko: "코너킥",
+            bh: "Korneri"
+        },
+        offsides: {
+            en: "Offsides",
+            br: "Impedimentos",
+            es: "Fuera de juego",
+            it: "Fuorigioco",
+            nl: "Buitenspelgevallen",
+            ro: "Ofsaiduri",
+            sl: "Prepovedani položaji",
+            tr: "Ofsayt",
+            ko: "오프사이드",
+            bh: "Ofsajdi"
+        },
+        yellowCards: {
+            en: "Yellow Cards",
+            br: "Cartões Amarelos",
+            es: "Tarjetas Amarillas",
+            it: "Cartellini Gialli",
+            nl: "Gele Kaarten",
+            ro: "Cartonașe Galbene",
+            sl: "Rumeni kartoni",
+            tr: "Sarı Kart",
+            ko: "옐로우 카드",
+            bh: "Žuti kartoni"
+        },
+        redCards: {
+            en: "Red Cards",
+            br: "Cartões Vermelhos",
+            es: "Tarjetas Rojas",
+            it: "Cartellini Rossi",
+            nl: "Rode Kaarten",
+            ro: "Cartonașe Roșii",
+            sl: "Rdeči kartoni",
+            tr: "Kırmızı Kart",
+            ko: "레드 카드",
+            bh: "Crveni kartoni"
         },
         hideShow: {
             en: "Hide/Show",
@@ -1014,7 +1063,18 @@ function getTranslation() {
             ko: "숨기기/보이기",
             bh: "Sakrij/Pokaži"
         },
-
+        sendProScout: {
+            en: "Send Pro Scout",
+            br: "Enviar Olheiro Profissional",
+            es: "Mandar Ojeador Profesional",
+            it: "Manda Osservatore Professionista",
+            nl: "Stuur Pro Scout",
+            ro: "Trimite Scouter Profesionist",
+            sl: "Pošlji Profesionalnega Oglednika",
+            tr: "Profesyonel Gözlemci Gönder",
+            ko: "프로 스카우트 보내기",
+            bh: "Pošalji Profesionalnog Skauta"
+        }
     };
 }
 //dropdownMenu languages by mini18
@@ -1261,7 +1321,6 @@ function bidButton() {
         }
 
         let language = getLanguage();
-        if (language!="en" && language!="br") language = "en";
         const translation = getTranslation();
         $(`<input id="bid1" type="button" value="${translation.bid[language]} ${val1}"><input id="bid2" type="button" value="${translation.bid[language]} ${val2}"> "`).insertAfter( ".bidButton" );
         $("#bid1").click(function() {
@@ -1551,7 +1610,7 @@ function configMenu() {
     const configOptions = [
         "SECONDARY_CLOCK", "DROPDDOWN_MENU", "PAGE_TITLE", "TEAM_LINK",
         "GET_SPONSORS", "SCOUT_BUTTON", "READ_RESUME", "COACHES_WAGE",
-        "PLAYER_OPS_NAME", "PLAYER_OPS_ID", "PLAYER_EXP", "PLAYER_IMAGE",
+        "PLAYER_OPS_NAME", "PLAYER_OPS_ID", "PLAYER_EXP", "PLAYER_IMAGE", "SEND_PRO_SCOUT",
         "SQUAD_DETAILS", "SQUAD_FILTERS", "SQUAD_HIGH", "NATIONAL_LINK","SPREADSHEET_SQUAD",
         "BID_BUTTON", "BID_LOCAL_TIME", "LOAD_TACTICS", "TACTICS_DETAILS", "LINKS",
         "STORED_FILTERS", "GOALS_DIFFERENCE", "HIDE_TRAINING_REPORT", "COACH_EFFECTIVENESS",
@@ -1655,6 +1714,7 @@ function getStorage(storageConfigs) {
         "TEAM_LINK": 'checked',
         "GET_SPONSORS": 'checked',
         "PLAYER_IMAGE": 'checked',
+        "SEND_PRO_SCOUT": 'checked',
         "LINKS": 'checked',
         "STORED_FILTERS": 'checked',
         "GOALS_DIFFERENCE": 'checked',
@@ -2412,7 +2472,6 @@ function matchScore() {
     const events = document.querySelectorAll('#events_content table tbody tr');
 
     let language = getLanguage();
-    if (language!="en" && language!="br") language = "en";
     const translation = getTranslation();
     // Function to count shots based on minute range
     function countShots(startMin, endMin) {
@@ -2516,24 +2575,24 @@ function matchScore() {
                         <th>${translation.offTarget[language]}</th>
                         <td>${awayTeamShots.offTarget}</td>
                     </tr>
-                    <tr class="table_row_static1">
+                    <tr class="table_row_static2">
                         <td>${homeTeamShots.corners}</td>
-                        <th>${'Escanteios'}</th>
+                        <th>${translation.corners[language]}</th>
                         <td>${awayTeamShots.corners}</td>
                     </tr>
-                    <tr class="table_row_static2">
+                    <tr class="table_row_static1">
                         <td>${homeTeamShots.offsides}</td>
-                        <th>${'Impedimentos'}</th>
+                        <th>${translation.offsides[language]}</th>
                         <td>${awayTeamShots.offsides}</td>
                     </tr>
                     <tr class="table_row_static2">
                         <td>${homeTeamShots.yellow}</td>
-                        <th>${'Cartões Amarelos'}</th>
+                        <th>${translation.yellowCards[language]}</th>
                         <td>${awayTeamShots.yellow}</td>
                     </tr>
                     <tr class="table_row_static1">
                         <td>${homeTeamShots.red}</td>
-                        <th>${'Cartões Vermelhos'}</th>
+                        <th>${translation.redCards[language]}</th>
                         <td>${awayTeamShots.red}</td>
                     </tr>
                 </tbody>
@@ -2647,7 +2706,6 @@ function nationalLink() {
 
     function getTeamLink(idade, pais) {
         if (!teamLinks[pais]) {
-            console.warn(`País não encontrado: ${pais}`);
             return null;
         }
 
@@ -2661,7 +2719,6 @@ function nationalLink() {
             return teamLinks[pais].NT || null;
         }
 
-        console.warn(`Idade fora do range de seleção: ${idade}`);
         return null;
     }
 
