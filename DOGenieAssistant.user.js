@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name DO Genie Assistant
-// @version 43.1
+// @version 44.0
 // @namespace https://github.com/edunogueira/DOGenieAssistant/
 // @description dugout-online genie assistant
-// @author n_edu (clubid/112411), mini18 (clubid/99440), lumfurt (clubid/106059), Gleybe (clubid/113526), ernestofv01 (clubid/112729)
+// @author n_edu (clubid/112411), mini18 (clubid/99440), lumfurt (clubid/106059), Gleybe (clubid/113526), ernestofv01 (clubid/112729), allandagama (clubid/113643)
 // @icon https://www.google.com/s2/favicons?domain=dugout-online.com
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js
 // @require https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js
@@ -1027,6 +1027,18 @@ function getTranslation() {
             ko: "오프사이드",
             bh: "Ofsajdi"
         },
+        fouls: {
+            en: "Fouls",
+            br: "Faltas",
+            es: "Faltas",
+            it: "Falli",
+            nl: "Overtredingen",
+            ro: "Faulturi",
+            sl: "Prekrški",
+            tr: "Fauller",
+            ko: "파울",
+            bh: "Prekršaji"
+        },
         yellowCards: {
             en: "Yellow Cards",
             br: "Cartões Amarelos",
@@ -1735,6 +1747,7 @@ function configSound() {
         { name: "GOAL_SOUND", defaultValue: 'checked' },
         { name: "HOME_GOAL_ID", defaultValue: '1579437467' },
         { name: "AWAY_GOAL_ID", defaultValue: '1636248327' },
+        { name: "UPDATE_GOAL_ID", defaultValue: '1888294176' },
         { name: "OFFSIDE_SOUND", defaultValue: 'checked' },
         { name: "OFFSIDE_ID", defaultValue: '1636263519' },
         { name: "GAME_END_SOUND", defaultValue: 'checked' },
@@ -1820,6 +1833,7 @@ function getSoundStorage(storageConfigs) {
         'GOAL_SOUND': 'checked',
         'HOME_GOAL_ID': '1579437467',
         'AWAY_GOAL_ID': '1636248327',
+        'UPDATE_GOAL_ID': '1888294176',
         'OFFSIDE_SOUND': 'checked',
         'OFFSIDE_ID': '1636263519',
         'GAME_END_SOUND': 'checked',
@@ -2437,7 +2451,7 @@ async function updateScores() {
     } else {
         for (let i = 0; i < scores.length; i++) {
             if (scores[i] !== gameScores[i]) {
-                const soundId = soundConfig['AWAY_GOAL_ID'];
+                const soundId = soundConfig['UPDATE_GOAL_ID'];
                 scores[i] = gameScores[i];
                 $(`<iframe width="0%" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${soundId}&amp;color=%23ff5500&amp;auto_play=true&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false&amp;show_teaser=true&amp;visual=true"></iframe>`).insertBefore("#myTable");
             }
@@ -2463,11 +2477,14 @@ function matchScore() {
     const illegalKeywords = ['offside', 'rises his flag', 'penalty', 'diver', 'behind the goal', 'own goal', 'breaks up the play'];
     const offsideKeywords = ['offside', 'rises his flag'];
     const legalKeywords = ['evades the offside trap', 'flag stays down', 'offside trap beaten', 'badly executed offside trap'];
+    const foulKeywords = ['foul', 'Referee stops the play'];
     const yellowKeywords = ['yellow'];
     const redKeywords = ['red card','his second yellow',"it's his second","it's red"]
     const cornersKeywords = ['corner awarded','will take this corner','will take the corner','... corner!']
 
     const homeTeam = document.querySelectorAll('.game_general')[1].innerText.trim().toLowerCase();
+    const goalsHomeTeam = document.querySelectorAll('.game_general')[2].innerText.trim().toLowerCase();
+    const goalsAwayTeam = document.querySelectorAll('.game_general')[3].innerText.trim().toLowerCase();
     const awayTeam = document.querySelectorAll('.game_general')[4].innerText.trim().toLowerCase();
     const events = document.querySelectorAll('#events_content table tbody tr');
 
@@ -2475,8 +2492,8 @@ function matchScore() {
     const translation = getTranslation();
     // Function to count shots based on minute range
     function countShots(startMin, endMin) {
-        let homeTeamShots = { onTarget: 0, offTarget: 0, offsides: 0, corners: 0, yellow: 0, red: 0 };
-        let awayTeamShots = { onTarget: 0, offTarget: 0, offsides: 0, corners: 0, yellow: 0, red: 0 };
+        let homeTeamShots = { onTarget: 0, offTarget: 0, offsides: 0, corners: 0, foul:0, yellow: 0, red: 0 };
+        let awayTeamShots = { onTarget: 0, offTarget: 0, offsides: 0, corners: 0, foul:0, yellow: 0, red: 0 };
 
         for (const event of events) {
             const eventText = event.innerText.toLowerCase().trim();
@@ -2489,12 +2506,18 @@ function matchScore() {
                 let isIllegal = illegalKeywords.some(keyword => eventText.includes(keyword));
                 let isOffside = offsideKeywords.some(keyword => eventText.includes(keyword));
                 let isLegal = legalKeywords.some(keyword => eventText.includes(keyword));
+                let isFoul = foulKeywords.some(keyword => eventText.includes(keyword));
                 let isYellow = yellowKeywords.some(keyword => eventText.includes(keyword));
                 let isRed = redKeywords.some(keyword => eventText.includes(keyword));
                 let isCorner = cornersKeywords.some(keyword => eventText.includes(keyword));
                 if ((eventText.includes('blocks the shot')) && (eventText.includes('free kick'))) {
                     isOffTarget = false;
                     isSaved = true;
+                }
+                if ((eventText.includes('foul'))) {
+                    if ((eventText.includes('no foul')) || (eventText.includes('play on'))) {
+                        isFoul = false;
+                    }
                 }
 
                 const isHomeTeam = eventText.includes(homeTeam);
@@ -2528,6 +2551,11 @@ function matchScore() {
                         teamShots.offsides++;
                     }
 
+                    // Contagem de faltas
+                    if (isFoul) {
+                        teamShots.foul++;
+                    }
+
                     // Contagem de cartões amarelos
                     if (isYellow) {
                         teamShots.yellow++;
@@ -2555,7 +2583,7 @@ function matchScore() {
                 <thead>
                     <tr>
                         <th class="player_ratings_header">${homeTeam.toUpperCase()}</th>
-                        <th class="player_ratings_header">vs</th>
+                        <th class="player_ratings_header">${goalsHomeTeam.toUpperCase()} vs ${goalsAwayTeam.toUpperCase()}</th>
                         <th class="player_ratings_header">${awayTeam.toUpperCase()}</th>
                     </tr>
                 </thead>
@@ -2586,11 +2614,16 @@ function matchScore() {
                         <td>${awayTeamShots.offsides}</td>
                     </tr>
                     <tr class="table_row_static2">
+                        <td>${homeTeamShots.foul}</td>
+                        <th>${translation.fouls[language]}*</th>
+                        <td>${awayTeamShots.foul}</td>
+                    </tr>
+                    <tr class="table_row_static1">
                         <td>${homeTeamShots.yellow}</td>
                         <th>${translation.yellowCards[language]}</th>
                         <td>${awayTeamShots.yellow}</td>
                     </tr>
-                    <tr class="table_row_static1">
+                    <tr class="table_row_static2">
                         <td>${homeTeamShots.red}</td>
                         <th>${translation.redCards[language]}</th>
                         <td>${awayTeamShots.red}</td>
@@ -2758,4 +2791,63 @@ function nationalLink() {
     window.addEventListener('load', function() {
         insertTeamLinks();
     });
+}
+function submitProScout() {
+    let url = new URL(window.location.href);
+
+    // Split the pathname by "/"
+    let parts = url.pathname.split('/');
+
+    // Extract playerID and club_id values from the URL
+    let playerID = parts[parts.indexOf('playerID') + 1];
+    let clubID = parts[parts.indexOf('club_id') + 1];
+
+    // Build the new URL structure
+    let newUrl = `https://www.dugout-online.com/players/details/playerID/${playerID}/clubid/youth/0/${clubID}/back/`;
+
+    // Prepare data for the POST request
+    let postData = new URLSearchParams();
+    postData.append('sendscout', '1');
+    postData.append('scouttype', '1');
+
+    // Make the POST request
+    fetch(newUrl, {
+        method: 'POST',
+        body: postData,
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+    })
+        .then(response => {
+            if (response.ok) {
+                return response.text();
+            }
+            throw new Error('Network response was not ok.');
+        })
+        .then(data => {
+            location.reload(); // Refresh the page on success
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+        });
+}
+
+function sendProScout() {
+    // Create the input button
+    let button = document.createElement("input");
+    button.type = "button"; // Set type to button
+    button.value = "Send Pro Scout"; // Set button text
+    button.style.marginRight = "10px";
+    button.id = "scoutProBtn";
+
+    var scoutButton = $("input[type='button'][onclick*='sendscout']");
+    if (scoutButton.is(':disabled')) {
+        button.disabled = true; // Disable the button if the scout button is disabled
+    }
+
+    // Insert the new button before the existing scout button
+    scoutButton.before(button);
+
+    // Add click event listener to the button
+    button.addEventListener("click", submitProScout);
 }
