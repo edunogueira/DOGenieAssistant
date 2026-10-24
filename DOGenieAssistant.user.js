@@ -1,29 +1,30 @@
 // ==UserScript==
 // @name DO Genie Assistant
-// @version 44.0
+// @version 45.23
 // @namespace https://github.com/edunogueira/DOGenieAssistant/
 // @description dugout-online genie assistant
 // @author n_edu (clubid/112411), mini18 (clubid/99440), lumfurt (clubid/106059), Gleybe (clubid/113526), ernestofv01 (clubid/112729), allandagama (clubid/113643)
 // @icon https://www.google.com/s2/favicons?domain=dugout-online.com
-// @require http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js
+// @require https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js
 // @require https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.34/moment-timezone-with-data.min.js
 // @include http*dugout-online.com/*
 // @include https://www.dugout-online.com/*
+// @run-at document-end
+// @grant none
+// @inject-into page
 
 // ==/UserScript==
 //page select ----------------------------------------------//
+// Ordem esperada por getOPS na versão clássica; o índice 13 é Positioning.
+const v4StatOrder = ['REF','TCK','PAS','SHT','AGG','ONE','MRK','CRE','DRI','INF','HND','HEA','LSH','PSN','TMW','COM','CRS','FTO','STR','SPD','ECC'];
 var page = document.URL;
 var configs = getStorage(localStorage.getItem("DOGenieAssistant.configs")) || {};
 var soundConfig = getSoundStorage(localStorage.getItem("DOGenieAssistant.soundConfig")) || {};
 var scores = "";
-function checkAndExecute(config, func) {
-    if ((config) || (typeof config === 'undefined')) {
-        func();
-    }
-}
 
+checkAndExecute(configs["CHECKBOX_SWITCH"], checkboxSwitch);
 checkAndExecute(configs["PAGE_TITLE"], pageTitle);
 checkAndExecute(configs["DROPDDOWN_MENU"], dropdownMenu);
 checkAndExecute(configs["SECONDARY_CLOCK"], secondaryClock);
@@ -39,14 +40,14 @@ if (page.includes('/home/none/')) {
     clearMatchStorage();
     clearPlayerImages();
 
-    checkAndExecute(configs["TEAM_LINK"], teamLink);
     checkAndExecute(configs["GET_SPONSORS"], getSponsors);
-} else if (page.includes('/search_coaches/none/')) {
+} else if (/^\/search_coaches\/none(?:\/|$)/.test(location.pathname)) {
     checkAndExecute(configs["COACHES_WAGE"], coachesWage);
-    checkAndExecute(storedFilters["STORED_FILTERS"], storedFilters);
-} else if (page.includes('/clubinfo/none/clubid/')) {
+    checkAndExecute(configs["STORED_FILTERS"], storedFilters);
+} else if (/^\/staff\/details(?:\/|$)/.test(location.pathname)) {
+    checkAndExecute(configs["COACHES_WAGE"], coachesWage);
+} else if (/^\/clubinfo\/none(?:\/|$)/.test(location.pathname)) {
     checkAndExecute(configs["READ_RESUME"], readResume);
-} else if (page.includes('/clubinfo/none/')) {
     checkAndExecute(configs["SCOUT_BUTTON"], scoutButton);
 } else if (page.includes('/players/details/')|| page.includes('/players_nt/details/')) {
     playerDetails();
@@ -62,13 +63,13 @@ if (page.includes('/home/none/')) {
     checkAndExecute(configs["TACTICS_DETAILS"], tacticsDetails);
     checkAndExecute(configs["LOAD_TACTICS"], loadTactics);
 } else if (page.includes('/players/spreadsheet/')) {
-    checkAndExecute(configs["SPREADSHEET_SQUAD"], function() { doTable('.forumline'); });
+    checkAndExecute(configs["SPREADSHEET_SQUAD"], spreadsheetSquad);
 } else if (page.includes('/game/none/gameid/')) {
     checkAndExecute(soundConfig["MATCH_SOUND"], matchSound);
     checkAndExecute(configs["MATCH_NAMES"], matchNames);
     checkAndExecute(configs["MATCH_SCORE"], matchScore);
 } else if (page.match("/search_players|/search_transfers|/search_clubs|/search_coaches|/national_teams|/search_physios")) {
-    checkAndExecute(storedFilters["STORED_FILTERS"], storedFilters);
+    checkAndExecute(configs["STORED_FILTERS"], storedFilters);
 } else if (page.match("/training/none")) {
     checkAndExecute(configs["HIDE_TRAINING_REPORT"], hideTrainingReport);
     checkAndExecute(configs["COACH_EFFECTIVENESS"], coachEffectiveness);
@@ -76,11 +77,6 @@ if (page.includes('/home/none/')) {
     importExport();
 } else if (page.match("/competitions/")) {
     checkAndExecute(configs["AUTO_SCORE"], autoScore);
-    if (page.match("/competitions/none")) {
-        if (!page.match("/subpage/")) {
-            checkAndExecute(configs["GOALS_DIFFERENCE"], goalsDifference);
-        }
-    }
 }
 
 //helper //----------------------------------------------//
@@ -105,47 +101,34 @@ function applyStyle(css) {
     }
 }
 
-function getExp() {
-    return $('div[title]')
-        .map(function() {
-        var titleString = $(this).attr('title');
-        return /^\d+ XP$/.test(titleString) ? titleString : null;
-    })
-        .get();
-}
-
-function getPos() {
-    var posArray = Array.from({ length: 10 }, function() { return "0"; });
-
-    var mainDiv = document.querySelector('img[src*="positions-field"]').parentNode;
-
-    var positions = [
-        { top: "69px", left: "10px", index: 0 }, // GK
-        { top: "20px", left: "40px", index: 1 }, // DL
-        { top: "69px", left: "40px", index: 2 }, // DC
-        { top: "117px", left: "40px", index: 3 }, // DR
-        { top: "20px", left: "108px", index: 4 }, // ML
-        { top: "69px", left: "108px", index: 5 }, // MC
-        { top: "117px", left: "108px", index: 6 }, // MR
-        { top: "20px", left: "185px", index: 7 }, // FL
-        { top: "69px", left: "185px", index: 8 }, // FC
-        { top: "117px", left: "185px", index: 9 } // FR
-    ];
-
-    positions.forEach(function (pos) {
-        var posDiv = Array.from(mainDiv.querySelectorAll('div[style*="background"]')).find(function (div) {
-            return div.style.top === pos.top && div.style.left === pos.left;
-        });
-
-        if (posDiv) {
-            var img = posDiv.style.background;
-            var num = img.substring(img.indexOf("positions-") + "positions-".length, img.indexOf(".png"));
-            posArray[pos.index] = num;
+function checkboxSwitch() {
+    applyStyle(`
+        input[type="checkbox"] {
+            --genie-switch-off:var(--do-gray-500,#64748b);
+            --genie-switch-on:var(--do-green,#286b2d);
+            --genie-switch-thumb:#fff;
+            appearance:none!important;-webkit-appearance:none!important;
+            box-sizing:border-box!important;width:36px!important;height:20px!important;
+            min-width:36px!important;flex-shrink:0;vertical-align:middle;
+            border:1px solid transparent!important;border-radius:999px!important;
+            padding:0!important;cursor:pointer;
+            background:radial-gradient(circle at 9px 50%,var(--genie-switch-thumb) 7px,transparent 7.5px) var(--genie-switch-off)!important;
+            box-shadow:none!important;
         }
-    });
-
-    return posArray;
+        input[type="checkbox"]:checked {
+            background:radial-gradient(circle at 25px 50%,var(--genie-switch-thumb) 7px,transparent 7.5px) var(--genie-switch-on)!important;
+        }
+        input[type="checkbox"]:indeterminate {
+            background:radial-gradient(circle at 17px 50%,var(--genie-switch-thumb) 7px,transparent 7.5px) var(--genie-switch-off)!important;
+        }
+        input[type="checkbox"]:focus-visible {outline:2px solid var(--genie-switch-on)!important;outline-offset:3px!important}
+        input[type="checkbox"]:disabled {opacity:.5;cursor:not-allowed}
+        @media (forced-colors:active) {
+            input[type="checkbox"] {appearance:auto!important;-webkit-appearance:auto!important;background:revert!important;border:revert!important}
+        }
+    `);
 }
+
 
 function getOPS(data) {
     var ops = [];
@@ -222,63 +205,9 @@ function doTable(selector) {
 }
 
 //features //----------------------------------------------//
-function playerDetails() {
-    let attrText = '';
-    var data = Array();
-
-    $("#main-1 table tr").each(function(i, v) {
-        $(this).children('td').each(function(ii, vv) {
-            if ($.isNumeric($(this).text())) {
-                data.push(parseInt($(this).text()));
-            }
-        });
-    });
-    var ops = getOPS(data);
-    var position = getPos();
-    var natPos = 0;
-
-    for (var i = 0; i < position.length; ++i) {
-        if (position[i] == 1) {
-            natPos = i;
-        }
-    }
-    if (ops['pos'] !== natPos) {
-        attrText = ' @ OPS ' + ops[natPos] + '/' + ops[ops['pos']] + '*';
-    } else {
-        attrText = ' @ OPS ' + ops[natPos];
-    }
-
-    const exp = getExp();
-    const playerName = $('.player_name').text();
-
-    if (configs["PLAYER_OPS_ID"] !== "") {
-        $('.player_id_txt').text($('.player_id_txt').text() + attrText);
-    }
-
-    if (configs["PLAYER_OPS_NAME"] !== "") {
-        $('.player_name').text($('.player_name').text() + attrText);
-        $('.player_id_txt').css({
-            'position': 'absolute',
-            'right': '30px'
-        });
-    }
-    const expText = ' | ' + exp;
-    if (configs["PLAYER_EXP"] !== "") {
-        if (configs["PLAYER_OPS_NAME"] !== "") {
-            $('.player_name').text($('.player_name').text() + expText);
-        }
-
-        if (configs["PLAYER_OPS_ID"] !== "") {
-            $('.player_id_txt').text($('.player_id_txt').text() + expText);
-        }
-    }
-
-    if (configs["PAGE_TITLE"] !== "") {
-        $(document).prop('title', playerName + attrText + expText);
-    }
-}
 
 function squadDetails() {
+    if (document.querySelector('.do-players-table')) return v4SquadDetails();
     $(".forumline .table_top_row").each(function() {
         const headerRow = $(this).last();
         headerRow.append('<td align="center" width="20" title="Original Position Skills" class="tableHeader">OPS</td>');
@@ -333,6 +262,7 @@ function squadDetails() {
 }
 
 function squadFilters () {
+    if (document.querySelector('.do-players-table')) return v4SquadFilters();
     $("#top_positions").before('<table class="inputs"><tbody><tr><td>Min Age</td><td><input type="search" id="minAge" name="minAge"></td><td>Min Rat</td><td><input type="search" id="minRat" name="minRat"></td><td>Min OPS</td><td><input type="search" id="minOPS" name="minOPS"></td><td><button id="clearButton" onclick="">Clear Fields</button></td></tr><tr><td>Max Age</td><td><input type="search" id="maxAge" name="maxAge"></td><td>Max Rat</td><td><input type="search" id="maxRat" name="maxRat"></td><td>Max OPS</td><td><input type="search" id="maxOPS" name="maxOPS"></td></tr></tbody></table>');
 
     $('#clearButton').on('click', function() {
@@ -391,6 +321,7 @@ function getPositionIndex(position) {
 }
 
 function tacticsDetails() {
+    if (document.querySelector('.do-tac')) { v4TacticsDetails(); return; }
     $(document).ready(function() {
         $('#agression_id').css('width', '99px');
     });
@@ -496,30 +427,69 @@ function tacticsDetails() {
     });
 }
 
-function secondaryClock() {
-    $('#footer').append('<div class="time_display" id="servertime2" style="top: 12px;border:1px solid #fff"></div>');
-    setInterval(serverTime, 1000);
+function v4TacticsDetails() {
+    const data = window.DO_TAC, table = document.querySelector('.do-tac-squad');
+    if (!data?.squad || !table) return;
+
+    const aggression = document.getElementById('doTacAggression');
+    const slider = aggression?.closest('.do-tac-fs');
+    const label = document.getElementById('doTacAggVal');
+    if (slider && label && !document.getElementById('newAgg')) {
+        const input = document.createElement('input');
+        input.id = 'newAgg'; input.type = 'number'; input.min = '0'; input.max = '100';
+        input.value = aggression.value; input.style.cssText = 'width:4.5em;margin-left:8px';
+        input.setAttribute('aria-label', slider.querySelector('.do-tac-fs-title')?.textContent.trim() || 'Aggression');
+        label.after(input);
+        const update = () => {
+            if (input.value === '') return;
+            const value = Math.max(0, Math.min(100, Math.round(Number(input.value))));
+            input.value = value; aggression.value = value; label.textContent = value;
+            const stage = slider.querySelector('.do-tac-fs-stage'), rect = stage?.getBoundingClientRect();
+            if (rect?.width > 32 && window.PointerEvent) {
+                const x = rect.left + 16 + (rect.width - 32) * value / 100;
+                stage.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse', clientX: x }));
+                document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, pointerType: 'mouse' }));
+            }
+        };
+        input.addEventListener('input', update);
+        input.addEventListener('change', () => { if (input.value === '') input.value = aggression.value; else update(); });
+        new MutationObserver(() => { input.value = aggression.value; }).observe(label, { childList: true, characterData: true });
+    }
+
+    if (!table.querySelector('.genie-tac-ops')) {
+        const th = document.createElement('th'); th.className = 'c-num genie-tac-ops'; th.textContent = 'OPS';
+        table.tHead?.rows[0]?.append(th);
+        const squad = new Map(data.squad.map(player => [String(player.id), player]));
+        table.querySelectorAll('tbody tr[data-id]').forEach(row => {
+            const player = squad.get(row.dataset.id);
+            const attrs = Object.fromEntries((player?.attrs || []).map(([key, value]) => [key.toUpperCase(), Number(value)]));
+            const values = v4StatOrder.map(key => attrs[key === 'SPD' ? 'SP' : key]);
+            const pos = player?.pos;
+            const ops = pos && ['GK','DL','DC','DR','ML','MC','MR','FL','FC','FR'].includes(pos) && values.every(Number.isFinite)
+                ? getOPS(values)[getPositionIndex(pos)] : null;
+            const td = document.createElement('td'); td.className = 'c-num genie-tac-ops';
+            td.textContent = ops == null ? '—' : String(ops); row.append(td);
+        });
+    }
+
+    if (!document.getElementById('genie-tac-style')) {
+        const style = document.createElement('style'); style.id = 'genie-tac-style';
+        style.textContent = '.do-tac-squad .genie-tac-starter td,.do-tac-squad .genie-tac-starter .do-tac-squad-name{font-weight:700;text-decoration:underline}.do-tac-squad .genie-tac-sub td,.do-tac-squad .genie-tac-sub .do-tac-squad-name{font-weight:700;color:blue}';
+        document.head.append(style);
+    }
+    const refresh = () => {
+        const starters = new Set([...(data.players || []), data.gk].filter(Boolean).map(player => String(player.id)));
+        const subs = new Set((data.subs || []).map(player => String(player.id)));
+        table.querySelectorAll('tbody tr[data-id]').forEach(row => {
+            row.classList.toggle('genie-tac-starter', starters.has(row.dataset.id));
+            row.classList.toggle('genie-tac-sub', subs.has(row.dataset.id));
+        });
+    };
+    refresh();
+    // O jogo conclui o arraste em document, inclusive fora do painel de táticas.
+    ['click', 'change', 'pointerup'].forEach(type => document.addEventListener(type, () => requestAnimationFrame(refresh), true));
 }
 
-function getLanguage() {
-    let settingsTitle = 'en';
-    if (document.querySelector(".settings_button")) {
-        settingsTitle = document.querySelector(".settings_button").title;
-    }
-    const languages = {
-        Postavke: "bh",
-        Settings: "en",
-        Configuraciones: "es",
-        Impostazioni: "it",
-        Instellingen: "nl",
-        Configurações: "br",
-        Setări: "ro",
-        Nastavitve: "sl",
-        Ayarlar: "tr",
-        설정: "ko",
-    };
-    return languages[settingsTitle];
-};
 
 function getTranslation() {
     return {
@@ -1090,137 +1060,41 @@ function getTranslation() {
     };
 }
 //dropdownMenu languages by mini18
-function dropdownMenu() {
-    var css = '.dropdown-content{text-align: left;top:0px;border-radius: 15px;margin-top:40px;display:none;position:absolute;background-color:#f1f1f1;min-width:160px;box-shadow:0 8px 16px 0 rgba(0,0,0,.2);z-index:1}.dropdown-content a{border-radius: 15px;color:#000;padding:12px 16px;text-decoration:none;display:block}.dropdown-content a:hover{background-color:#ddd}.menu_button:hover .dropdown-content{display:block}.menu_button:hover .dropbtn{background-color:#3e8e41}';
-    applyStyle(css);
-
-    const translation = getTranslation();
-    let language = getLanguage();
-    if (translation.home_home[language] == undefined) {
-        language = 'en';
-    }
-
-    const menu = {
-        home: [
-            { url: 'https://www.dugout-online.com/home/none/', text: translation.home_home[language] },
-            { url: 'https://www.dugout-online.com/news/none/', text: translation.home_news[language] },
-            { url: 'https://www.dugout-online.com/rules/none/', text: translation.home_rules[language] },
-            { url: 'https://www.dugout-online.com/helpmain/none/', text: translation.home_help[language] },
-        ],
-        club: [
-            { url: 'https://www.dugout-online.com/clubinfo/none/', text: translation.club_info[language] },
-            { url: 'https://www.dugout-online.com/clubinfo/bids/', text: translation.club_bids[language] },
-            { url: 'https://www.dugout-online.com/clubinfo/transfers/', text: translation.club_transfers[language] },
-            { url: 'https://www.dugout-online.com/players/none/clubid/0/Free-online-football-manager-game', text: translation.club_players[language] },
-            { url: 'https://www.dugout-online.com/players/none/view/youth/clubid/0/', text: translation.club_players_youth[language] },
-            { url: 'https://www.dugout-online.com/staff/none/', text: translation.club_staff[language] },
-            { url: 'https://www.dugout-online.com/settings/none/', text: translation.club_settings[language] },
-        ],
-        nt: [
-            { url: 'https://www.dugout-online.com/players_nt/none/', text: translation.players_nt[language] },
-            { url: 'https://www.dugout-online.com/tactics_nt/none/', text: translation.tactics_nt[language] },
-        ],
-        management: [
-            { url: 'https://www.dugout-online.com/finances/none/', text: translation.management_finances[language] },
-            { url: 'https://www.dugout-online.com/stadium/none/', text: translation.management_stadium[language] },
-            { url: 'https://www.dugout-online.com/facilities/none/', text: translation.management_facilities[language] },
-            { url: 'https://www.dugout-online.com/sponsors/none/', text: translation.management_sponsors[language] },
-            { url: 'https://www.dugout-online.com/calendar/none/', text: translation.management_calendar[language] },
-        ],
-        tactics: [
-            { url: 'https://www.dugout-online.com/tactics/none/', text: translation.tactics_fiest[language] },
-            { url: 'https://www.dugout-online.com/tactics_youth/none/', text: translation.tactics_youth[language] },
-        ],
-        training: [
-            { url: 'https://www.dugout-online.com/training/none/', text: translation.training_training[language] },
-            { url: 'https://www.dugout-online.com/physios/none/', text: translation.training_physios[language] },
-            { url: 'https://www.dugout-online.com/physio_report/none', text: translation.training_physio_report[language] },
-        ],
-        search: [
-            { url: 'https://www.dugout-online.com/search_players/none/', text: translation.search_players[language] },
-            { url: 'https://www.dugout-online.com/search_clubs/none/', text: translation.search_clubs[language] },
-            { url: 'https://www.dugout-online.com/national_teams/none/', text: translation.search_national[language] },
-            { url: 'https://www.dugout-online.com/search_coaches/none/', text: translation.search_coaches[language] },
-            { url: 'https://www.dugout-online.com/search_physios/none/', text: translation.search_physios[language] },
-            { url: 'https://www.dugout-online.com/search_transfers/none/', text: translation.search_transfers[language] },
-        ],
-        community: [
-            { url: 'https://www.dugout-online.com/forum/none/', text: translation.community_forum[language] },
-            { url: 'https://www.dugout-online.com/community_rules/none/', text: translation.community_rules[language] },
-            { url: 'https://www.dugout-online.com/community_profile/none/', text: translation.community_profile[language] },
-            { url: 'https://www.dugout-online.com/links/none/', text: translation.community_links[language] },
-        ],
-    };
-
-    if ($(".menu_button").length <= 7) {
-        delete menu.nt;
-    } else {
-        let linksJson = localStorage.getItem('DOGenieAssistant.links');
-        let links = linksJson ? JSON.parse(linksJson) : {};
-        const ntLinks = [];
-
-        for (const url in links) {
-            const value = links[url];
-            if (value.startsWith('[NT]')) {
-                const text = value.replace(/^\[NT\]\s*/, '');
-                menu.nt.push({ url, text });
-            }
-        }
-
-    }
-
-    let menuIndex = 1;
-    let dropdownContent = '';
-    $.each(menu, function(menuKey, items) {
-        const $menuButton = $('.menu_button:nth-child(' + menuIndex + ')');
-        dropdownContent = '';
-        $.each(items, function(index, item) {
-            dropdownContent += `<a href="${item.url}">${item.text}</a>`;
-        });
-
-        $menuButton.append(`<div class="dropdown-content">${dropdownContent}</div>`);
-        menuIndex++;
-    });
-
-    [...document.querySelectorAll('div#top_container > div')]
-        .filter(d => d.classList.contains(`${d.id}_ico`))
-        .forEach(d => {
-        const anchor = document.createElement('a');
-        anchor.href = d.onclick.toString().split('document.location.href=')[1].split('\'')[1];
-        anchor.classList.add(...d.classList.values())
-        anchor.id = d.id;
-        anchor.style.cssText = d.style.cssText;
-        anchor.title = d.title;
-        d.parentElement.insertBefore(anchor, d);
-        d.remove();
-    });
-    var scripts = document.getElementsByTagName('script');
-
-    for (var i = 0; i < scripts.length; i++) {
-        var script = scripts[i];
-        if (script.innerHTML && script.innerHTML.indexOf('createIconTip(') !== -1) {
-            var novoScript = document.createElement('script');
-            novoScript.type = 'text/javascript';
-            novoScript.text = script.innerHTML;
-            document.body.appendChild(novoScript);
-            break;
-        }
-    }
-}
 
 function pageTitle() {
-    let title = '';
-    if (page.includes('/clubinfo/none/')) {
-        title = $('.clubname').text();
-    } else {
-        title = location.pathname.split("/")[1].replace("_", " ");
-        title = title.charAt(0).toUpperCase() + title.slice(1);
+    let title = (location.pathname.split('/')[1] || '').replace('_', ' ');
+    title = title.charAt(0).toUpperCase() + title.slice(1);
+    if (/^\/clubinfo\/none(?:\/|$)/.test(location.pathname)) {
+        title = document.querySelector('.do-club-name, .clubname')?.textContent.trim() || title;
     }
-    $(document).prop('title', title);
-    return title;
+    if (title) document.title = title;
+    return document.title;
+}
+
+function estimateCoachWage(skill) {
+    return (skill <= 42 ? 24.44889 * skill - 138.145 : 51.54712 * skill - 1260) * skill;
 }
 
 function coachesWage() {
+    const table = document.querySelector('.do-se-table');
+    if (table) return v4CoachSearchWages(table);
+    const details = document.querySelector('.do-sd');
+    if (details) {
+        if (!details.querySelector('.do-sd-role-coach') || document.getElementById('genie-coach-wage')) return;
+        const host = details.querySelector('.do-sd-inforows');
+        const attrs = Array.from(details.querySelectorAll('.do-sd-attrs .do-sd-attr')).slice(0, 4);
+        const values = attrs.map(attr => Number(attr.querySelector('.do-sd-skill')?.textContent.trim()));
+        if (!host || values.length !== 4 || values.some(value => !Number.isFinite(value))) return;
+        const highest = Math.max(...values), wage = estimateCoachWage(highest);
+        if (!Number.isFinite(wage) || wage <= 0) return;
+        const row = document.createElement('div'); row.id = 'genie-coach-wage'; row.className = 'do-sd-row';
+        const label = document.createElement('span'); label.className = 'do-sd-k'; label.textContent = 'Salário estimado';
+        const value = document.createElement('span'); value.className = 'do-sd-v';
+        value.textContent = '≈ ' + new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(wage) + ' $ / semana';
+        row.title = 'Estimativa pela fórmula clássica. Maior atributo entre ' + attrs.map(attr => attr.querySelector('.do-sd-attr-k')?.textContent.trim()).join(', ') + ': ' + highest + '.';
+        row.append(label, value); host.append(row);
+        return;
+    }
     $(".search_tbl tbody tr:first").append('<td width="36" class="table_header" valign="middle" align="center" style="cursor: default;" title="Approximate Wage">Wage</td>');
 
     $(".search_tbl tbody tr").each(function() {
@@ -1230,7 +1104,7 @@ function coachesWage() {
 
         if (data.length > 0) {
             const max = Math.max(...data.slice(1, -5));
-            let wage = (max <= 42) ? (24.44889 * max - 138.145) * max : (51.54712 * max - 1260) * max;
+            let wage = estimateCoachWage(max);
             wage = parseFloat(wage).toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, "$1,");
 
             $(this).append('<td align="center"><span class="tableText">' + wage + '</span></td>');
@@ -1254,13 +1128,81 @@ function coachesWage() {
     });
 }
 
+function v4CoachSearchWages(table) {
+    const header = table.tHead?.rows[0], tbody = table.tBodies[0];
+    if (!header || !tbody || table.querySelector('th.genie-coach-search-wage')) return;
+    const columns = {};
+    Array.from(header.cells).forEach(th => {
+        const key = th.getAttribute('onclick')?.match(/doSeSort\s*\(\s*['"](gk|df|mf|fw)['"]\s*\)/)?.[1];
+        if (key) columns[key] = th.cellIndex;
+    });
+    const indices = ['gk','df','mf','fw'].map(key => columns[key]);
+    if (indices.some(index => index === undefined)) return;
+    const th = document.createElement('th'); th.className = 'c-num do-se-sortable genie-coach-search-wage';
+    th.textContent = 'Salário estimado'; th.scope = 'col'; th.tabIndex = 0;
+    th.setAttribute('role', 'button'); th.setAttribute('aria-sort', 'none');
+    th.title = 'Salário semanal estimado. Clique para ordenar os resultados desta página.';
+    th.style.whiteSpace = 'nowrap';
+    const arrow = document.createElement('span'); arrow.textContent = ' ↕'; arrow.setAttribute('aria-hidden', 'true'); th.append(arrow);
+    header.append(th);
+    const format = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const wages = new Map();
+    Array.from(tbody.rows).forEach(row => {
+        if (row.cells.length === 1 && row.cells[0].colSpan > 1) { row.cells[0].colSpan = header.cells.length; return; }
+        const values = indices.map(index => {
+            const raw = row.cells[index]?.textContent.trim(); return /^\d+$/.test(raw || '') ? Number(raw) : NaN;
+        });
+        const estimate = values.every(Number.isFinite) ? estimateCoachWage(Math.max(...values)) : NaN;
+        const wage = Number.isFinite(estimate) && estimate > 0 ? estimate : null;
+        wages.set(row, wage);
+        const cell = row.insertCell(); cell.className = 'c-num genie-coach-search-wage';
+        cell.style.cssText = 'white-space:nowrap;text-align:right';
+        cell.textContent = wage === null ? '—' : '≈ ' + format.format(wage) + ' $';
+        cell.title = 'Estimativa pela fórmula clássica, usando o maior valor entre GKC, DFC, MFC e FWC.';
+    });
+    let ascending = true;
+    const sort = () => {
+        Array.from(wages.keys()).sort((a, b) => {
+            const left = wages.get(a), right = wages.get(b);
+            if (left === null) return right === null ? 0 : 1;
+            if (right === null) return -1;
+            return (ascending ? 1 : -1) * (left - right);
+        }).forEach(row => tbody.append(row));
+        th.setAttribute('aria-sort', ascending ? 'ascending' : 'descending');
+        arrow.textContent = ascending ? ' ▲' : ' ▼'; ascending = !ascending;
+    };
+    th.addEventListener('click', sort);
+    th.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); sort(); }
+    });
+}
+
 function readResume() {
-    const toid = $(".maninfo a").attr('href').split('toid')[1].slice(1);
-    const url = `https://www.dugout-online.com/readresume.php?id=${toid}`;
-    $(".clubname").append(`<a href="${url}"> [Read Resume]</a>`);
+    if (document.getElementById('genie-read-resume')) return;
+    const manager = document.querySelector('.do-club-info-left a[href*="/toid/"], .maninfo a[href*="/toid/"]');
+    const id = manager?.href.match(/\/toid\/(\d+)(?:\/|[?#]|$)/)?.[1];
+    const actions = document.querySelector('.do-club-actions'), host = actions || document.querySelector('.clubname');
+    if (!id || !host) return;
+    const link = document.createElement('a'); link.id = 'genie-read-resume';
+    link.href = location.origin + '/readresume.php?id=' + id;
+    link.textContent = actions ? 'Read Resume' : ' [Read Resume]';
+    if (actions) link.className = 'do-btn do-btn-sm do-btn-secondary';
+    host.append(link);
 }
 
 function scoutButton() {
+    const actions = document.querySelector('.do-club-actions');
+    if (actions) {
+        if (document.getElementById('genie-scout-report') || actions.querySelector('a[href*="/clubinfo/analysis/"]')) return;
+        const clubLink = actions.querySelector('a[href*="/clubid/"]');
+        const id = location.pathname.match(/\/clubid\/(\d+)(?:\/|$)/)?.[1] || clubLink?.href.match(/\/clubid\/(\d+)(?:\/|[?#]|$)/)?.[1];
+        if (!id) return;
+        const link = document.createElement('a'); link.id = 'genie-scout-report';
+        link.href = location.origin + '/clubinfo/analysis/clubid/' + id;
+        link.className = 'do-btn do-btn-sm do-btn-secondary'; link.textContent = 'Relatório do espião';
+        actions.append(link);
+        return;
+    }
     const clubid = $("a[href^='https://www.dugout-online.com/clubinfo/none/clubid/']:eq(1)").attr('href').split('clubid/')[1];
 
     const rowIndex = $('table tbody tr').length - 18;
@@ -1272,6 +1214,7 @@ function scoutButton() {
 }
 
 function loadTactics() {
+    if (document.querySelector('.do-tac')) { v4LoadTactics(); return; }
     $('#field_cont table').append('<tr><td valign="middle" style="color: unset;" colspan="2"><textarea id="dataTtc" name="dataTtc" rows="2" cols="40"></textarea></td><td valign="middle" style="color: unset;"><input type="button" value="Apply" id="apply"><input type="button" value="getTtc" id="getTtc"></td></tr>');
 
     $("#getTtc").click(function() {
@@ -1320,33 +1263,115 @@ function loadTactics() {
     });
 }
 
-function bidButton() {
-    if ($('input[name="riseoffer"]').length === 1) {
-        $('form[name="bidForm"]').addClass( "bidForm" );
-        $( ".bidForm input:last" ).addClass( "bidButton" );
+function v4TacticsData() {
+    const data = window.DO_TAC;
+    if (!data?.players || data.players.length !== 10 || !data.gk) return '';
+    const players = [...data.players, data.gk];
+    const value = id => document.getElementById(id)?.value ?? '0';
+    const checked = id => document.getElementById(id)?.checked ? 1 : 0;
+    const roles = data.roles || {};
+    const options = [value('doTacAggression'), value('doTacMentality'), value('doTacWing'), value('doTacPassing'),
+        roles.captain?.id || 0, roles.playmaker?.id || 0, roles.target?.id || 0, roles.penalty?.id || 0,
+        checked('doTacCounter'), checked('doTacOffside')];
+    return new URLSearchParams({
+        action: 'submit',
+        players_ids: players.map(player => player.id).join(','),
+        positions: [...data.players.map(player => player.code || 0), 0].join(','),
+        players_x: [...data.players.map(player => Math.round(player.xRef)), 0].join(','),
+        players_y: [...data.players.map(player => Math.round(player.yRef)), 0].join(','),
+        substitutes: (data.subs || []).map(player => player.id).join(','),
+        actions: (data.actions || []).join(','),
+        options: options.join('*')
+    }).toString();
+}
 
-        let value = parseInt($('.bidForm input').val()) - 1000;
-        let val1 = new Intl.NumberFormat('en-DE').format(value + 100000);
-        let val2 = new Intl.NumberFormat('en-DE').format(value + 1000000);
-        if (value < 2000000) {
-            val2 = new Intl.NumberFormat('en-DE').format(parseInt(value + (value / 2)));
+function v4LoadTactics() {
+    const saveBlock = document.getElementById('doTacSaveBlock'), data = window.DO_TAC;
+    if (!saveBlock || !data || document.getElementById('dataTtc')) return;
+    const block = document.createElement('div'); block.className = 'do-tac-block genie-tac-transfer';
+    block.innerHTML = '<textarea id="dataTtc" rows="3" style="width:100%;box-sizing:border-box"></textarea>' +
+        '<div class="do-tac-actions"><button type="button" class="do-btn do-btn-outline do-btn-sm" id="getTtc">getTtc</button>' +
+        '<button type="button" class="do-btn do-btn-outline do-btn-sm" id="apply">Apply</button>' +
+        '<span id="genie-tac-message" role="status"></span></div>';
+    saveBlock.after(block);
+    const textarea = block.querySelector('#dataTtc'), apply = block.querySelector('#apply'), message = block.querySelector('#genie-tac-message');
+    block.querySelector('#getTtc').addEventListener('click', () => {
+        textarea.value = v4TacticsData(); textarea.focus(); textarea.select();
+    });
+    apply.addEventListener('click', async () => {
+        const source = new URLSearchParams(textarea.value.trim());
+        const numeric = (key, count) => source.has(key) && source.get(key).split(',').length === count &&
+            source.get(key).split(',').every(value => /^\d+$/.test(value));
+        if (!numeric('players_ids', 11) || !numeric('positions', 11) || !numeric('players_x', 11) ||
+            !numeric('players_y', 11) || !source.has('substitutes') || !source.has('actions') ||
+            !source.has('options') || source.get('options').split('*').length !== 10) {
+            message.textContent = data.i18n?.failed || 'Invalid tactics data'; return;
         }
+        const payload = new URLSearchParams({ action: 'submit' });
+        ['players_ids','positions','players_x','players_y','substitutes','actions','options'].forEach(key => payload.set(key, source.get(key)));
+        apply.disabled = true; message.textContent = '';
+        try {
+            const endpoint = new URL(data.endpoint, data.serverUrl || location.href);
+            if (endpoint.origin !== location.origin) throw new Error('Invalid tactics endpoint');
+            const response = await fetch(endpoint.href, { method: 'POST', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: payload.toString() });
+            if (!response.ok) throw new Error('Tactics request failed');
+            message.textContent = data.i18n?.submitted || 'Applied';
+            location.reload();
+        } catch (error) {
+            console.error('[DO Genie] apply tactics', error);
+            message.textContent = data.i18n?.failed || 'Tactics request failed';
+            apply.disabled = false;
+        }
+    });
+}
 
-        let language = getLanguage();
-        const translation = getTranslation();
-        $(`<input id="bid1" type="button" value="${translation.bid[language]} ${val1}"><input id="bid2" type="button" value="${translation.bid[language]} ${val2}"> "`).insertAfter( ".bidButton" );
-        $("#bid1").click(function() {
-            $('.bidForm input').val(val1);
-            document.bidForm.submit();
+function bidButton() {
+    const input = document.getElementById('riseoffer_input') || document.querySelector('input[name="riseoffer"]');
+    const form = document.forms.namedItem('bidForm') || input?.form;
+    const field = form?.querySelector('input[name="riseoffer"]');
+    if (!input || !field || document.getElementById('bid1')) return;
+    const minimum = Number(String(input.dataset.min || input.value).replace(/\D/g, ''));
+    if (!Number.isSafeInteger(minimum) || minimum <= 0) return;
+    const current = Math.max(0, minimum - 1000);
+    const amounts = [current + 100000, current < 2000000 ? Math.floor(current * 1.5) : current + 1000000];
+    const label = getTranslation().bid[getLanguage()] || 'Bid';
+    const format = new Intl.NumberFormat();
+    const group = document.createElement('div');
+    group.className = 'genie-bid-buttons'; group.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-top:6px';
+    amounts.forEach((value, index) => {
+        const amount = Math.max(minimum, value);
+        const button = document.createElement('button');
+        button.type = 'button'; button.id = 'bid' + (index + 1);
+        button.className = 'do-btn do-btn-outline do-btn-sm';
+        button.textContent = label + ' ' + format.format(amount);
+        button.addEventListener('click', () => {
+            input.value = field.value = String(amount);
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            if (input.id === 'riseoffer_input' && typeof window.doPdRaiseBid === 'function') window.doPdRaiseBid();
+            else if (form.requestSubmit) form.requestSubmit();
+            else form.submit();
         });
-        $("#bid2").click(function() {
-            $('.bidForm input').val(val2);
-            document.bidForm.submit();
-        });
-    }
+        group.append(button);
+    });
+    const submit = document.querySelector('[onclick*="doPdRaiseBid"]') || form.querySelector('[type="submit"]');
+    if (submit) submit.after(group);
+    else form.append(group);
 }
 
 function bidLocalTime() {
+    const deadline = document.querySelector('.do-pd-bid-left[data-ends]');
+    if (deadline) {
+        const timestamp = Number(deadline.dataset.ends), date = new Date(timestamp * 1000);
+        if (!Number.isFinite(timestamp) || timestamp <= 0 || Number.isNaN(date.getTime()) || document.querySelector('.genie-bid-local-time')) return;
+        const local = document.createElement('span'); local.className = 'genie-bid-local-time';
+        local.textContent = ` (${addZero(date.getDate())}-${addZero(date.getMonth() + 1)} ${addZero(date.getHours())}:${addZero(date.getMinutes())})`;
+        local.style.whiteSpace = 'nowrap'; local.title = date.toLocaleString();
+        deadline.title = local.title;
+        deadline.after(local);
+        return;
+    }
     let riseOfferInput = $('input[name="riseoffer"]');
     if (riseOfferInput.length === 1) {
         let text = $('.info').text();
@@ -1366,79 +1391,16 @@ function bidLocalTime() {
 }
 
 
-function playerImage() {
-    const playerId = getUrlParameter('playerID');
-    let playerInfo = JSON.parse(localStorage.getItem(`DOGenieAssistant.player.${playerId}`)) || { img: "" };
-    const url = `https://sortitoutsi.b-cdn.net/uploads/face/${playerInfo.img}.png`;
-
-    const playerImg = $(".tabbed_pane img").eq(1);
-    playerImg.after(`
-        <input id="imgId" type="text" value="${playerInfo.img}" style="position: absolute; left: 38px; top: 150px; width: 96px;">
-        <button id="refresh" type="button" style="position: absolute; left: 10px; top: 150px;">
-            <i class="fa fa-refresh"></i>
-        </button>
-    `);
-    if (playerInfo.img) {
-        replacePlayerImg(url);
-    }
-
-    $("#refresh").click(function() {
-        const newImgValue = $("#imgId").val();
-        playerInfo.img = (newImgValue !== "" && !isNaN(newImgValue)) ? parseInt(newImgValue) : "";
-        replacePlayerImg(`https://sortitoutsi.b-cdn.net/uploads/face/${playerInfo.img}.png`);
-        if (playerInfo.img){
-            replacePlayerImg(`https://sortitoutsi.b-cdn.net/uploads/face/${playerInfo.img}.png`);
-            localStorage.setItem(`DOGenieAssistant.player.${playerId}`, JSON.stringify(playerInfo));
-        } else {
-            replacePlayerImg("https://www.dugout-online.com/images/club/profile/player-pic-default.png");
-            localStorage.removeItem(`DOGenieAssistant.player.${playerId}`);
-        }
-    });
-}
 
 function replacePlayerImg(url) {
     const playerImg = $(".tabbed_pane img").eq(1);
     playerImg.attr("src", url).css({ width: "150px", height: "150px" });
 }
 
-function extractLinkFromBadge(badge) {
-    const onclickValue = badge.attr('onclick');
-    if (onclickValue) {
-        const startIndex = 24;
-        const endIndex = onclickValue.length - 1;
-        return onclickValue.substring(startIndex, endIndex);
-    }
-    return '';
-}
-
-function createTeamBadge(link, badge, className) {
-    return $(`<a class="${className}" style='cursor: pointer; float: left; position: relative; margin-left: 2px; margin-top: 5px; width: 120px; height: 120px;' href="${link}">${badge.html()}</a>`);
-}
-
-function teamLink() {
-    const homeBadge = $(`.generic_badge:first`);
-    const homeLink = extractLinkFromBadge(homeBadge);
-
-    if (homeLink) {
-        const homeBadgeLink = createTeamBadge(homeLink, homeBadge, 'home_badge');
-        homeBadge.before(homeBadgeLink);
-        homeBadge.remove();
-        $(`.home_badge`).addClass('generic_badge');
-    }
-
-    const awayBadge = $(`.generic_badge:last`);
-    const awayLink = extractLinkFromBadge(awayBadge);
-
-    if (awayLink) {
-        const awayBadgeLink = createTeamBadge(awayLink, awayBadge, 'away_badge');
-        awayBadge.before(awayBadgeLink);
-        awayBadge.remove();
-        $(`.away_badge`).addClass('generic_badge');
-    }
-}
-
 
 function getSponsors() {
+    // shortcut: a página v4 de patrocinadores não foi fornecida; validar o fluxo antes de enviar requisições automáticas.
+    if (document.querySelector('.do-user-bar')) return;
     const lastSponsor = localStorage.getItem('DOGenieAssistant.lastSponsor') || '01/01/2000';
     const today = new Date(Date.now()).toLocaleString().split(',')[0];
     $('#getSponsors').css('visibility', 'visible');
@@ -1478,6 +1440,7 @@ $("#getSponsors").click(function (e) {
 });
 
 function matchSound() {
+    if (document.querySelector('#doMvCommentary')) return v4MatchSound();
     const gameId = getUrlParameter('gameid');
     const match = JSON.parse(localStorage.getItem(`DOGenieAssistant.match.${gameId}`) || '{}');
 
@@ -1520,6 +1483,7 @@ function matchSound() {
 }
 
 function matchNames() {
+    if (document.querySelector('#doMvCommentary')) return v4MatchNames();
     let playersHome = extractPlayers($("#events_content td:nth-child(3)").eq(-3).html());
     let playersAway = extractPlayers($("#events_content td:nth-child(3)").eq(-4).html());
     playersHome = setCaptain(".player_ratings:eq(0)", playersHome);
@@ -1614,87 +1578,6 @@ function getUrlParameter(paramName) {
     return match ? match[1] : false;
 }
 
-function configMenu() {
-    function getConfigOrDefault(configName, defaultValue) {
-        return typeof configs[configName] !== 'undefined' && configs[configName] !== null ? configs[configName] : defaultValue;
-    }
-
-    const configOptions = [
-        "SECONDARY_CLOCK", "DROPDDOWN_MENU", "PAGE_TITLE", "TEAM_LINK",
-        "GET_SPONSORS", "SCOUT_BUTTON", "READ_RESUME", "COACHES_WAGE",
-        "PLAYER_OPS_NAME", "PLAYER_OPS_ID", "PLAYER_EXP", "PLAYER_IMAGE", "SEND_PRO_SCOUT",
-        "SQUAD_DETAILS", "SQUAD_FILTERS", "SQUAD_HIGH", "NATIONAL_LINK","SPREADSHEET_SQUAD",
-        "BID_BUTTON", "BID_LOCAL_TIME", "LOAD_TACTICS", "TACTICS_DETAILS", "LINKS",
-        "STORED_FILTERS", "GOALS_DIFFERENCE", "HIDE_TRAINING_REPORT", "COACH_EFFECTIVENESS",
-        "MATCH_NAMES", "MATCH_SCORE","WRAP_TEXT", "AUTO_SCORE"
-    ];
-
-    const configForm = $(`
-        <div class="gui_object" style="width: 468px; margin-left: 8px;">
-            <div class="window1_wrapper" style="margin-top: 4px; width: 490px;">
-                <div class="window1_header_start"></div>
-                <div class="window1_header" style="width: 480px;">
-                    <div class="window1_header_text">&nbsp;DO Genie Assistant Configs</div>
-                    <a href="https://github.com/edunogueira/DOGenieAssistant/raw/main/DOGenieAssistant.user.js/" target="_blank" style="margin-left: 10px;">
-                        <button>Update extension</button>
-                    </a>
-                    <a href="https://www.dugout-online.com/stadium/setticket/" target="_blank" style="margin-left: 10px;">
-                        <button>Set Ticket Price</button>
-                    </a>
-                </div>
-                <div class="window1_header_end"></div>
-            </div>
-            <div class="window1_wrapper" style="margin-top: 0px; width: 468px;">
-                <div class="window1_content" style="width: 486px;">
-                    <form name="configForm" action="#" method="post" class="configForm">
-                       <table width="99%" border="0" cellspacing="1" cellpadding="1" class="matches_tbl" style="margin-bottom: 0px; margin-left: 3px; margin-top: 2px;">
-                           <tbody></tbody>
-                       </table>
-                </div>
-                <div class="window1_bottom" style="width: 488px;"></div>
-            </div>
-        </div>
-    `).insertAfter("#footer");
-
-    const tableBody = configForm.find(".matches_tbl tbody");
-
-    let row = "<tr class='table_top_row'>";
-    configOptions.forEach((option, index) => {
-        const defaultValue = getConfigOrDefault(option, 'checked');
-        const optionCheckbox = `<input type="checkbox" name="${option}" ${defaultValue}>`;
-        const optionLabel = option
-        .split('_')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-
-        row += `<td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
-                    ${optionLabel}: <br>${optionCheckbox}
-                </td>`;
-
-        if ((index + 1) % 4 === 0 && index !== configOptions.length - 1) {
-            row += "</tr><tr class='table_top_row'>";
-        }
-    });
-    row += "</tr>";
-
-    tableBody.append(row);
-
-    const saveButton = $('<input id="saveConfig" type="submit" style="width: 140px;margin-top: 20px;" value="Save">');
-    const defaultConfigStorageButton = $('<input id="defaultConfigStorage" type="submit" style="width: 160px;margin-top: 20px; margin-left: 10px;" value="Defalut Config Storage">');
-    const clearPlayerImagesButton = $('<input id="clearPlayerImages" type="submit" style="width: 140px;margin-top: 20px; margin-left: 10px;" value="Clear Player Images">');
-    const getSponsorsButton = getConfigOrDefault("GET_SPONSORS", 'checked') ? $('<input id="getSponsors" type="submit" style="width: 140px;margin-top: 20px;" value="Get Sponsors">') : undefined;
-
-    configForm.find(".window1_content").append(saveButton, defaultConfigStorageButton, clearPlayerImagesButton, getSponsorsButton);
-
-    saveButton.click(function() {
-        configOptions.forEach(option => {
-            const isChecked = $(`input[name="${option}"]`).is(":checked");
-            configs[option] = isChecked ? "checked" : "";
-        });
-
-        localStorage.setItem('DOGenieAssistant.configs', JSON.stringify(configs));
-    });
-}
 
 function defaultConfigStorage() {
     $("#defaultConfigStorage").click(function(e) {
@@ -1705,6 +1588,7 @@ function defaultConfigStorage() {
 
 function getStorage(storageConfigs) {
     const defaultConfigs = {
+        "CHECKBOX_SWITCH": 'checked',
         "SECONDARY_CLOCK": 'checked',
         "DROPDDOWN_MENU": 'checked',
         "PAGE_TITLE": 'checked',
@@ -1723,13 +1607,11 @@ function getStorage(storageConfigs) {
         "SPREADSHEET_SQUAD": 'checked',
         "BID_BUTTON": 'checked',
         "BID_LOCAL_TIME": 'checked',
-        "TEAM_LINK": 'checked',
         "GET_SPONSORS": 'checked',
         "PLAYER_IMAGE": 'checked',
         "SEND_PRO_SCOUT": 'checked',
         "LINKS": 'checked',
         "STORED_FILTERS": 'checked',
-        "GOALS_DIFFERENCE": 'checked',
         "HIDE_TRAINING_REPORT": 'checked',
         "COACH_EFFECTIVENESS": 'checked',
         "MATCH_NAMES": 'checked',
@@ -1741,73 +1623,6 @@ function getStorage(storageConfigs) {
     return (storageConfigs == null || storageConfigs == '[]') ? defaultConfigs : JSON.parse(storageConfigs);
 }
 
-function configSound() {
-    const soundConfigOptions = [
-        { name: "MATCH_SOUND", defaultValue: 'checked' },
-        { name: "GOAL_SOUND", defaultValue: 'checked' },
-        { name: "HOME_GOAL_ID", defaultValue: '1579437467' },
-        { name: "AWAY_GOAL_ID", defaultValue: '1636248327' },
-        { name: "UPDATE_GOAL_ID", defaultValue: '1888294176' },
-        { name: "OFFSIDE_SOUND", defaultValue: 'checked' },
-        { name: "OFFSIDE_ID", defaultValue: '1636263519' },
-        { name: "GAME_END_SOUND", defaultValue: 'checked' },
-        { name: "GAME_END_ID", defaultValue: '1636248255' },
-    ];
-
-    const soundConfig = getSoundStorage(localStorage.getItem('DOGenieAssistant.soundConfig'));
-
-    const soundForm = $(`
-        <div class="gui_object" style="width: 468px; margin-left: 8px;">
-            <div class="window1_wrapper" style="margin-top: 4px; width: 468px;">
-                <div class="window1_header_start"></div>
-                <div class="window1_header" style="width: 460px;">
-                    <div class="window1_header_text">&nbsp;DO Genie Assistant Sound Configs</div>
-                </div>
-                <div class="window1_header_end"></div>
-            </div>
-            <div class="window1_wrapper" style="margin-top: 0px; width: 468px;">
-                <div class="window1_content" style="width: 466px;">
-                    <form name="configForm" action="#" method="post" class="configForm">
-                       <table width="99%" border="0" cellspacing="1" cellpadding="1" class="matches_tbl" style="margin-bottom: 0px; margin-left: 3px; margin-top: 2px;">
-                           <tbody></tbody>
-                       </table>
-                </div>
-                <div class="window1_bottom_start"></div>
-                <div class="window1_bottom" style="width: 464px;"></div>
-            </div>
-        </div>
-    `).insertAfter("#footer");
-
-    const tableBody = soundForm.find(".matches_tbl tbody");
-
-    soundConfigOptions.forEach(option => {
-        const optionValue = soundConfig[option.name] === null ? option.defaultValue : soundConfig[option.name];
-        const inputType = option.name.includes("_ID") ? 'text' : 'checkbox';
-
-        const row = `<tr class="table_top_row">
-                        <td valign="middle" align="left" style="font-weight: bold; font-size: 12px;">
-                            ${option.name.replace('_', ' ')}: <input type="${inputType}" name="${option.name}" value="${optionValue}" ${optionValue}>
-                        </td>
-                    </tr>`;
-
-        tableBody.append(row);
-    });
-
-    const saveButton = $('<input id="saveSoundConfig" type="submit" style="width: 140px;margin-top: 20px;" value="Save">');
-    const clearMatchStorageButton = $('<input id="clearMatchStorage" type="submit" style="width: 140px;margin-top: 20px;; margin-left: 10px" value="Clear Match Storage">');
-    const defaultSoundStorageButton = $('<input id="defaultSoundStorage" type="submit" style="width: 160px;margin-top: 20px; margin-left: 10px;" value="Default Sound Storage">');
-
-    soundForm.find(".window1_content").append(saveButton, clearMatchStorageButton, defaultSoundStorageButton);
-
-    saveButton.click(function() {
-        soundConfigOptions.forEach(option => {
-            const inputElement = $(`input[name="${option.name}"]`);
-            soundConfig[option.name] = inputElement.is(":checkbox") ? inputElement.is(":checked") ? "checked" : "" : inputElement.val();
-        });
-
-        localStorage.setItem('DOGenieAssistant.soundConfig', JSON.stringify(soundConfig));
-    });
-}
 
 function clearMatchStorage() {
     $("#clearMatchStorage").click(function(e) {
@@ -1859,98 +1674,12 @@ function clearPlayerImages() {
     });
 }
 
-function links() {
-    let linksJson = localStorage.getItem('DOGenieAssistant.links');
-    let links = linksJson ? JSON.parse(linksJson) : {};
-
-    if (links[window.location.href]) {
-        $('.user_bar').append('<button id="btnSaveLink" style="background: none;border: none;margin-left: -58px;margin-top: 11px;font-size: 23px;cursor:pointer;color: white;"><i class="fa fa-star"></i></button>');
-    } else {
-        $('.user_bar').append('<button id="btnSaveLink" style="background: none;border: none;margin-left: -58px;margin-top: 11px;font-size: 23px;cursor:pointer;color: white;"><i class="fa fa-star-o"></i></button>');
-    }
-
-    if (page.includes('/links/none/')) {
-        var table = $('<table  cellspacing="1" cellpadding="2" style="width: 940px;">').attr('id', 'urlsTable').addClass('display').addClass('forumline');
-        var thead = $('<thead>').append('<tr class="table_top_row" style="text-align: center;text-transform: uppercase;"><th>Url</th><th>Title</th><th>Action</th></tr>');
-        var tbody = $('<tbody></div>');
-
-        var tr = '';
-        Object.keys(links).forEach(function(url, index) {
-            var trClass = index % 2 === 0 ? 'matches_row1' : 'matches_row2';
-            tr = $('<tr>').addClass(trClass).append(
-                $('<td align="center">').addClass('urlCell').append('<a href="' + url + '" target="_blank" class="def_icon" style="margin: 2px;">' + url.replace('https://www.dugout-online.com/','').substring(0,60) + '</a>'),
-                $('<td align="center">').addClass('keyCell').append('<span align="center"class="def_icon" style="margin: 2px;">' + links[url] + '</span>'),
-                $('<td align="center">').append('<button class="btnEdit">Edit</button><button class="btnRemove">Remove</button>')
-            );
-            tbody.append(tr);
-        });
-
-        table.append(thead, tbody);
-        var staticDiv = $('<div>').addClass('group').text('Links');
-        $('#pane1').append(staticDiv);
-        $('#pane1').append(table);
-
-        var urlsDataTable = $('#urlsTable').DataTable({
-            "searching": true,
-            "bPaginate": false,
-            "bLengthChange": false,
-            "bFilter": false,
-            "bInfo": false,
-            "bAutoWidth": false,
-            "order": [
-                [0, "asc"]
-            ]
-        });
-
-        $('#urlsTable_filter').css({
-            'position': 'absolute',
-            'left': '270px',
-            'top': '0px'
-        });
-        $('#urlsTable tbody').on('click', '.btnEdit', function() {
-            var cell = urlsDataTable.cell($(this).parents('tr').find('.keyCell'));
-            var originalValue = $(cell.data()).text();
-            var newValue = prompt('Edit Key:', originalValue);
-
-            if (newValue !== null && newValue !== originalValue) {
-                cell.data(newValue);
-                var urlCell = urlsDataTable.cell($(this).parents('tr').find('.urlCell'));
-                var url = urlCell.data().match(/href="([^"]*)/)[1];
-                links[url] = newValue;
-                localStorage.setItem('DOGenieAssistant.links', JSON.stringify(links));
-            }
-        });
-
-        $('#urlsTable tbody').on('click', '.btnRemove', function() {
-            var row = urlsDataTable.row($(this).parents('tr'));
-            var data = row.data();
-            var urlToRemove = $(data[0]).attr('href');
-
-            delete links[urlToRemove];
-
-            row.remove().draw();
-
-            localStorage.setItem('DOGenieAssistant.links', JSON.stringify(links));
-
-        });
-    }
-
-    $('#btnSaveLink').on('click', function() {
-        let linksJson = localStorage.getItem('DOGenieAssistant.links');
-        let links = linksJson ? JSON.parse(linksJson) : {};
-
-        if (links[window.location.href]) {
-            delete links[window.location.href];
-        } else {
-            links[window.location.href] = document.title;
-        }
-        localStorage.setItem('DOGenieAssistant.links', JSON.stringify(links));
-        location.reload();
-    });
-}
 
 //storedFilters by mini18
 function storedFilters() {
+    const form = document.getElementById('doSeForm');
+    if (form) return v4StoredFilters(form);
+    if (!document.querySelector('#filter_div')) return;
     const storedFilters = JSON.parse(localStorage.getItem("DOGenieAssistant.storedFilters")) || {
         search_players: {
             default: ["", "", true, false, "13", "35", false, "", "", "", "0", "0", "", "DESC", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", "1", "50", ],
@@ -2090,49 +1819,98 @@ function storedFilters() {
     saveBtn.addEventListener("click", saveCurrentFilter);
 }
 
-function goalsDifference() {
-    if ($('#myTable').length === 0) {
-        return;
-    }
-    let isColspan = $('#myTable thead th[colspan]').length > 0;
-    let ref = isColspan ? 9 : 8;
-
-    if (isColspan) {
-        $('#myTable th[colspan]').removeAttr('colspan');
-        $('#myTable thead th:eq(1)').after($('<th>').text(''));
-    }
-
-    let $tbody = $('#myTable tbody');
-    $tbody.find('tr td:nth-child(' + ref + ')').each(function() {
-        $(this).after($(this).clone());
+function v4StoredFilters(form) {
+    if (document.getElementById('genie-stored-filters')) return;
+    const route = location.pathname.match(/^\/(search_players|search_transfers|search_clubs|search_coaches|national_teams|search_physios)(?:\/|$)/)?.[1];
+    if (!route) return;
+    const key = 'DOGenieAssistant.storedFilters';
+    const fields = Array.from(form.querySelectorAll('input[name]:not([type="hidden"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="file"]), select[name], textarea[name]'));
+    const snapshot = () => {
+        const data = new FormData(form);
+        return Object.fromEntries([...new Set(fields.map(field => field.name))].map(name => [name, data.getAll(name)]));
+    };
+    const defaults = snapshot();
+    const bar = document.createElement('div'); bar.id = 'genie-stored-filters'; bar.className = 'do-panel';
+    bar.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px;margin-bottom:12px';
+    const label = document.createElement('label'); label.textContent = 'Filtros salvos'; label.htmlFor = 'genie-filter-select';
+    const select = document.createElement('select'); select.id = 'genie-filter-select'; select.className = 'do-select do-select-sm';
+    select.style.cssText = 'width:auto;max-width:100%';
+    const save = document.createElement('button'); save.id = 'genie-filter-save'; save.type = 'button';
+    save.className = 'do-btn do-btn-outline do-btn-sm'; save.textContent = 'Salvar filtro';
+    const remove = document.createElement('button'); remove.id = 'genie-filter-delete'; remove.type = 'button';
+    remove.className = 'do-btn do-btn-danger do-btn-sm'; remove.textContent = 'Excluir filtro';
+    const status = document.createElement('span'); status.setAttribute('role', 'status');
+    bar.append(label, select, save, remove, status); form.prepend(bar);
+    const read = () => {
+        const data = JSON.parse(localStorage.getItem(key) || '{}');
+        if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Invalid saved filters');
+        if (data[route] !== undefined && (!data[route] || typeof data[route] !== 'object' || Array.isArray(data[route]))) throw new Error('Invalid saved filters');
+        return data;
+    };
+    const failed = error => {
+        console.error('[DO Genie] storedFilters', error);
+        status.textContent = 'Não foi possível ler ou salvar os filtros. Os dados existentes foram preservados.';
+    };
+    const refresh = name => {
+        const presets = read()[route] || {};
+        select.replaceChildren(new Option('Padrão', 'default'));
+        Object.keys(presets).filter(name => name !== 'default').forEach(name => select.add(new Option(name, name)));
+        select.value = name; remove.disabled = select.value === 'default';
+    };
+    const load = name => {
+        let values = read()[route]?.[name] ?? (name === 'default' ? defaults : null);
+        if (Array.isArray(values)) {
+            // shortcut: só o formato clássico de técnicos foi validado; mapear as outras buscas quando seus HTMLs forem fornecidos.
+            if (route !== 'search_coaches' || values.length !== 26) {
+                if (name === 'default') values = defaults;
+                else { status.textContent = 'Este filtro clássico foi preservado, mas ainda precisa ser adaptado a esta busca.'; return; }
+            } else {
+                const names = ['namecont','dirid','from','sortby','sortord','agemin','agemax', ...['gk','df','mf','fw','tac','mot','phy','yng','jpt'].flatMap(skill => [skill + 'min', skill + 'max']), 'unempl'];
+                values = Object.fromEntries(names.map((field, index) => [field, field === 'unempl' ? (values[index] ? ['1'] : []) : [String(values[index] ?? '')]]));
+            }
+        }
+        if (!values || typeof values !== 'object' || Object.values(values).some(value => !Array.isArray(value) || value.some(item => typeof item !== 'string'))) throw new Error('Invalid filter fields');
+        let unavailable = false;
+        fields.forEach(field => {
+            if (!Object.prototype.hasOwnProperty.call(values, field.name)) return;
+            const selected = values[field.name];
+            if (field.type === 'checkbox' || field.type === 'radio') field.checked = selected.includes(field.value);
+            else if (field.multiple) Array.from(field.options).forEach(option => { option.selected = selected.includes(option.value); });
+            else {
+                const value = selected[0] ?? '';
+                if ((field.tagName === 'SELECT' && !Array.from(field.options).some(option => option.value === value)) || (field.type === 'number' && value !== '' && !Number.isFinite(Number(value)))) { unavailable = true; return; }
+                field.value = value;
+            }
+            field.dispatchEvent(new Event('input', { bubbles: true })); field.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+        const page = form.elements.namedItem('pagenum'); if (page) page.value = '1';
+        status.textContent = unavailable ? 'Filtro carregado; alguns valores não estão disponíveis nesta busca.' : 'Filtro carregado.';
+    };
+    select.addEventListener('change', () => {
+        remove.disabled = select.value === 'default';
+        try { load(select.value); } catch (error) { failed(error); }
     });
-
-    $('<th>', {
-        class: 'header',
-        align: 'center',
-        width: '70',
-        style: 'border-left: solid 1px #999999;',
-        text: 'PTS'
-    }).appendTo('#myTable thead tr');
-
-    let table = $('#myTable').DataTable({
-        searching: false,
-        paging: false,
-        lengthChange: false,
-        info: false,
-        autoWidth: false
+    save.addEventListener('click', () => {
+        const name = prompt('Nome do filtro:')?.trim(); if (!name) return;
+        try {
+            const data = read(), presets = data[route] || {};
+            if (name === 'default' || Object.prototype.hasOwnProperty.call(presets, name)) { status.textContent = 'Esse nome já existe ou é reservado. Escolha outro nome.'; return; }
+            data[route] = { ...presets, [name]: snapshot() };
+            localStorage.setItem(key, JSON.stringify(data)); refresh(name); status.textContent = 'Filtro salvo.';
+        } catch (error) { failed(error); }
     });
-
-    table.column(ref).data().each(function(value, index) {
-        let gpColValue = table.cell(index, ref - 2).data();
-        let gcColValue = table.cell(index, ref - 1).data();
-        let difference = parseFloat(gpColValue) - parseFloat(gcColValue);
-        table.cell(index, ref).data(parseFloat(difference.toFixed(2)));
+    remove.addEventListener('click', () => {
+        const name = select.value; if (name === 'default' || !confirm('Excluir o filtro "' + name + '"?')) return;
+        try {
+            const data = read(); delete data[route][name]; localStorage.setItem(key, JSON.stringify(data));
+            refresh('default'); load('default'); status.textContent = 'Filtro excluído.';
+        } catch (error) { failed(error); }
     });
-    $('#myTable thead tr th:nth-child(' + (ref + 1) + ')').text('GD');
+    try { refresh('default'); } catch (error) { failed(error); select.disabled = save.disabled = remove.disabled = true; }
 }
 
 function hideTrainingReport() {
+    if (document.querySelector('.do-tr-prow')) return v4HideTrainingReport();
     $('<input type="checkbox" id="toggleRows" checked>').insertAfter('.window1_header_text');
     $('<label for="toggleRows">Hide player in training report</label>').insertAfter('#toggleRows');
 
@@ -2156,6 +1934,7 @@ function hideTrainingReport() {
 }
 
 function coachEffectiveness() {
+    if (document.querySelector('.do-tr-coach')) return v4CoachEffectiveness();
     const parsePlayer = (doc = document) => {
         const [headerEl, , bioEl, basicEl, mainEl] = doc
         .querySelector("#main-1")
@@ -2399,6 +2178,7 @@ function wrapText() {
 
 //autoScore by lumfurt
 function autoScore() {
+    if (document.querySelector('.do-fixtures-panel')) return v4AutoScore();
     const button = $("<button>").text("Update scores").click(function() {
         updateScores();
         button.prop('disabled', true).removeClass('enabled').addClass('disabled');
@@ -2425,8 +2205,8 @@ async function fetchScore(url) {
         const parser = new DOMParser();
         const html = parser.parseFromString(data, "text/html");
 
-        const goalsHome = html.getElementById("goals_home")?.textContent;
-        const goalsAway = html.getElementById("goals_away")?.textContent;
+        const goalsHome = html.getElementById("goals_home")?.textContent || html.querySelector('.do-mv-score-nums b:first-child')?.textContent;
+        const goalsAway = html.getElementById("goals_away")?.textContent || html.querySelector('.do-mv-score-nums b:last-child')?.textContent;
 
         if (goalsHome && goalsAway) {
             return `[${goalsHome.trim()} : ${goalsAway.trim()}]`;
@@ -2482,102 +2262,58 @@ function matchScore() {
     const redKeywords = ['red card','his second yellow',"it's his second","it's red"]
     const cornersKeywords = ['corner awarded','will take this corner','will take the corner','... corner!']
 
-    const homeTeam = document.querySelectorAll('.game_general')[1].innerText.trim().toLowerCase();
-    const goalsHomeTeam = document.querySelectorAll('.game_general')[2].innerText.trim().toLowerCase();
-    const goalsAwayTeam = document.querySelectorAll('.game_general')[3].innerText.trim().toLowerCase();
-    const awayTeam = document.querySelectorAll('.game_general')[4].innerText.trim().toLowerCase();
-    const events = document.querySelectorAll('#events_content table tbody tr');
+    const v4 = !!document.querySelector('#doMvCommentary');
+    const gameHeader = document.querySelectorAll('.game_general');
+    const score = document.querySelectorAll('.do-mv-score-nums b');
+    const homeTeam = (v4 ? document.querySelector('.do-mv-team.home .do-mv-team-name')?.textContent : gameHeader[1]?.textContent)?.trim().toLowerCase();
+    const goalsHomeTeam = (v4 ? score[0]?.textContent : gameHeader[2]?.textContent)?.trim().toLowerCase();
+    const goalsAwayTeam = (v4 ? score[1]?.textContent : gameHeader[3]?.textContent)?.trim().toLowerCase();
+    const awayTeam = (v4 ? document.querySelector('.do-mv-team.away .do-mv-team-name')?.textContent : gameHeader[4]?.textContent)?.trim().toLowerCase();
+    const events = document.querySelectorAll(v4 ? '#doMvCommentary table tr' : '#events_content table tbody tr');
+    if (!homeTeam || !awayTeam || !goalsHomeTeam || !goalsAwayTeam || !events.length || document.getElementById('tblScore')) return;
 
     let language = getLanguage();
     const translation = getTranslation();
-    // Function to count shots based on minute range
+    const statRows = [
+        ['total', 'shoots'], ['onTarget', 'onTarget'], ['offTarget', 'offTarget'],
+        ['corners', 'corners'], ['offsides', 'offsides'], ['foul', 'fouls'],
+        ['yellow', 'yellowCards'], ['red', 'redCards']
+    ];
+
+    function classifyEvent(eventText) {
+        const matches = keywords => keywords.some(keyword => eventText.includes(keyword));
+        const blockedFreeKick = eventText.includes('blocks the shot') && eventText.includes('free kick');
+        const isOffTarget = !blockedFreeKick && matches(offTargetKeywords);
+        const isSaved = blockedFreeKick || matches(onTargetKeywords);
+        const validShot = matches(shotKeywords) && !matches(illegalKeywords);
+        return {
+            onTarget: validShot && !isOffTarget && isSaved,
+            offTarget: validShot && isOffTarget,
+            offsides: matches(offsideKeywords) && !matches(legalKeywords),
+            corners: matches(cornersKeywords),
+            foul: matches(foulKeywords) && !eventText.includes('no foul') && !eventText.includes('play on'),
+            yellow: matches(yellowKeywords),
+            red: matches(redKeywords)
+        };
+    }
+
     function countShots(startMin, endMin) {
-        let homeTeamShots = { onTarget: 0, offTarget: 0, offsides: 0, corners: 0, foul:0, yellow: 0, red: 0 };
-        let awayTeamShots = { onTarget: 0, offTarget: 0, offsides: 0, corners: 0, foul:0, yellow: 0, red: 0 };
-
+        const homeTeamShots = { onTarget: 0, offTarget: 0, offsides: 0, corners: 0, foul: 0, yellow: 0, red: 0 };
+        const awayTeamShots = { ...homeTeamShots };
         for (const event of events) {
+            const gameTime = parseFloat((event.querySelector('td:nth-child(2) b')?.textContent || '').replace(/[^\d:]/g, '').split(':')[0]);
+            if (!(gameTime >= startMin && gameTime <= endMin)) continue;
             const eventText = event.innerText.toLowerCase().trim();
-            const gameTime = parseFloat(event.querySelector('td:nth-child(2) b').innerText.replace(/[^\d:]/g, '').split(':')[0]);
-
-            if (gameTime >= startMin && gameTime <= endMin) {
-                let isShot = shotKeywords.some(keyword => eventText.includes(keyword));
-                let isSaved = onTargetKeywords.some(keyword => eventText.includes(keyword));
-                let isOffTarget = offTargetKeywords.some(keyword => eventText.includes(keyword));
-                let isIllegal = illegalKeywords.some(keyword => eventText.includes(keyword));
-                let isOffside = offsideKeywords.some(keyword => eventText.includes(keyword));
-                let isLegal = legalKeywords.some(keyword => eventText.includes(keyword));
-                let isFoul = foulKeywords.some(keyword => eventText.includes(keyword));
-                let isYellow = yellowKeywords.some(keyword => eventText.includes(keyword));
-                let isRed = redKeywords.some(keyword => eventText.includes(keyword));
-                let isCorner = cornersKeywords.some(keyword => eventText.includes(keyword));
-                if ((eventText.includes('blocks the shot')) && (eventText.includes('free kick'))) {
-                    isOffTarget = false;
-                    isSaved = true;
-                }
-                if ((eventText.includes('foul'))) {
-                    if ((eventText.includes('no foul')) || (eventText.includes('play on'))) {
-                        isFoul = false;
-                    }
-                }
-
-                const isHomeTeam = eventText.includes(homeTeam);
-                const isAwayTeam = eventText.includes(awayTeam);
-                let teamShots = isHomeTeam ? homeTeamShots : isAwayTeam ? awayTeamShots : null;
-
-                if (isLegal) {
-                    isOffside = false;
-                }
-
-                if (teamShots) {
-                    // Contagem de eventos relacionados a finalizações
-                    if (isShot) {
-                        if (isOffTarget) {
-                            teamShots.offTarget++;
-                        } else if (isSaved) {
-                            teamShots.onTarget++;
-                        }
-
-                        if (isIllegal) {
-                            if (isOffTarget) {
-                                teamShots.offTarget--;
-                            } else if (isSaved) {
-                                teamShots.onTarget--;
-                            }
-                        }
-                    }
-
-                    // Contagem de impedimentos
-                    if (isOffside) {
-                        teamShots.offsides++;
-                    }
-
-                    // Contagem de faltas
-                    if (isFoul) {
-                        teamShots.foul++;
-                    }
-
-                    // Contagem de cartões amarelos
-                    if (isYellow) {
-                        teamShots.yellow++;
-                    }
-
-                    // Contagem de cartões vermelhos
-                    if (isRed) {
-                        teamShots.red++;
-                    }
-
-                    // Contagem de escanteios
-                    if (isCorner) {
-                        teamShots.corners++;
-                    }
-                }
-            }
+            const eventClub = v4 ? event.querySelector('td:nth-child(3) a[href*="/clubinfo/"]')?.textContent.trim().toLowerCase() : null;
+            const isHomeTeam = v4 ? eventClub === homeTeam : eventText.includes(homeTeam);
+            const isAwayTeam = v4 ? eventClub === awayTeam : eventText.includes(awayTeam);
+            const teamShots = isHomeTeam ? homeTeamShots : isAwayTeam ? awayTeamShots : null;
+            if (!teamShots) continue;
+            const stats = classifyEvent(eventText);
+            Object.keys(stats).forEach(key => { if (stats[key]) teamShots[key]++; });
         }
-
-        // Calcular total de finalizações
         homeTeamShots.total = homeTeamShots.onTarget + homeTeamShots.offTarget;
         awayTeamShots.total = awayTeamShots.onTarget + awayTeamShots.offTarget;
-        // Update the table with stats
         document.querySelector('#shotsTable').innerHTML = `
             <table class="border-collapse: collapse;">
                 <thead>
@@ -2587,47 +2323,12 @@ function matchScore() {
                         <th class="player_ratings_header">${awayTeam.toUpperCase()}</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr class="table_row_static1">
-                        <td>${homeTeamShots.total}</td>
-                        <th>${translation.shoots[language]}</th>
-                        <td>${awayTeamShots.total}</td>
-                    </tr>
-                    <tr class="table_row_static2">
-                        <td>${homeTeamShots.onTarget}</td>
-                        <th>${translation.onTarget[language]}</th>
-                        <td>${awayTeamShots.onTarget}</td>
-                    </tr>
-                    <tr class="table_row_static1">
-                        <td>${homeTeamShots.offTarget}</td>
-                        <th>${translation.offTarget[language]}</th>
-                        <td>${awayTeamShots.offTarget}</td>
-                    </tr>
-                    <tr class="table_row_static2">
-                        <td>${homeTeamShots.corners}</td>
-                        <th>${translation.corners[language]}</th>
-                        <td>${awayTeamShots.corners}</td>
-                    </tr>
-                    <tr class="table_row_static1">
-                        <td>${homeTeamShots.offsides}</td>
-                        <th>${translation.offsides[language]}</th>
-                        <td>${awayTeamShots.offsides}</td>
-                    </tr>
-                    <tr class="table_row_static2">
-                        <td>${homeTeamShots.foul}</td>
-                        <th>${translation.fouls[language]}*</th>
-                        <td>${awayTeamShots.foul}</td>
-                    </tr>
-                    <tr class="table_row_static1">
-                        <td>${homeTeamShots.yellow}</td>
-                        <th>${translation.yellowCards[language]}</th>
-                        <td>${awayTeamShots.yellow}</td>
-                    </tr>
-                    <tr class="table_row_static2">
-                        <td>${homeTeamShots.red}</td>
-                        <th>${translation.redCards[language]}</th>
-                        <td>${awayTeamShots.red}</td>
-                    </tr>
+                <tbody>${statRows.map(([key, label], index) => `
+                    <tr class="table_row_static${index % 2 + 1}">
+                        <td>${homeTeamShots[key]}</td>
+                        <th>${translation[label][language]}${key === 'foul' ? '*' : ''}</th>
+                        <td>${awayTeamShots[key]}</td>
+                    </tr>`).join('')}
                 </tbody>
             </table>`;
     }
@@ -2641,10 +2342,27 @@ function matchScore() {
         <br>
         <label for="endMin">${translation.end[language]} (min): <span id="endMinValue">120</span></label>
         <input type="range" id="endMin" min="0" max="120" value="120" style="width: 100%;">
-        <table id="shotsTable"></table>
+        <div id="shotsTable"></div>
     </div>`;
 
-    document.body.appendChild(slider);
+    if (v4) {
+        slider.className = 'do-panel genie-match-score';
+        slider.innerHTML = `<style>
+            .genie-match-score{margin:0 0 12px;min-width:0}
+            .genie-match-score .do-panel-header{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+            .genie-match-score #tblScore{position:static!important;width:auto!important;background:transparent!important;padding:12px!important}
+            .genie-match-score input[type=range]{display:block;max-width:100%;margin:8px 0 12px;accent-color:var(--do-green-600,#387b42)}
+            .genie-match-score #shotsTable table{width:100%;table-layout:fixed;border-collapse:collapse;color:inherit}
+            .genie-match-score #shotsTable th,.genie-match-score #shotsTable td{padding:8px 6px;text-align:center;overflow-wrap:anywhere;background:transparent;color:inherit;border-bottom:1px solid var(--do-gray-200,#e5e7eb)}
+            .genie-match-score #shotsTable thead{background:var(--do-gray-100,#f3f4f6)}
+            .genie-match-score #shotsTable tbody th{font-weight:500}
+            .genie-match-score #shotsTable tbody td{font-weight:700;font-variant-numeric:tabular-nums}
+        </style><div class="do-panel-header"><h2 class="do-panel-title">MATCH SCORE</h2></div>` + slider.innerHTML;
+        slider.querySelector('#tblScore').className = 'do-panel-body';
+        document.querySelector('#doMvCommentary').closest('.do-panel').before(slider);
+    } else {
+        document.body.appendChild(slider);
+    }
     countShots(0, 120);  // Initial count for the full range
 
     // Update shot count when slider values change
@@ -2660,17 +2378,27 @@ function matchScore() {
 
     // Add a toggle button to show/hide the stats
     const toggleButton = document.createElement('button');
+    toggleButton.type = 'button';
     toggleButton.innerHTML = `${translation.hideShow[language]}`;
     toggleButton.style.position = 'fixed';
     toggleButton.style.bottom = '300px';
     toggleButton.style.zIndex = '9999';
+    toggleButton.setAttribute('aria-controls', 'tblScore');
+    toggleButton.setAttribute('aria-expanded', 'true');
 
     toggleButton.addEventListener('click', function() {
         const scoreTable = document.getElementById('tblScore');
         scoreTable.style.display = scoreTable.style.display === 'none' ? 'block' : 'none';
+        toggleButton.setAttribute('aria-expanded', String(scoreTable.style.display !== 'none'));
     });
 
-    document.body.appendChild(toggleButton);
+    if (v4) {
+        toggleButton.className = 'do-btn do-btn-outline do-btn-sm';
+        toggleButton.removeAttribute('style');
+        slider.querySelector('.do-panel-header').appendChild(toggleButton);
+    } else {
+        document.body.appendChild(toggleButton);
+    }
 }
 
 //National Link by ernestofv01
@@ -2757,22 +2485,15 @@ function nationalLink() {
 
     // Função para inserir os links nas posições
     function insertTeamLinks() {
-        const rows = document.querySelectorAll("table.forumline tr");
+        const v4 = !!document.querySelector('.do-players-table');
+        const rows = document.querySelectorAll(v4 ? '.do-players-table tbody tr' : 'table.forumline tr');
         const i = ($('.top_positions').length) ? 1 : 0;
 
         rows.forEach(row => {
-            if (!row.cells[4 + i]) {
-                return;
-            }
-
-            if (!row.cells[4 + i].querySelector("img")) {
-                return;
-            }
-            const countryElement = row.cells[4 + i].querySelector("img");
-
-            const age = parseInt(row.cells[3 + i].textContent);
-            const country = countryElement.src.match(/\/([^\/]+)\.png$/);
-
+            const countryElement = v4 ? row.querySelector('.do-col-nat img') : row.cells[4 + i]?.querySelector('img');
+            const age = parseInt(v4 ? row.querySelector('.do-col-age')?.textContent : row.cells[3 + i]?.textContent, 10);
+            const country = countryElement?.src.match(/\/([^\/]+)\.png(?:\?|$)/);
+            if (!country || !Number.isFinite(age) || countryElement.closest('a')) return;
             const teamLink = getTeamLink(age, country[1]);
 
             if (teamLink) {
@@ -2788,9 +2509,7 @@ function nationalLink() {
         });
     }
 
-    window.addEventListener('load', function() {
-        insertTeamLinks();
-    });
+    insertTeamLinks();
 }
 function submitProScout() {
     let url = new URL(window.location.href);
@@ -2833,6 +2552,24 @@ function submitProScout() {
 }
 
 function sendProScout() {
+    if (document.getElementById('scoutProBtn')) return;
+    if (document.querySelector('.do-pd')) {
+        const panel = document.getElementById('doPdScoutPanel');
+        const pro = Array.from(panel?.querySelectorAll('[onclick*="doPdSendScout"]') || [])
+            .find(button => /doPdSendScout\s*\(\s*['"]?1['"]?\s*[,)]/.test(button.getAttribute('onclick')));
+        const actions = document.querySelector('.do-pd-actions');
+        if (!pro || !actions) return;
+        const button = document.createElement('button');
+        button.type = 'button'; button.id = 'scoutProBtn'; button.textContent = 'Send Pro Scout';
+        button.className = 'do-btn do-btn-outline do-btn-sm';
+        const sync = () => { button.disabled = pro.disabled || !pro.isConnected; };
+        sync();
+        button.addEventListener('click', () => { if (!button.disabled) pro.click(); });
+        const trigger = actions.querySelector('[onclick*="doPdScoutPanel"]');
+        if (trigger) trigger.before(button); else actions.append(button);
+        new MutationObserver(sync).observe(panel, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled'] });
+        return;
+    }
     // Create the input button
     let button = document.createElement("input");
     button.type = "button"; // Set type to button
@@ -2850,4 +2587,641 @@ function sendProScout() {
 
     // Add click event listener to the button
     button.addEventListener("click", submitProScout);
+}
+
+/* Adaptadores da interface v4. As funções acima continuam atendendo à versão clássica. */
+function checkAndExecute(config, func) {
+    if (config === '' || config === false || config === null) return;
+    try { func(); } catch (error) { console.error('[DO Genie] ' + func.name, error); }
+}
+function getLanguage() {
+    const el = document.querySelector('.do-user-bar-settings, .settings_button');
+    const label = el && (el.getAttribute('data-do-tooltip') || el.title);
+    return ({Postavke:'bh',Settings:'en',Configuraciones:'es',Impostazioni:'it',Instellingen:'nl',Configurações:'br',Setări:'ro',Nastavitve:'sl',Ayarlar:'tr','설정':'ko'})[label] || 'en';
+}
+function genieEnabled(key) { return configs[key] !== '' && configs[key] !== false && configs[key] !== null; }
+function genieRead(key, fallback) {
+    try { const v = JSON.parse(localStorage.getItem(key)); return v && typeof v === 'object' && !Array.isArray(v) ? v : fallback; }
+    catch (error) { console.warn('[DO Genie] Dados inválidos em ' + key, error); return fallback; }
+}
+function genieUI() {
+    if (document.getElementById('genie-v4-style')) return;
+    const style = document.createElement('style'); style.id = 'genie-v4-style';
+    style.textContent = `
+.genie-panel.do-panel .genie-grid{grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr))}.genie-panel.do-panel .genie-grid label{flex-wrap:wrap;overflow-wrap:anywhere;min-width:0}.genie-panel.do-panel input[type=text]{box-sizing:border-box;max-width:100%;min-width:0}.genie-panel.do-panel .do-btn{margin:4px 4px 4px 0}
+.genie-panel:not(.do-panel){box-sizing:border-box;max-width:1100px;margin:16px auto 40px;padding:16px;background:#fff;color:#243442;border:1px solid #ccd3d9;border-radius:8px;font:14px/1.5 sans-serif}
+.genie-panel summary{cursor:pointer;font-weight:bold}.genie-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:12px 0}.genie-grid label{display:flex;align-items:center;gap:8px}.genie-panel button:not(.do-btn){margin:4px;padding:5px 10px;cursor:pointer}.genie-panel input[type=text]{max-width:160px}.genie-nav{position:relative;display:inline-flex;align-items:center;height:32px}.genie-nav>.do-nav-item{padding-right:6px}.genie-nav-toggle{height:32px;min-width:28px;padding:0 7px;border:0;background:transparent;color:#fff;font:700 18px/1 sans-serif;cursor:pointer}.genie-nav:hover>.genie-nav-toggle,.genie-nav:focus-within>.genie-nav-toggle,.genie-nav.open>.genie-nav-toggle{background:#286b2d}.genie-nav-list{display:none;position:absolute;top:100%;left:0;min-width:190px;max-height:70vh;overflow:auto;background:#fff;color:#222;border:1px solid #ccd3d9;box-shadow:0 4px 14px #0003;z-index:1200}.genie-nav:hover>.genie-nav-list,.genie-nav:focus-within>.genie-nav-list,.genie-nav.open>.genie-nav-list{display:block}.genie-nav-list a{display:block;padding:8px 12px;color:#222;text-decoration:none}.genie-nav-list a:hover,.genie-nav-list a:focus{background:#eee}.genie-photo{margin:8px 0;display:flex;gap:4px;align-items:center;flex-wrap:wrap}.genie-photo input{width:110px}.genie-extra{font-size:12px;margin-left:6px;white-space:normal}.genie-bookmark{border:0;background:transparent;color:inherit;cursor:pointer;font-size:22px}.genie-clock{white-space:nowrap;font-variant-numeric:tabular-nums}
+.genie-filters{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin:12px 0;padding:10px;background:#fff;border:1px solid #ccd3d9;border-radius:8px}.genie-filters label{display:flex;flex-direction:column;gap:3px;font-size:12px}.genie-filters input{width:78px}.genie-ops{text-align:center;font-weight:600}.genie-training-controls{display:flex;align-items:center;gap:8px;margin:10px 0;flex-wrap:wrap}
+.do-header:has(.genie-nav:hover),.do-header:has(.genie-nav:focus-within),.do-header:has(.genie-nav.open){z-index:1050}
+.genie-bookmark.do-header-icon{flex:none;border:0;padding:0;color:#fff;font-size:22px;line-height:1;background:rgba(255,255,255,.1)}.genie-bookmark.do-header-icon:hover{background:rgba(255,255,255,.25)}.genie-bookmark.do-header-icon[aria-pressed="true"]{color:#ffd166}.do-user-bar>.genie-bookmark{order:2}.do-user-bar:has(>.genie-bookmark){min-width:0}
+.genie-links-page .window1_wrapper,.genie-links-page .window1_header,.genie-links-page .window1_content,.genie-links-page .window1_content_inside{max-width:100%;box-sizing:border-box}.genie-links-page .window1_header_text{font-size:18px;font-weight:700;padding:0 0 12px}.genie-links-page .tabs_content{display:flex;gap:6px;flex-wrap:wrap;padding-bottom:12px}.genie-links-page .tabs_start,.genie-links-page #links1,.genie-links-page #links3,.genie-links-page #friends1,.genie-links-page #friends3{display:none}
+.genie-links-page #links2,.genie-links-page #friends2{padding:7px 12px;border:1px solid var(--panel-border,#ccd3d9);border-radius:var(--radius-sm,4px);cursor:pointer;font-weight:600}.genie-links-page #links2[class*="tab_on"],.genie-links-page #friends2[class*="tab_on"]{background:var(--do-green,#286b2d);color:#fff}
+#genie-links{margin:4px 0 12px;min-width:0}#genie-links .do-panel-title{padding:0}#genie-links .do-table-wrapper{max-width:100%;overflow-x:auto}.genie-links-table{table-layout:fixed;min-width:540px}.genie-links-table th:first-child{width:40%}.genie-links-table th:last-child{width:160px}.genie-links-table td{overflow-wrap:anywhere}.genie-links-actions{display:flex;gap:6px}.genie-links-empty{text-align:center;padding:20px}
+`;
+    document.head.append(style);
+}
+function geniePanel(id, title) {
+    genieUI();
+    let box = document.getElementById(id); if (box) return box;
+    box = document.createElement('details'); box.id = id; box.className = 'genie-panel';
+    const heading = document.createElement('summary'); heading.textContent = title; box.append(heading);
+    if (document.querySelector('.do-home-dashboard')) {
+        box.classList.add('do-panel', 'do-home-panel');
+        box.style.cssText = 'margin:16px 0 40px;min-width:0';
+        heading.className = 'do-panel-header';
+        const text = document.createElement('span'); text.className = 'do-panel-title'; text.textContent = title;
+        heading.replaceChildren(text);
+        box.addEventListener('toggle', () => heading.setAttribute('aria-expanded', String(box.open)));
+        heading.setAttribute('aria-expanded', 'false');
+    }
+    (document.querySelector('#content_main') || document.body).append(box); return box;
+}
+function genieButton(parent, text, callback) {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = text; b.addEventListener('click', callback); parent.append(b); return b;
+}
+function configMenu() {
+    const panel = geniePanel('genie-config', 'DO Genie Assistant — Configurações');
+    if (panel.querySelector('form')) return;
+    const form = document.createElement('form'); const grid = document.createElement('div'); grid.className = 'genie-grid';
+    if (panel.classList.contains('do-panel')) form.className = 'do-panel-body';
+    Object.keys(getStorage(null)).forEach(key => {
+        const label = document.createElement('label'), input = document.createElement('input');
+        input.type = 'checkbox'; input.name = key; input.checked = genieEnabled(key);
+        label.append(input, document.createTextNode(key.split('_').join(' '))); grid.append(label);
+    });
+    form.append(grid); panel.append(form);
+    const status = document.createElement('span'); status.setAttribute('role','status');
+    genieButton(form, 'Salvar', () => {
+        form.querySelectorAll('input[type=checkbox]').forEach(i => configs[i.name] = i.checked ? 'checked' : '');
+        localStorage.setItem('DOGenieAssistant.configs', JSON.stringify(configs)); status.textContent = ' Salvo. Recarregue a página para aplicar.';
+    });
+    genieButton(form, 'Restaurar padrões', () => { localStorage.removeItem('DOGenieAssistant.configs'); location.reload(); });
+    genieButton(form, 'Limpar fotos', () => {
+        Object.keys(localStorage).filter(k => k.startsWith('DOGenieAssistant.player.')).forEach(k => localStorage.removeItem(k)); status.textContent = ' Fotos removidas.';
+    });
+    // Reutiliza a rotina de patrocinadores original; endpoints ainda não validados.
+    if (genieEnabled('GET_SPONSORS') && !document.querySelector('.do-user-bar')) {
+        const b = genieButton(form, 'Get Sponsors', () => sendSponsorsRequest()); b.id = 'getSponsors';
+    }
+    form.append(status); form.addEventListener('submit', e => e.preventDefault());
+    if (panel.classList.contains('do-panel')) form.querySelectorAll('button').forEach(button => button.className = 'do-btn do-btn-outline do-btn-sm');
+}
+function configSound() {
+    const panel = geniePanel('genie-sound', 'DO Genie Assistant — Sons');
+    if (panel.querySelector('form')) return;
+    const form = document.createElement('form'), grid = document.createElement('div'); grid.className = 'genie-grid';
+    if (panel.classList.contains('do-panel')) form.className = 'do-panel-body';
+    const values = Object.assign({}, getSoundStorage(null), soundConfig);
+    Object.keys(values).forEach(key => {
+        const label = document.createElement('label'), input = document.createElement('input'); input.name = key;
+        input.type = key.endsWith('_ID') ? 'text' : 'checkbox';
+        if (input.type === 'checkbox') input.checked = values[key] !== '' && values[key] !== false;
+        else input.value = values[key];
+        label.append(document.createTextNode(key.split('_').join(' ')), input); grid.append(label);
+    });
+    form.append(grid); panel.append(form);
+    const status = document.createElement('span'); status.setAttribute('role','status');
+    genieButton(form, 'Salvar sons', () => {
+        form.querySelectorAll('input').forEach(i => values[i.name] = i.type === 'checkbox' ? (i.checked ? 'checked' : '') : i.value);
+        soundConfig = values; localStorage.setItem('DOGenieAssistant.soundConfig', JSON.stringify(values)); status.textContent = ' Salvo.';
+    });
+    genieButton(form, 'Limpar histórico de sons', () => Object.keys(localStorage).filter(k => k.startsWith('DOGenieAssistant.match.')).forEach(k => localStorage.removeItem(k)));
+    genieButton(form, 'Restaurar sons', () => { localStorage.removeItem('DOGenieAssistant.soundConfig'); location.reload(); });
+    form.append(status); form.addEventListener('submit', e => e.preventDefault());
+    if (panel.classList.contains('do-panel')) form.querySelectorAll('button').forEach(button => button.className = 'do-btn do-btn-outline do-btn-sm');
+}
+function secondaryClock() {
+    if (!document.querySelector('.do-header')) {
+        if (document.getElementById('servertime2')) return;
+        const footer = document.getElementById('footer'); if (!footer) return;
+        const clock = document.createElement('div'); clock.id = 'servertime2'; clock.className = 'time_display';
+        clock.style.cssText = 'top:12px;border:1px solid #fff'; footer.append(clock);
+        serverTime(); setInterval(serverTime, 1000);
+        return;
+    }
+    const attach = () => {
+        const serverClock = document.querySelector('.do-ftr-clock');
+        if (!serverClock) return false;
+        let clock = document.getElementById('servertime2');
+        if (!clock) { clock = document.createElement('span'); clock.id = 'servertime2'; }
+        clock.className = 'do-ftr-clock genie-clock';
+        clock.removeAttribute('title');
+        clock.replaceChildren(document.createTextNode('('), document.createElement('time'), document.createTextNode(')'));
+        serverClock.after(clock);
+        const time = clock.querySelector('time');
+        const tick = () => {
+            const now = new Date();
+            time.textContent = [now.getHours(), now.getMinutes(), now.getSeconds()].map(addZero).join(':');
+        };
+        tick(); setInterval(tick, 1000);
+        return true;
+    };
+    if (attach()) return;
+    const observer = new MutationObserver(() => { if (attach()) observer.disconnect(); });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+}
+function getExp() {
+    return Array.from(document.querySelectorAll('[data-do-tooltip], [title]')).map(e => e.getAttribute('data-do-tooltip') || e.title || '').filter(t => /^\d+ XP$/.test(t.trim()));
+}
+function playerDetails() {
+    const root = document.querySelector('.do-pd');
+    let data, natPos;
+    if (root) {
+        // Ordem antiga reconstruída a partir da ordem da grade v4, não de todos os números da página.
+        // Grade v4: Reflexes, One on ones, Handling, Communication, Positioning,
+        // Eccentricity, Aggression, Creativity, Passing, Crossing, Long shots,
+        // First touch, Influence, Speed, Shooting, Dribbling, Heading, Marking,
+        // Tackling, Team work, Strength.
+        const cells = Array.from(root.querySelectorAll('.do-pd-attrgrid .do-pd-av'));
+        if (cells.length !== 21 || cells.some(c => !/^\d+$/.test(c.textContent.trim()))) {
+            console.warn('[DO Genie] Atributos incompletos/ocultos; OPS não calculado.'); return;
+        }
+        const values = cells.map(c => Number(c.textContent.trim()));
+        data = [0,18,8,14,6,1,17,7,15,12,2,16,10,4,19,3,9,11,20,13,5].map(i => values[i]);
+        const code = root.querySelector('.do-pd-head .do-pd-pos')?.textContent.trim();
+        natPos = ['GK','DL','DC','DR','ML','MC','MR','FL','FC','FR'].indexOf(code);
+    } else {
+        data = Array.from(document.querySelectorAll('#main-1 table tr > td')).map(c => c.textContent.trim()).filter(t => /^\d+$/.test(t)).map(Number);
+        const position = getPos(); natPos = position.lastIndexOf('1');
+    }
+    if (natPos < 0 || data.length < 18) { console.warn('[DO Genie] Posição/atributos não reconhecidos.'); return; }
+    const ops = getOPS(data), best = ops[ops.pos];
+    const attrText = ' @ OPS ' + ops[natPos] + (best > ops[natPos] ? '/' + best + '*' : '');
+    const exp = getExp(); const expText = genieEnabled('PLAYER_EXP') && exp.length ? ' | ' + exp.join(', ') : '';
+    const name = document.querySelector('.do-pd-name, .player_name'), id = document.querySelector('.do-pd-id, .player_id_txt');
+    if (!name) return;
+    const baseName = name.dataset.genieBase || name.textContent.trim(); name.dataset.genieBase = baseName;
+    function decorate(el, enabled) {
+        if (!el) return; el.querySelector('.genie-extra')?.remove();
+        if (enabled) { const extra = document.createElement('span'); extra.className = 'genie-extra'; extra.textContent = attrText + expText; el.append(extra); }
+    }
+    genieUI(); decorate(name, genieEnabled('PLAYER_OPS_NAME')); decorate(id, genieEnabled('PLAYER_OPS_ID'));
+    if (genieEnabled('PAGE_TITLE')) document.title = baseName + attrText + expText;
+}
+function getPos() {
+    const positions = Array(10).fill('0');
+    const root = document.querySelector('.do-pd');
+    if (root) {
+        const i = ['GK','DL','DC','DR','ML','MC','MR','FL','FC','FR'].indexOf(root.querySelector('.do-pd-head .do-pd-pos')?.textContent.trim());
+        if (i >= 0) positions[i] = '1'; return positions;
+    }
+    const field = document.querySelector('img[src*="positions-field"]')?.parentElement; if (!field) return positions;
+    const coords = [[69,10],[20,40],[69,40],[117,40],[20,108],[69,108],[117,108],[20,185],[69,185],[117,185]];
+    coords.forEach(([top,left], i) => {
+        const dot = Array.from(field.querySelectorAll('div')).find(e => e.style.top === top+'px' && e.style.left === left+'px');
+        const match = dot?.style.background.match(/positions-(\d+)\.png/); if (match) positions[i] = match[1];
+    }); return positions;
+}
+function playerImage() {
+    const img = document.querySelector('.do-pd-portrait') || document.querySelectorAll('.tabbed_pane img')[1];
+    const pid = document.querySelector('.do-pd')?.dataset.pid || getUrlParameter('playerID');
+    if (!img || !pid || document.getElementById('genie-photo')) return;
+    genieUI(); const key = 'DOGenieAssistant.player.' + pid, info = genieRead(key, {img:''});
+    const original = img.getAttribute('src'); const box = document.createElement('div'); box.id = 'genie-photo'; box.className = 'genie-photo';
+    const input = document.createElement('input'); input.type = 'text'; input.className = 'do-input do-input-sm'; input.inputMode = 'numeric'; input.placeholder = 'ID da foto'; input.setAttribute('aria-label','ID da foto'); input.value = info.img || '';
+    box.append(input); img.parentElement.after(box);
+    const show = value => { img.src = value ? 'https://sortitoutsi.b-cdn.net/uploads/face/face_' + value + '.png' : original; img.style.display = ''; };
+    if (/^\d+$/.test(String(info.img))) show(info.img);
+    const apply = genieButton(box, 'Aplicar foto', () => {
+        const value = input.value.trim(); if (value && !/^\d+$/.test(value)) { input.setCustomValidity('Use somente números.'); input.reportValidity(); return; }
+        input.setCustomValidity(''); info.img = value;
+        if (value) localStorage.setItem(key, JSON.stringify(info)); else localStorage.removeItem(key);
+        show(value);
+    }); apply.className = 'do-btn do-btn-primary do-btn-sm';
+    input.addEventListener('input', () => input.setCustomValidity(''));
+}
+function links() {
+    genieUI();
+    const icons = document.querySelector('.do-header-icons'), userBar = document.querySelector('.do-user-bar, .user_bar');
+    const host = icons || userBar;
+    let star = document.getElementById('btnSaveLink'), render = null;
+    const syncStar = () => {
+        if (!star) return;
+        const saved = Object.prototype.hasOwnProperty.call(genieRead('DOGenieAssistant.links', {}), location.href);
+        star.textContent = saved ? '★' : '☆';
+        star.title = saved ? 'Remover dos favoritos' : 'Adicionar aos favoritos';
+        star.setAttribute('aria-label', star.title); star.setAttribute('aria-pressed', String(saved));
+    };
+    if (host && !star) {
+        star = genieButton(host, '', () => {
+            const current = genieRead('DOGenieAssistant.links', {});
+            if (Object.prototype.hasOwnProperty.call(current, location.href)) delete current[location.href];
+            else current[location.href] = document.title;
+            localStorage.setItem('DOGenieAssistant.links', JSON.stringify(current)); syncStar(); render?.(); syncNTLinks();
+        });
+        star.id = 'btnSaveLink'; star.className = 'genie-bookmark' + (icons ? ' do-header-icon' : '');
+        if (icons && userBar) {
+            const mobile = matchMedia('(max-width:560px)');
+            const placeStar = () => { const target = mobile.matches ? userBar : icons; if (star.parentElement !== target) target.append(star); };
+            placeStar(); mobile.addEventListener('change', placeStar);
+        }
+    }
+    syncStar();
+    if (!/^\/links(?:\/|$)/.test(location.pathname) || document.getElementById('genie-links')) return;
+    const content = document.getElementById('content_main'); content?.classList.add('genie-links-page');
+    content?.querySelectorAll('.window1_wrapper, .window1_header, .window1_content, .window1_content_inside, .window1_bottom').forEach(element => { element.style.width = '100%'; });
+    content?.querySelectorAll('.window1_content_inside').forEach(element => { element.style.paddingBottom = '0'; });
+    const panel = document.createElement('section'); panel.id = 'genie-links'; panel.className = 'do-panel';
+    panel.innerHTML = '<div class="do-panel-header"><h2 class="do-panel-title">Favoritos</h2></div>' +
+        '<div class="do-table-wrapper"><table id="urlsTable" class="do-table do-table-striped do-table-compact genie-links-table">' +
+        '<thead><tr><th scope="col">Página</th><th scope="col">Nome</th><th scope="col">Ações</th></tr></thead><tbody></tbody></table></div>';
+    (document.getElementById('pane1') || content || document.body).append(panel);
+    const tbody = panel.querySelector('tbody');
+    render = () => {
+        tbody.replaceChildren();
+        Object.entries(genieRead('DOGenieAssistant.links', {})).sort(([a],[b]) => a.localeCompare(b)).forEach(([url,title]) => {
+            let parsed; try { parsed = new URL(url); } catch { return; }
+            if (!['http:','https:'].includes(parsed.protocol)) return;
+            const row = document.createElement('tr'); row.dataset.url = url;
+            const page = document.createElement('td'), name = document.createElement('td'), actions = document.createElement('td');
+            const link = document.createElement('a'); link.href = parsed.href; link.target = '_blank'; link.rel = 'noopener'; link.title = parsed.href;
+            link.textContent = parsed.origin === location.origin ? parsed.pathname + parsed.search + parsed.hash : parsed.href;
+            page.append(link); name.textContent = title;
+            const buttons = document.createElement('div'); buttons.className = 'genie-links-actions'; actions.append(buttons);
+            const edit = genieButton(buttons, 'Editar', () => {
+                const value = prompt('Nome do favorito:', name.textContent); if (value === null) return;
+                const current = genieRead('DOGenieAssistant.links', {}); current[url] = value;
+                localStorage.setItem('DOGenieAssistant.links', JSON.stringify(current)); render(); syncStar(); syncNTLinks();
+            }); edit.className = 'do-btn do-btn-outline do-btn-sm';
+            const remove = genieButton(buttons, 'Remover', () => {
+                const current = genieRead('DOGenieAssistant.links', {}); delete current[url];
+                localStorage.setItem('DOGenieAssistant.links', JSON.stringify(current)); render(); syncStar(); syncNTLinks();
+            }); remove.className = 'do-btn do-btn-danger do-btn-sm';
+            row.append(page, name, actions); tbody.append(row);
+        });
+        if (!tbody.children.length) {
+            const row = tbody.insertRow(), cell = row.insertCell(); cell.colSpan = 3; cell.className = 'genie-links-empty';
+            cell.textContent = 'Nenhum favorito salvo. Use a estrela no topo da página.';
+        }
+    };
+    render();
+}
+function syncNTLinks() {
+    document.querySelectorAll('.genie-nav-list[data-genie-nt]').forEach(list => {
+        list.querySelectorAll('.genie-nt-favorite').forEach(link => link.remove());
+        Object.entries(genieRead('DOGenieAssistant.links', {})).forEach(([url, title]) => {
+            if (typeof title !== 'string' || !title.includes('[NT]')) return;
+            let parsed; try { parsed = new URL(url); } catch { return; }
+            if (!['http:', 'https:'].includes(parsed.protocol)) return;
+            const link = document.createElement('a'); link.className = 'genie-nt-favorite';
+            link.href = parsed.href; link.textContent = title.replace(/\[NT\]/g, '').trim() || title;
+            list.append(link);
+        });
+    });
+}
+function dropdownMenu() {
+    genieUI(); const tr = getTranslation(), lang = getLanguage();
+    const groups = {
+        home: [['home','home_home'],['news','home_news'],['rules','home_rules'],['helpmain','home_help']],
+        clubinfo: [['clubinfo','club_info'],['clubinfo/bids','club_bids'],['clubinfo/transfers','club_transfers'],['players','club_players'],['players/none/view/youth/clubid/0','club_players_youth'],['staff','club_staff'],['settings','club_settings']],
+        finances: [['finances','management_finances'],['stadium','management_stadium'],['facilities','management_facilities'],['sponsors','management_sponsors'],['calendar','management_calendar']],
+        tactics: [['tactics','tactics_fiest'],['tactics_youth','tactics_youth']],
+        training: [['training','training_training'],['physios','training_physios'],['physio_report','training_physio_report']],
+        forum: [['forum','community_forum'],['community_rules','community_rules'],['community_profile','community_profile'],['links','community_links'],['search_players','search_players'],['search_transfers','search_transfers'],['search_clubs','search_clubs'],['search_coaches','search_coaches'],['search_physios','search_physios'],['national_teams','search_national']]
+    };
+    document.querySelectorAll('.do-nav-item').forEach(a => {
+        if (a.parentElement.classList.contains('genie-nav')) return;
+        const url = new URL(a.href), key = url.pathname.split('/')[1];
+        const nt = /national-team/.test(url.pathname);
+        const items = nt ? [['players_nt','players_nt'],['tactics_nt','tactics_nt']] : groups[key]; if (!items) return;
+        const wrapper = document.createElement('div'); wrapper.className = 'genie-nav'; a.before(wrapper); wrapper.append(a);
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'genie-nav-toggle';
+        button.textContent = '▾'; button.title = 'Abrir atalhos'; button.setAttribute('aria-label', 'Abrir atalhos');
+        button.setAttribute('aria-expanded', 'false');
+        const list = document.createElement('div'); list.className = 'genie-nav-list';
+        if (nt) list.dataset.genieNt = 'true';
+        items.forEach(([path,label]) => { const link = document.createElement('a'); link.href = '/' + path + (path.includes('/') ? '/' : '/none/'); link.textContent = tr[label]?.[lang] || tr[label]?.en || label; list.append(link); });
+        button.addEventListener('click', () => {
+            const open = !wrapper.classList.contains('open');
+            document.querySelectorAll('.genie-nav.open').forEach(nav => { nav.classList.remove('open'); nav.querySelector('.genie-nav-toggle')?.setAttribute('aria-expanded', 'false'); });
+            wrapper.classList.toggle('open', open); button.setAttribute('aria-expanded', String(open));
+        });
+        wrapper.addEventListener('mouseleave', () => { wrapper.classList.remove('open'); button.setAttribute('aria-expanded', 'false'); });
+        wrapper.append(button, list);
+    });
+    syncNTLinks();
+}
+
+function v4SquadOPS(row) {
+    const raw = row.querySelector('.do-stats-btn')?.getAttribute('data-stats');
+    if (!raw) return null;
+    try {
+        const stats = JSON.parse(raw), values = v4StatOrder.map(key => Number(stats[key]));
+        if (values.some(value => !Number.isFinite(value))) return null;
+        const pos = row.querySelector('.do-col-pos')?.textContent.trim();
+        if (!['GK','DL','DC','DR','ML','MC','MR','FL','FC','FR'].includes(pos)) return null;
+        const scores = getOPS(values);
+        return { original: scores[getPositionIndex(pos)], high: scores[scores.pos] };
+    } catch (error) {
+        console.warn('[DO Genie] Atributos do elenco inválidos.', error);
+        return null;
+    }
+}
+function spreadsheetSquad() {
+    const table = document.querySelector('#ssTable.do-ss-table');
+    if (!table) { doTable('.forumline'); return; }
+    if (table.querySelector('.genie-ss-ops') || !table.tHead || !table.tBodies[0]) return;
+
+    // A planilha v4 agrupa atributos com identificadores estáveis, independentemente do idioma.
+    const groups = {
+        attrs_gk: ['REF','ONE','HND','COM','PAS','PSN'],
+        attrs_out: ['TCK','MRK','FTO','PAS','CRS','DRI','CRE','LSH','SHT','HEA'],
+        nontrain: ['ECC','INF','AGG','TMW'],
+        physical: ['SPD','STR']
+    };
+    const columns = {}, counts = {};
+    Array.from(table.tHead.rows[0].cells).forEach(th => {
+        const group = th.dataset.statGroup;
+        if (!groups[group]) return;
+        const key = groups[group][counts[group] || 0];
+        counts[group] = (counts[group] || 0) + 1;
+        if (key && columns[key] === undefined) columns[key] = th.cellIndex;
+    });
+    if (v4StatOrder.some(key => columns[key] === undefined)) return;
+
+    const tbody = table.tBodies[0], originalRows = Array.from(tbody.rows);
+    const scoresByRow = new Map(originalRows.map(row => {
+        const pos = row.cells[1]?.textContent.trim();
+        const values = v4StatOrder.map(key => {
+            const cell = row.cells[columns[key]];
+            const raw = cell?.getAttribute('data-v') ?? cell?.textContent.trim();
+            return /^\d+$/.test(raw || '') ? Number(raw) : NaN;
+        });
+        if (!['GK','DL','DC','DR','ML','MC','MR','FL','FC','FR'].includes(pos) || values.some(value => !Number.isFinite(value))) return [row, null];
+        const scores = getOPS(values);
+        return [row, { ops: scores[getPositionIndex(pos)], high: scores[scores.pos] }];
+    }));
+
+    const heading = table.tHead.rows[0], rat = heading.cells[7];
+    if (!rat) return;
+    const makeHeading = label => {
+        const th = document.createElement('th');
+        th.className = 'do-ss-col-num do-ss-sortable genie-ss-ops';
+        th.textContent = label; th.dataset.sortDir = 'desc';
+        th.tabIndex = 0; th.setAttribute('role', 'button');
+        return th;
+    };
+    const opsHeading = makeHeading('OPS'), highHeading = makeHeading('HIGH');
+    rat.after(opsHeading, highHeading);
+    originalRows.forEach(row => {
+        const result = scoresByRow.get(row);
+        [['ops', result?.ops], ['high', result?.high]].forEach(([key, value]) => {
+            const cell = document.createElement('td'); cell.className = 'do-ss-col-num genie-ss-ops';
+            cell.textContent = value == null ? '—' : String(value);
+            cell.dataset.v = value == null ? '' : String(value);
+            if (key === 'ops') row.cells[7].after(cell);
+            else row.cells[8].after(cell);
+        });
+    });
+
+    const originalIndex = new Map(originalRows.map((row, index) => [row, Number(row.dataset.orig ?? index)]));
+    let active = null, direction = null;
+    const sort = () => {
+        const index = active?.cellIndex;
+        Array.from(tbody.rows).sort((a, b) => {
+            if (direction) {
+                const left = a.cells[index].dataset.v, right = b.cells[index].dataset.v;
+                if ((left === '') !== (right === '')) return left === '' ? 1 : -1;
+                if (left !== '' && Number(left) !== Number(right)) {
+                    return (Number(left) - Number(right)) * (direction === 'desc' ? -1 : 1);
+                }
+            }
+            return originalIndex.get(a) - originalIndex.get(b);
+        }).forEach(row => tbody.append(row));
+    };
+    const reorder = th => {
+        const next = active !== th ? 'desc' : direction === 'desc' ? 'asc' : direction === 'asc' ? null : 'desc';
+        // Limpa também o estado interno do ordenador nativo antes de usar uma coluna nova.
+        const native = table.tHead.querySelector('th:not(.genie-ss-ops).do-sort-asc, th:not(.genie-ss-ops).do-sort-desc');
+        if (native) {
+            if (native.classList.contains('do-sort-' + native.dataset.sortDir)) native.click();
+            native.click();
+        }
+        if (active) active.classList.remove('do-sort-asc', 'do-sort-desc');
+        active = next ? th : null; direction = next;
+        if (active) active.classList.add('do-sort-' + direction);
+        sort();
+    };
+    [opsHeading, highHeading].forEach(th => {
+        th.addEventListener('click', () => reorder(th));
+        th.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); reorder(th); }
+        });
+    });
+    table.tHead.addEventListener('click', event => {
+        if (event.target.closest('th')?.classList.contains('genie-ss-ops')) return;
+        if (active) active.classList.remove('do-sort-asc', 'do-sort-desc');
+        active = null; direction = null;
+    });
+}
+function v4SquadDetails() {
+    document.querySelectorAll('.do-players-table').forEach(table => {
+        const header = table.querySelector('thead tr');
+        if (!header || header.querySelector('.genie-ops')) return;
+        const headings = [['OPS', 'Soma das habilidades da posição preferida']];
+        if (genieEnabled('SQUAD_HIGH')) headings.push(['HIGH', 'Melhor soma entre posições']);
+        const tbody = table.querySelector('tbody');
+        const sort = (key, ascending) => {
+            Array.from(tbody.rows).sort((a, b) => {
+                const left = Number(a.dataset[key]), right = Number(b.dataset[key]);
+                return (ascending ? 1 : -1) * ((Number.isFinite(left) ? left : -1) - (Number.isFinite(right) ? right : -1));
+            }).forEach(row => tbody.append(row));
+        };
+        headings.forEach(([text, title], index) => {
+            const th = document.createElement('th'); th.className = 'genie-ops';
+            th.textContent = text; th.title = title + ' (clique para ordenar)'; th.tabIndex = 0; th.setAttribute('role', 'button');
+            let ascending = false;
+            const reorder = () => { sort(index ? 'genieHigh' : 'genieOps', ascending); ascending = !ascending; };
+            th.addEventListener('click', reorder);
+            th.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); reorder(); } });
+            header.append(th);
+        });
+        table.querySelectorAll('tbody tr').forEach(row => {
+            const result = v4SquadOPS(row);
+            if (result) { row.dataset.genieOps = String(result.original); row.dataset.genieHigh = String(result.high); }
+            (genieEnabled('SQUAD_HIGH') ? [result?.original, result?.high] : [result?.original]).forEach(value => {
+                const td = document.createElement('td'); td.className = 'genie-ops';
+                td.textContent = value == null ? '—' : String(value); row.append(td);
+            });
+        });
+        if (tbody) sort(genieEnabled('SQUAD_HIGH') ? 'genieHigh' : 'genieOps', false);
+    });
+}
+function v4SquadFilters() {
+    if (document.getElementById('genie-squad-filters')) return;
+    const content = document.querySelector('.do-players-content');
+    if (!content || !content.querySelector('.do-players-table')) return;
+    genieUI();
+    const form = document.createElement('form'); form.id = 'genie-squad-filters'; form.className = 'genie-filters do-panel';
+    const fields = [['minAge','Idade mínima'],['maxAge','Idade máxima'],['minRat','RAT mínimo'],['maxRat','RAT máximo'],['minOPS','OPS mínimo'],['maxOPS','OPS máximo']];
+    fields.forEach(([id, text]) => {
+        const label = document.createElement('label'), input = document.createElement('input');
+        input.id = id; input.type = 'number'; input.min = '0'; input.className = 'do-input do-input-sm'; input.setAttribute('aria-label', text);
+        label.append(document.createTextNode(text), input); form.append(label);
+    });
+    const clear = genieButton(form, 'Limpar filtros', () => form.reset());
+    clear.className = 'do-btn do-btn-outline do-btn-sm';
+    clear.addEventListener('click', () => form.dispatchEvent(new Event('input')));
+    form.addEventListener('submit', event => event.preventDefault());
+    form.addEventListener('input', () => {
+        const number = id => { const value = form.querySelector('#' + id).value; return value === '' ? null : Number(value); };
+        const [minAge,maxAge,minRat,maxRat,minOPS,maxOPS] = fields.map(([id]) => number(id));
+        document.querySelectorAll('.do-players-table tbody tr').forEach(row => {
+            const age = Number(row.querySelector('.do-col-age')?.textContent.trim());
+            const rat = Number(row.querySelector('.do-col-rat')?.textContent.trim());
+            const ops = Number(row.dataset.genieOps ?? v4SquadOPS(row)?.original);
+            row.style.display = (
+                (minAge === null || age >= minAge) && (maxAge === null || age <= maxAge) &&
+                (minRat === null || rat >= minRat) && (maxRat === null || rat <= maxRat) &&
+                (minOPS === null || ops >= minOPS) && (maxOPS === null || ops <= maxOPS)
+            ) ? '' : 'none';
+        });
+    });
+    content.prepend(form);
+}
+function v4HideTrainingReport() {
+    if (document.getElementById('genie-training-hide')) return;
+    const rows = document.querySelectorAll('.do-tr-prow');
+    if (!rows.length) return;
+    const host = document.querySelector('.do-tr-players-panel .do-panel-body, .do-tr-quality') || rows[0].closest('table');
+    if (!host) return;
+    genieUI();
+    const label = document.createElement('label'), input = document.createElement('input');
+    label.id = 'genie-training-hide'; label.className = 'genie-training-controls';
+    input.type = 'checkbox'; input.checked = true;
+    label.append(input, document.createTextNode('Ocultar jogadores fora do relatório de treino'));
+    host.before(label);
+    const update = () => rows.forEach(row => {
+        row.style.display = input.checked && row.querySelector('.do-tr-listtog')?.dataset.excl === '1' ? 'none' : '';
+    });
+    input.addEventListener('change', update);
+    rows.forEach(row => {
+        const button = row.querySelector('.do-tr-listtog');
+        if (button) new MutationObserver(update).observe(button, { attributes: true, attributeFilter: ['data-excl'] });
+    });
+    update();
+}
+function v4CoachEffectiveness() {
+    if (document.getElementById('genie-coach-effectiveness')) return;
+    const quality = document.querySelector('.do-tr-quality');
+    const coaches = document.querySelectorAll('.do-tr-coach[data-cid]').length;
+    if (!quality || !coaches) return;
+    genieUI();
+    const box = document.createElement('div'); box.id = 'genie-coach-effectiveness'; box.className = 'genie-training-controls';
+    const result = document.createElement('span'); result.setAttribute('role', 'status'); result.textContent = 'Efetividade dos técnicos: —';
+    const button = genieButton(box, 'Calcular', async () => {
+        const urls = [...new Set(Array.from(document.querySelectorAll('.do-tr-prow .do-tr-c-name a[href*="/players/"]'), a => a.href))];
+        button.disabled = true; result.textContent = 'Consultando contratos…';
+        let contracted = 0, failures = 0;
+        for (let i = 0; i < urls.length; i += 5) {
+            const batch = await Promise.all(urls.slice(i, i + 5).map(async url => {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(String(response.status));
+                    const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+                    const contract = Array.from(doc.querySelectorAll('.do-pd-cl')).find(el => el.textContent.trim().toLowerCase() === 'contract')?.nextElementSibling?.textContent.trim();
+                    if (!contract) throw new Error('Contrato não encontrado');
+                    return contract !== '/' && !/^no contract$/i.test(contract);
+                } catch (error) { console.warn('[DO Genie] Contrato indisponível:', url, error); return null; }
+            }));
+            contracted += batch.filter(value => value === true).length;
+            failures += batch.filter(value => value === null).length;
+        }
+        if (failures) result.textContent = 'Efetividade indisponível: ' + failures + ' contrato(s) não lido(s).';
+        else {
+            const excess = Math.max(0, contracted - coaches * 7);
+            const percentages = [100,99,98,96,92,88,82,76,68,60,50,40,28,16];
+            result.textContent = 'Jogadores contratados: ' + contracted + ' · Efetividade dos técnicos: ' + (excess > 13 ? 10 : percentages[excess]) + '%';
+        }
+        button.disabled = false;
+    });
+    box.prepend(result); quality.after(box);
+}
+function v4MatchSound() {
+    const gameId = getUrlParameter('gameid');
+    if (!gameId) return;
+    const key = 'DOGenieAssistant.match.' + gameId;
+    const match = genieRead(key, {});
+    const rows = Array.from(document.querySelectorAll('#doMvCommentary table tr')).slice(0, 5);
+    const home = document.querySelector('.do-mv-team.home .do-mv-team-name')?.textContent.trim();
+    function play(event, time, soundId) {
+        if (!/^\d+$/.test(String(soundId)) || Number(formatTime(match[event])) >= Number(formatTime(time))) return;
+        match[event] = time; localStorage.setItem(key, JSON.stringify(match));
+        const iframe = document.createElement('iframe');
+        iframe.width = '0'; iframe.height = '0'; iframe.allow = 'autoplay';
+        iframe.src = 'https://w.soundcloud.com/player/?url=' +
+            encodeURIComponent('https://api.soundcloud.com/tracks/' + soundId) + '&auto_play=true';
+        document.querySelector('#doMvCommentary').append(iframe);
+        setTimeout(() => iframe.remove(), 30000);
+    }
+    for (const row of rows) {
+        const cells = row.querySelectorAll('td');
+        if (cells.length < 3) continue;
+        const time = cells[1].textContent.trim();
+        const icon = cells[0].querySelector('img')?.src || '';
+        if (soundConfig.GOAL_SOUND && icon.includes('icon-goal')) {
+            const club = cells[2].querySelector('a[href*="/clubinfo/"]')?.textContent.trim();
+            play('LAST_GOAL', time, club === home ? soundConfig.HOME_GOAL_ID : soundConfig.AWAY_GOAL_ID);
+            break;
+        }
+        if (soundConfig.OFFSIDE_SOUND && icon.includes('icon-offside')) {
+            play('LAST_OFFSIDE', time, soundConfig.OFFSIDE_ID);
+            break;
+        }
+    }
+    const latest = rows[0]?.querySelectorAll('td');
+    if (soundConfig.GAME_END_SOUND && latest?.[2]?.textContent.trim().startsWith('Game ends')) {
+        play('GAME_ENDS', latest[1].textContent.trim(), soundConfig.GAME_END_ID);
+    }
+}
+function v4MatchNames() {
+    const commentary = document.querySelector('#doMvCommentary');
+    if (!commentary) return;
+    const names = new Map();
+    commentary.querySelectorAll('a[href*="/players/"]').forEach(link => {
+        const id = link.href.match(/playerID\/(\d+)/)?.[1], name = link.textContent.trim();
+        if (id && name.length > (names.get(id)?.length || 0)) names.set(id, name);
+    });
+    const replace = () => {
+        document.querySelectorAll('.do-mv-pname, .do-mv-evpl, #doMvCommentary a[href*="/players/"]').forEach(link => {
+            const id = link.href.match(/playerID\/(\d+)/)?.[1], name = names.get(id);
+            if (name && link.textContent.trim().length < name.length) link.textContent = name;
+        });
+    };
+    replace();
+    const header = commentary.parentElement?.querySelector('.do-panel-header');
+    if (header && !header.querySelector('#genie-match-names')) {
+        const button = genieButton(header, 'Atualizar nomes', replace);
+        button.id = 'genie-match-names'; button.className = 'do-btn do-btn-sm';
+    }
+}
+function v4AutoScore() {
+    document.querySelectorAll('.do-fixtures-panel').forEach(panel => {
+        const links = Array.from(panel.querySelectorAll('.do-fixture-vs[href*="/game/"]'));
+        const header = panel.querySelector('.do-fixtures-panel-header');
+        if (!links.length || !header || header.querySelector('.genie-score-button')) return;
+        const button = genieButton(header, 'Atualizar placares', async () => {
+            button.disabled = true; button.textContent = 'Monitorando placares';
+            const refresh = async () => {
+                const previous = links.map(link => link.dataset.genieScore || '');
+                const results = await Promise.all(links.map(link => fetchScore(link.href)));
+                results.forEach((score, i) => {
+                    if (!score) return;
+                    const link = links[i];
+                    if (previous[i] && previous[i] !== score && /^\d+$/.test(String(soundConfig.UPDATE_GOAL_ID))) {
+                        const iframe = document.createElement('iframe');
+                        iframe.width = '0'; iframe.height = '0'; iframe.allow = 'autoplay';
+                        iframe.src = 'https://w.soundcloud.com/player/?url=' +
+                            encodeURIComponent('https://api.soundcloud.com/tracks/' + soundConfig.UPDATE_GOAL_ID) + '&auto_play=true';
+                        panel.append(iframe); setTimeout(() => iframe.remove(), 30000);
+                    }
+                    link.textContent = score; link.dataset.genieScore = score;
+                    link.classList.replace('do-fixture-vs', 'do-fixture-score');
+                });
+                if (panel.isConnected) setTimeout(refresh, 90000);
+            };
+            await refresh();
+        });
+        button.className = 'do-btn do-btn-sm genie-score-button';
+    });
 }
