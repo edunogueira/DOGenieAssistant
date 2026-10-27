@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name DO Genie Assistant
-// @version 45.0
+// @version 45.01
 // @namespace https://github.com/edunogueira/DOGenieAssistant/
 // @description dugout-online genie assistant
 // @author n_edu (clubid/112411), mini18 (clubid/99440), lumfurt (clubid/106059), Gleybe (clubid/113526), ernestofv01 (clubid/112729), allandagama (clubid/113643)
@@ -2270,7 +2270,7 @@ function matchScore() {
     const goalsAwayTeam = (v4 ? score[1]?.textContent : gameHeader[3]?.textContent)?.trim().toLowerCase();
     const awayTeam = (v4 ? document.querySelector('.do-mv-team.away .do-mv-team-name')?.textContent : gameHeader[4]?.textContent)?.trim().toLowerCase();
     const events = document.querySelectorAll(v4 ? '#doMvCommentary table tr' : '#events_content table tbody tr');
-    if (!homeTeam || !awayTeam || !goalsHomeTeam || !goalsAwayTeam || !events.length || document.getElementById('tblScore')) return;
+    if (!homeTeam || !awayTeam || !goalsHomeTeam || !goalsAwayTeam || (!v4 && !events.length) || document.getElementById('tblScore')) return;
 
     let language = getLanguage();
     const translation = getTranslation();
@@ -2300,7 +2300,7 @@ function matchScore() {
     function countShots(startMin, endMin) {
         const homeTeamShots = { onTarget: 0, offTarget: 0, offsides: 0, corners: 0, foul: 0, yellow: 0, red: 0 };
         const awayTeamShots = { ...homeTeamShots };
-        for (const event of events) {
+        for (const event of v4 ? document.querySelectorAll('#doMvCommentary table tr') : events) {
             const gameTime = parseFloat((event.querySelector('td:nth-child(2) b')?.textContent || '').replace(/[^\d:]/g, '').split(':')[0]);
             if (!(gameTime >= startMin && gameTime <= endMin)) continue;
             const eventText = event.innerText.toLowerCase().trim();
@@ -2319,7 +2319,7 @@ function matchScore() {
                 <thead>
                     <tr>
                         <th class="player_ratings_header">${homeTeam.toUpperCase()}</th>
-                        <th class="player_ratings_header">${goalsHomeTeam.toUpperCase()} vs ${goalsAwayTeam.toUpperCase()}</th>
+                        <th class="player_ratings_header">${v4 ? score[0].textContent.trim() : goalsHomeTeam.toUpperCase()} vs ${v4 ? score[1].textContent.trim() : goalsAwayTeam.toUpperCase()}</th>
                         <th class="player_ratings_header">${awayTeam.toUpperCase()}</th>
                     </tr>
                 </thead>
@@ -2364,6 +2364,13 @@ function matchScore() {
         document.body.appendChild(slider);
     }
     countShots(0, 120);  // Initial count for the full range
+
+    if (v4) {
+        const update = () => countShots(Number(document.getElementById('startMin').value), Number(document.getElementById('endMin').value));
+        const observer = new MutationObserver(update);
+        observer.observe(document.querySelector('#doMvCommentary'), { childList: true });
+        observer.observe(document.querySelector('.do-mv-score-nums'), { childList: true, subtree: true, characterData: true });
+    }
 
     // Update shot count when slider values change
     document.getElementById('startMin').addEventListener('input', function() {
@@ -3142,7 +3149,6 @@ function v4MatchSound() {
     if (!gameId) return;
     const key = 'DOGenieAssistant.match.' + gameId;
     const match = genieRead(key, {});
-    const rows = Array.from(document.querySelectorAll('#doMvCommentary table tr')).slice(0, 5);
     const home = document.querySelector('.do-mv-team.home .do-mv-team-name')?.textContent.trim();
     function play(event, time, soundId) {
         if (!/^\d+$/.test(String(soundId)) || Number(formatTime(match[event])) >= Number(formatTime(time))) return;
@@ -3151,28 +3157,33 @@ function v4MatchSound() {
         iframe.width = '0'; iframe.height = '0'; iframe.allow = 'autoplay';
         iframe.src = 'https://w.soundcloud.com/player/?url=' +
             encodeURIComponent('https://api.soundcloud.com/tracks/' + soundId) + '&auto_play=true';
-        document.querySelector('#doMvCommentary').append(iframe);
+        document.body.append(iframe);
         setTimeout(() => iframe.remove(), 30000);
     }
-    for (const row of rows) {
-        const cells = row.querySelectorAll('td');
-        if (cells.length < 3) continue;
-        const time = cells[1].textContent.trim();
-        const icon = cells[0].querySelector('img')?.src || '';
-        if (soundConfig.GOAL_SOUND && icon.includes('icon-goal')) {
-            const club = cells[2].querySelector('a[href*="/clubinfo/"]')?.textContent.trim();
-            play('LAST_GOAL', time, club === home ? soundConfig.HOME_GOAL_ID : soundConfig.AWAY_GOAL_ID);
-            break;
+    function update() {
+        const rows = Array.from(document.querySelectorAll('#doMvCommentary table tr')).slice(0, 5);
+        for (const row of rows) {
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 3) continue;
+            const time = cells[1].textContent.trim();
+            const icon = cells[0].querySelector('img')?.src || '';
+            if (soundConfig.GOAL_SOUND && icon.includes('icon-goal')) {
+                const club = cells[2].querySelector('a[href*="/clubinfo/"]')?.textContent.trim();
+                play('LAST_GOAL', time, club === home ? soundConfig.HOME_GOAL_ID : soundConfig.AWAY_GOAL_ID);
+                break;
+            }
+            if (soundConfig.OFFSIDE_SOUND && icon.includes('icon-offside')) {
+                play('LAST_OFFSIDE', time, soundConfig.OFFSIDE_ID);
+                break;
+            }
         }
-        if (soundConfig.OFFSIDE_SOUND && icon.includes('icon-offside')) {
-            play('LAST_OFFSIDE', time, soundConfig.OFFSIDE_ID);
-            break;
+        const latest = rows[0]?.querySelectorAll('td');
+        if (soundConfig.GAME_END_SOUND && latest?.[2]?.textContent.trim().startsWith('Game ends')) {
+            play('GAME_ENDS', latest[1].textContent.trim(), soundConfig.GAME_END_ID);
         }
     }
-    const latest = rows[0]?.querySelectorAll('td');
-    if (soundConfig.GAME_END_SOUND && latest?.[2]?.textContent.trim().startsWith('Game ends')) {
-        play('GAME_ENDS', latest[1].textContent.trim(), soundConfig.GAME_END_ID);
-    }
+    update();
+    new MutationObserver(update).observe(document.querySelector('#doMvCommentary'), { childList: true });
 }
 function v4MatchNames() {
     const commentary = document.querySelector('#doMvCommentary');
